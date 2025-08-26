@@ -5,14 +5,29 @@ type User = {
   id: string;
   name: string;
   email: string;
-  role: "user" | "vendor";
+  role: "USER" | "VENDOR";
+  phone?: string;
   token: string;
+  vendorProfile?: {
+    storeName: string;
+    storeAddress: string;
+    businessCategory: string;
+  };
 };
 
 type AuthState = {
   user: User | null;
   login: (email: string, password: string) => Promise<void>;
-  signup: (userData: { name: string; email: string; password: string; role: string }) => Promise<void>;
+  signup: (userData: {
+    name: string;
+    email: string;
+    password: string;
+    phone?: string;
+    role?: string;
+    storeName?: string;
+    storeAddress?: string;
+    businessCategory?: string;
+  }) => Promise<void>;
   logout: () => void;
   setAuth: (user: User) => void;
 };
@@ -20,53 +35,85 @@ type AuthState = {
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
 
-  login: async (email, password) => {
-    const res = await api.post("/auth/login", { email, password });
+  login: async (email: string, password: string) => {
+    try {
+      const response = await api.post("/auth/login", { email, password });
+      
+      if (!response.data.success) {
+        throw new Error(response.data.message || "Login failed");
+      }
 
-    
-    const userData: User = {
-      id: res.data.id,
-      name: res.data.name,
-      email: res.data.email,
-      role: res.data.role as "user" | "vendor", // 🔑 enforce type
-      token: res.data.token,
-    };
+      const { token, user: userData } = response.data.data;
+      
+      const user: User = {
+        id: userData.id,
+        name: userData.name,
+        email: userData.email,
+        role: userData.role.toUpperCase() as "USER" | "VENDOR",
+        phone: userData.phone,
+        token,
+        ...(userData.vendorProfile && {
+          vendorProfile: userData.vendorProfile
+        })
+      };
 
+      // Save user data for interceptors and easy access
+      localStorage.setItem("token", token);
+      localStorage.setItem("id", user.id);
+      localStorage.setItem("email", user.email);
+      localStorage.setItem("role", user.role);
 
-    // Save user data for interceptors and easy access
-    localStorage.setItem("token", userData.token);
-    localStorage.setItem("id", userData.id);
-    localStorage.setItem("email", userData.email);
-
-    set({ user: userData });
+      set({ user });
+    } catch (error) {
+      console.error("Login error:", error);
+      throw error;
+    }
   },
 
   signup: async (userData) => {
-    const res = await api.post("/auth/register", userData);
-    
-    const user: User = {
-      id: res.data.id || "",
-      name: userData.name,
-      email: userData.email,
-      role: userData.role.toLowerCase() as "user" | "vendor",
-      token: res.data.token,
-    };
+    try {
+      const response = await api.post("/auth/register", userData);
+      
+      if (!response.data.success) {
+        throw new Error(response.data.message || "Signup failed");
+      }
 
-    // Save user data for interceptors and easy access
-    localStorage.setItem("token", user.token);
-    localStorage.setItem("id", user.id);
-    localStorage.setItem("email", user.email);
+      const { token, user: userResponse } = response.data.data;
+      
+      const user: User = {
+        id: userResponse.id,
+        name: userResponse.name,
+        email: userResponse.email,
+        role: userResponse.role.toUpperCase() as "USER" | "VENDOR",
+        phone: userResponse.phone,
+        token,
+        ...(userResponse.vendorProfile && {
+          vendorProfile: userResponse.vendorProfile
+        })
+      };
 
-    set({ user });
+      // Save user data for interceptors and easy access
+      localStorage.setItem("token", token);
+      localStorage.setItem("id", user.id);
+      localStorage.setItem("email", user.email);
+      localStorage.setItem("role", user.role);
+
+      set({ user });
+    } catch (error) {
+      console.error("Signup error:", error);
+      throw error;
+    }
   },
 
   logout: () => {
     localStorage.removeItem("token");
     localStorage.removeItem("id");
     localStorage.removeItem("email");
+    localStorage.removeItem("role");
     set({ user: null });
   },
-  setAuth: (user) => set({ user}),
+
+  setAuth: (user: User) => set({ user }),
 }));
 
 export const useAuth = () => {

@@ -5,7 +5,7 @@ async function getListing(id: string) {
   try {
     const response = await api.get(`/listings/${id}`);
     return response.data;
-  } catch (error) {
+  } catch {
     throw new Error("Failed to fetch listing");
   }
 }

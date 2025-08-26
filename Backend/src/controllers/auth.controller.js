@@ -5,69 +5,199 @@ const { sign } = require('../lib/jwt');
 
 exports.register = async (req, res, next) => {
   try {
+    // Check for validation errors
     const errors = validationResult(req);
-    if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
+    if (!errors.isEmpty()) {
+      console.log('🔴 Validation errors:', errors.array());
+      console.log('📝 Request body:', req.body);
+      
+      const errorMessages = errors.array().map(err => ({
+        field: err.path,
+        message: err.msg,
+        value: err.value
+      }));
+      
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: errorMessages
+      });
+    }
 
     const { 
-      name, email, password, phone,
-      role, // "USER" or "VENDOR"
-      storeName, storeAddress, businessCategory, coverImage 
+      name, 
+      email, 
+      password, 
+      phone,
+      role = 'USER', // Default to USER if not specified
+      storeName, 
+      storeAddress, 
+      businessCategory
     } = req.body;
-console.log( req.body);
 
-    if (role && !["USER", "VENDOR"].includes(role)) {
-      return res.status(400).json({ message: "Invalid role" });
+    console.log('✅ Registration attempt for:', { email, role, name, phone: phone || 'not provided' });
+
+    // Check if email already exists
+    const existingUser = await prisma.user.findUnique({ 
+      where: { email: email.toLowerCase() } 
+    });
+    
+    if (existingUser) {
+      return res.status(409).json({
+        success: false,
+        message: 'Email address is already registered'
+      });
     }
-    const phoneExists = await prisma.user.findUnique({ where: { phone } });
-if (phoneExists) {
-  return res.status(409).json({ message: 'Phone number already in use' });
-}
-    const emailExists = await prisma.user.findUnique({ where: { email } });
-if (emailExists) {
-  return res.status(409).json({ message: 'Email already in use' });
-}
 
-    const exists = await prisma.user.findUnique({ where: { email } });
-    if (exists) return res.status(409).json({ message: 'Email already in use' });
+    // Check if phone already exists (if provided)
+    if (phone) {
+      const existingPhone = await prisma.user.findUnique({ 
+        where: { phone } 
+      });
+      
+      if (existingPhone) {
+        return res.status(409).json({
+          success: false,
+          message: 'Phone number is already registered'
+        });
+      }
+    }
 
-    const hash = await bcrypt.hash(password, 10);
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 12);
 
-  const user = await prisma.user.create({
-  data: {
-    name,
-    email,
-    password: hash,
-    phone,
-    role,
-    ...(role === "VENDOR" && {
-      vendorProfile: {
-        create: {
-          storeName,
-          storeAddress,
-          businessCategory,
-          coverImage,
+    // Prepare user data
+    const userData = {
+      name: name.trim(),
+      email: email.toLowerCase().trim(),
+      password: hashedPassword,
+      phone: phone ? phone.trim() : null,
+      role: role.toUpperCase(),
+    };
+
+    // Create user with or without vendor profile
+    let user;
+    if (role === 'VENDOR') {
+      // Validate vendor-specific fields
+      if (!storeName || !storeAddress || !businessCategory) {
+        return res.status(400).json({
+          success: false,
+          message: 'Vendor accounts require store name, address, and business category'
+        });
+      }
+
+      user = await prisma.user.create({
+        data: {
+          ...userData,
+          vendorProfile: {
+            create: {
+              storeName: storeName.trim(),
+              storeAddress: storeAddress.trim(),
+              businessCategory: businessCategory.trim(),
+            },
+          },
         },
-      },
-    }),
-  },
-  include: { vendorProfile: true }, 
-  });
-    const token = sign({ id: user.id, email: user.email, name: user.name, role: user.role });
-    res.status(201).json({ token, role: user.role });
-  } catch (e) { next(e); }
-};
+        include: { 
+          vendorProfile: true 
+        },
+      });
+    } else {
+      // Create regular user
+      user = await prisma.user.create({
+        data: userData,
+      });
+    }
 
+    // Generate JWT token
+    const token = sign({ 
+      id: user.id, 
+      email: user.email, 
+      name: user.name, 
+      role: user.role 
+    });
+
+    // Return success response
+    res.status(201).json({
+      success: true,
+      message: 'Account created successfully',
+      data: {
+        token,
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          phone: user.phone,
+          ...(user.vendorProfile && {
+            vendorProfile: {
+              storeName: user.vendorProfile.storeName,
+              storeAddress: user.vendorProfile.storeAddress,
+              businessCategory: user.vendorProfile.businessCategory,
+            }
+          })
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('Registration error:', error);
+    
+    // Handle Prisma-specific errors
+    if (error.code === 'P2002') {
+      return res.status(409).json({
+        success: false,
+        message: 'A user with this email or phone already exists'
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error during registration'
+    });
+  }
+};
 
 exports.login = async (req, res, next) => {
   try {
-    // user attached by passport local strategy
-    const token = sign(req.user);
-    res.json({ 
-      token, 
-      id: req.user.id,
-      name: req.user.name,
-      email: req.user.email,
-      role: req.user.role
+    // User is attached by passport local strategy
+    const user = req.user;
+    
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid credentials'
+      });
+    }
+
+    // Generate JWT token
+    const token = sign({ 
+      id: user.id, 
+      email: user.email, 
+      name: user.name, 
+      role: user.role 
     });
-  } catch (e) { next(e); }
+
+    // Return success response
+    res.json({
+      success: true,
+      message: 'Login successful',
+      data: {
+        token,
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          phone: user.phone
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error during login'
+    });
+  }
 };

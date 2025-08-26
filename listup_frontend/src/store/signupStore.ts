@@ -10,7 +10,6 @@ interface SignupState {
     storeName?: string;
     storeAddress?: string;
     businessCategory?: string;
-    coverImage?: string;
   };
   setField: (field: string, value: string) => void;
   reset: () => void;
@@ -26,7 +25,6 @@ export const useSignupStore = create<SignupState>((set) => ({
     storeName: "",
     storeAddress: "",
     businessCategory: "",
-    coverImage: "",
   },
   setField: (field, value) =>
     set((state) => ({
@@ -43,7 +41,6 @@ export const useSignupStore = create<SignupState>((set) => ({
         storeName: "",
         storeAddress: "",
         businessCategory: "",
-        coverImage: "",
       },
     }),
 }));

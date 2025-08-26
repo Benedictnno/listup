@@ -1,5 +1,5 @@
 import api from "@/utils/axios"; 
-import axios from "axios";
+
 
 // Define proper types for the API
 interface ListingData {
