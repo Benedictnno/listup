@@ -7,7 +7,8 @@
   "build": "npx prisma generate",
   "start": "node src/server.js",
   "dev": "nodemon src/server.js",
-  "prisma": "prisma"
+  "prisma": "prisma",
+  "add-categories": "node add-categories.js"
 },
   "keywords": [],
   "author": "",

@@ -11,4 +11,16 @@ router.post('/',
   CategoriesCtrl.create
 );
 
+// Add seed route for categories
+router.post('/seed', CategoriesCtrl.seed);
+
+// Add update and delete routes
+router.put('/:id',
+  body('name').isString().isLength({ min: 2 }),
+  body('slug').isString().isLength({ min: 2 }),
+  CategoriesCtrl.update
+);
+
+router.delete('/:id', CategoriesCtrl.delete);
+
 module.exports = router;

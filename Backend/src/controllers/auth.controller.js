@@ -25,7 +25,7 @@ exports.register = async (req, res, next) => {
     }
 
     const { 
-      name, 
+      name,
       email, 
       password, 
       phone,
