@@ -19,8 +19,6 @@ router.post('/',
   ListingsCtrl.create
 );
 
-
-
 // 👇 only vendor that owns the listing can update/delete
 router.patch('/:id', auth, allow('VENDOR'), ListingsCtrl.update);
 router.delete('/:id', auth, allow('VENDOR'), ListingsCtrl.remove);

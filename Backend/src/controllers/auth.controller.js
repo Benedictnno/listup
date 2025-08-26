@@ -13,10 +13,19 @@ exports.register = async (req, res, next) => {
       role, // "USER" or "VENDOR"
       storeName, storeAddress, businessCategory, coverImage 
     } = req.body;
+console.log( req.body);
 
     if (role && !["USER", "VENDOR"].includes(role)) {
       return res.status(400).json({ message: "Invalid role" });
     }
+    const phoneExists = await prisma.user.findUnique({ where: { phone } });
+if (phoneExists) {
+  return res.status(409).json({ message: 'Phone number already in use' });
+}
+    const emailExists = await prisma.user.findUnique({ where: { email } });
+if (emailExists) {
+  return res.status(409).json({ message: 'Email already in use' });
+}
 
     const exists = await prisma.user.findUnique({ where: { email } });
     if (exists) return res.status(409).json({ message: 'Email already in use' });
@@ -53,6 +62,12 @@ exports.login = async (req, res, next) => {
   try {
     // user attached by passport local strategy
     const token = sign(req.user);
-    res.json({ token, id: req.user.id });
+    res.json({ 
+      token, 
+      id: req.user.id,
+      name: req.user.name,
+      email: req.user.email,
+      role: req.user.role
+    });
   } catch (e) { next(e); }
 };

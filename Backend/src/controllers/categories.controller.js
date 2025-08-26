@@ -18,6 +18,8 @@ exports.create = async (req, res, next) => {
     res.status(201).json(cat);
   } catch (e) { next(e); }
 };
+
+
 exports.update = async (req, res, next) => {
     try {
         const errors = validationResult(req);

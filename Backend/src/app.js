@@ -8,7 +8,14 @@ const error = require('./middleware/error');
 require('./config/passport'); // init strategies
 
 const app = express();
-app.use(cors());
+app.use(cors(
+    {
+        origin: ['http://localhost:3000', 'https://your-production-url.com'],
+        methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+        allowedHeaders: ['Content-Type', 'Authorization'],
+         credentials: true, 
+    }
+));
 app.use(express.json({ limit: '2mb' }));
 app.use(morgan('dev'));
 app.use(passport.initialize());

@@ -5,7 +5,7 @@ const { body } = require('express-validator');
 
 router.get('/', CategoriesCtrl.list);
 router.post('/',
-  auth, allow('admin'),
+  // auth, allow('admin'),
   body('name').isString().isLength({ min: 2 }),
   body('slug').isString().isLength({ min: 2 }),
   CategoriesCtrl.create

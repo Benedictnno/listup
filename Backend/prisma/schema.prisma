@@ -41,26 +41,49 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // Profile fields
+  profileImage String?
+  bio          String?
+  dateOfBirth  DateTime?
+  gender       String?
+  address      String?
+  city         String?
+  state        String?
+  zipCode      String?
+  country      String?
+
   // Relations
-  listings          Listing[]
-  ads               Ad[]
-  payments          Payment[]
-  vendorProfile     VendorProfile?
-  favorites         Favorite[]
-  savedSearches     SavedSearch[]
-  PhoneVerification PhoneVerification[]
+  listings             Listing[]
+  ads                  Ad[]
+  payments             Payment[]
+  vendorProfile        VendorProfile?
+  favorites            Favorite[]
+  savedSearches        SavedSearch[]
+  PhoneVerification    PhoneVerification[]
+  userPreferences      UserPreferences?
+  NotificationSettings NotificationSettings?
 }
 
 model VendorProfile {
   id               String   @id @default(auto()) @map("_id") @db.ObjectId
   storeName        String
+  storeDescription String?
   storeAddress     String
   businessCategory String
   coverImage       String?
+  logo             String?
+  website          String?
   createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   userId String @unique @db.ObjectId
   user   User   @relation(fields: [userId], references: [id])
+  Ad     Ad[]
+
+  // New relations
+  businessHours BusinessHours?
+  socialMedia   SocialMedia?
+  storeSettings StoreSettings?
 }
 
 model Category {
@@ -138,23 +161,44 @@ model SavedSearch {
   @@index([userId])
 }
 
+model AdPlan {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  adType    AdType
+  price     Int // in Naira
+  duration  Int // in days
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  ads Ad[]
+}
+
 model Ad {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
   type      AdType
   status    AdStatus @default(PENDING)
   startDate DateTime
   endDate   DateTime
-  createdAt DateTime @default(now())
 
   vendorId String @db.ObjectId
   vendor   User   @relation(fields: [vendorId], references: [id])
 
-  listingId String?  @db.ObjectId
-  listing   Listing? @relation(fields: [listingId], references: [id])
+  storeId String?        @db.ObjectId
+  store   VendorProfile? @relation(fields: [storeId], references: [id])
 
-  payments Payment[]
+  productId String?  @db.ObjectId
+  product   Listing? @relation(fields: [productId], references: [id])
 
-  @@index([endDate])
+  appliesToAllProducts Boolean? @default(false)
+
+  paymentStatus PaymentStatus @default(PENDING)
+  amount        Float
+  transactionId String? // Paystack/Stripe ref
+
+  createdAt DateTime  @default(now())
+  AdPlan    AdPlan?   @relation(fields: [adPlanId], references: [id])
+  adPlanId  String?   @db.ObjectId
+  Payment   Payment[]
 }
 
 model Payment {
@@ -168,5 +212,85 @@ model Payment {
   ad   Ad     @relation(fields: [adId], references: [id])
 
   userId String @db.ObjectId
+  user   User   @relation(fields: [userId], references: [id])
+}
+
+// New models for comprehensive settings
+model BusinessHours {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  monday    Json // { open: "09:00", close: "18:00", closed: false }
+  tuesday   Json // { open: "09:00", close: "18:00", closed: false }
+  wednesday Json // { open: "09:00", close: "18:00", closed: false }
+  thursday  Json // { open: "09:00", close: "18:00", closed: false }
+  friday    Json // { open: "09:00", close: "18:00", closed: false }
+  saturday  Json // { open: "10:00", close: "16:00", closed: false }
+  sunday    Json // { open: "12:00", close: "16:00", closed: true }
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  vendorProfileId String        @unique @db.ObjectId
+  vendorProfile   VendorProfile @relation(fields: [vendorProfileId], references: [id])
+}
+
+model SocialMedia {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  facebook  String?
+  twitter   String?
+  instagram String?
+  linkedin  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  vendorProfileId String        @unique @db.ObjectId
+  vendorProfile   VendorProfile @relation(fields: [vendorProfileId], references: [id])
+}
+
+model StoreSettings {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  autoSave    Boolean  @default(true)
+  emailDigest Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  vendorProfileId String        @unique @db.ObjectId
+  vendorProfile   VendorProfile @relation(fields: [vendorProfileId], references: [id])
+}
+
+model UserPreferences {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  language   String   @default("English")
+  timezone   String   @default("Africa/Lagos")
+  currency   String   @default("NGN")
+  dateFormat String   @default("DD/MM/YYYY")
+  theme      String   @default("light") // light, dark, auto
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  userId String @unique @db.ObjectId
+  user   User   @relation(fields: [userId], references: [id])
+}
+
+model NotificationSettings {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  // Order notifications
+  orderUpdates         Boolean @default(true)
+  newMessages          Boolean @default(true)
+  lowStockAlerts       Boolean @default(true)
+  paymentNotifications Boolean @default(true)
+
+  // Marketing & reports
+  marketingEmails Boolean @default(false)
+  weeklyReports   Boolean @default(true)
+  monthlyReports  Boolean @default(true)
+
+  // Security notifications
+  emailNotifications Boolean @default(true)
+  smsNotifications   Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId String @unique @db.ObjectId
   user   User   @relation(fields: [userId], references: [id])
 }
