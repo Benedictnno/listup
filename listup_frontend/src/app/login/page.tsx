@@ -20,9 +20,10 @@ export default function LoginPage() {
     try {
       await login(email, password);
       router.push("/dashboard"); // redirect after login
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Login failed:", error);
-      setError(error.response?.data?.message || "Invalid email or password. Please try again.");
+              const errorMessage = error instanceof Error ? error.message : "Invalid email or password. Please try again.";
+        setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -82,7 +83,7 @@ export default function LoginPage() {
         </button>
         
         <div className="mt-6 text-center text-sm text-slate-600">
-          Don't have an account? <Link href="/signup" className="font-semibold text-lime-600 hover:text-lime-700">Sign up</Link>
+          Don&apos;t have an account? <Link href="/signup" className="font-semibold text-lime-600 hover:text-lime-700">Sign up</Link>
         </div>
       </form>
     </div>

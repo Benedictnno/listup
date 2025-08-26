@@ -15,12 +15,6 @@ import {
   Bell, 
   Settings as SettingsIcon,
   Camera,
-  MapPin,
-  Phone,
-  Mail,
-  Globe,
-  Clock,
-  Save,
   CheckCircle,
   AlertTriangle,
   Menu,
@@ -47,7 +41,7 @@ export default function SettingsPage() {
       await new Promise(resolve => setTimeout(resolve, 1000));
       setMessage({ type: 'success', text: `${section} settings updated successfully!` });
       setTimeout(() => setMessage(null), 3000);
-    } catch (error) {
+    } catch {
       setMessage({ type: 'error', text: `Failed to update ${section} settings. Please try again.` });
     } finally {
       setLoading(false);

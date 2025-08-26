@@ -1,14 +1,11 @@
 "use client";
 import React from "react";
 import { motion } from "framer-motion";
-import { ArrowRight, Search, ShoppingBag, Tag, Menu, X, Facebook, Twitter, Instagram, Linkedin } from "lucide-react";
-import Footer from "@/components/Footer";
-import {  tips } from "@/utils/constants";
-import { GhostButton, PrimaryButton, SectionEyebrow } from "@/utils/helpers";
-import NavBar from "@/components/NavBar";
-import Link from "next/link";
-import Image from "next/image";
+import { ArrowRight, Search } from "lucide-react";
+import { tips } from "@/utils/constants";
+import { PrimaryButton, SectionEyebrow } from "@/utils/helpers";
 import AdsPage from "@/components/TrendingAds";
+import Image from "next/image";
 
 /**
  * Marketplace Landing Page
@@ -92,9 +89,11 @@ export default function MarketplaceLanding() {
             className="relative z-10"
           >
             <div className="relative mx-auto w-full max-w-md overflow-hidden rounded-3xl border border-white/10 bg-white/5 shadow-2xl">
-              <img
+              <Image
                 src="https://images.unsplash.com/photo-1517263904808-5dc91e3e7044?q=80&w=1400&auto=format&fit=crop"
                 alt="Friends shopping in a cafe"
+                width={500}
+                height={600}
                 className="h-72 w-full object-cover md:h-96"
               />
               <div className="absolute bottom-3 right-3 rounded-xl bg-slate-900/80 px-3 py-1.5 text-[11px] text-white backdrop-blur">
@@ -141,9 +140,11 @@ export default function MarketplaceLanding() {
 
           <div>
             <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-              <img
+              <Image
                 src="https://images.unsplash.com/photo-1519337265831-281ec6cc8514?q=80&w=1400&auto=format&fit=crop"
                 alt="Happy couple shopping online"
+                width={500}
+                height={600}
                 className="h-64 w-full object-cover md:h-80"
               />
             </div>
@@ -183,7 +184,7 @@ export default function MarketplaceLanding() {
           <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
             {tips.map((t, i) => (
               <article key={i} className="overflow-hidden rounded-2xl border border-white/10 bg-white/5 shadow-sm">
-                <img src={t.img} alt={t.title} className="h-44 w-full object-cover" />
+                <Image src={t.img} alt={t.title} width={500} height={300} className="h-44 w-full object-cover" />
                 <div className="p-4">
                   <h4 className="text-base font-semibold text-white">{t.title}</h4>
                   <div className="mt-3 flex items-center justify-between text-[11px] text-slate-300">

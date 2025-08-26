@@ -3,22 +3,14 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import Image from "next/image";
 import { 
   TrendingUp, 
-  ShoppingCart, 
-  MessageSquare, 
-  DollarSign, 
   Package,
-  BarChart3,
-  Clock,
-  Star,
-  AlertTriangle,
-  Store,
-  Tag,
-  Calendar,
   Plus,
   ArrowRight,
-  ShoppingBag
+  ShoppingBag,
+  Store
 } from "lucide-react";
 import { fetchVendorListings } from "@/lib/api/listing";
 import { safeLocalStorage } from "@/utils/helpers";
@@ -29,18 +21,7 @@ interface DashboardData {
   activeListings: number;
   inactiveListings: number;
   pendingListings: number;
-  totalRevenue: number;
-  totalViews: number;
-  totalOrders: number;
-  unreadMessages: number;
-  activeAds: number;
-  adSpend: number;
-  businessCategory: string;
-  storeName: string;
   latestListings: LatestListing[];
-  recentActivity: ActivityItem[];
-  lowStockAlerts: StockAlert[];
-  topPerformers: TopPerformer[];
 }
 
 interface LatestListing {
@@ -49,32 +30,6 @@ interface LatestListing {
   price: number;
   status: string;
   createdAt: string;
-  image?: string;
-}
-
-interface ActivityItem {
-  id: string;
-  type: 'listing_created' | 'order_received' | 'ad_activated' | 'message_received' | 'stock_updated';
-  title: string;
-  description: string;
-  timestamp: string;
-  icon: React.ReactNode;
-  color: string;
-}
-
-interface StockAlert {
-  id: string;
-  productName: string;
-  currentStock: number;
-  threshold: number;
-}
-
-interface TopPerformer {
-  id: string;
-  title: string;
-  views: number;
-  sales: number;
-  revenue: number;
   image?: string;
 }
 
@@ -108,72 +63,15 @@ export default function DashboardOverview() {
             image: listing.image
           }));
 
-        // Mock data for demonstration - in real app, these would come from API
-        const mockData: DashboardData = {
+        const dashboardData: DashboardData = {
           totalListings: listings.length,
           activeListings: activeListings.length,
           inactiveListings: inactiveListings.length,
           pendingListings: pendingListings.length,
-          totalRevenue: 1250000, // ₦1,250,000
-          totalViews: 15420,
-          totalOrders: 89,
-          unreadMessages: 12,
-          activeAds: 3,
-          adSpend: 45000, // ₦45,000
-          businessCategory: "Electronics & Gadgets", // This would come from store data
-          storeName: "Tech Haven Store", // This would come from store data
-          latestListings,
-          recentActivity: [
-            {
-              id: '1',
-              type: 'order_received',
-              title: 'New Order Received',
-              description: 'Order #ORD-2024-001 for iPhone 13 Pro',
-              timestamp: '2 minutes ago',
-              icon: <ShoppingCart size={16} />,
-              color: 'text-green-600 bg-green-100'
-            },
-            {
-              id: '2',
-              type: 'ad_activated',
-              title: 'Ad Campaign Activated',
-              description: 'Storefront promotion is now live',
-              timestamp: '1 hour ago',
-              icon: <TrendingUp size={16} />,
-              color: 'text-blue-600 bg-blue-100'
-            },
-            {
-              id: '3',
-              type: 'message_received',
-              title: 'Customer Message',
-              description: 'Question about Samsung Galaxy S23',
-              timestamp: '3 hours ago',
-              icon: <MessageSquare size={16} />,
-              color: 'text-purple-600 bg-purple-100'
-            },
-            {
-              id: '4',
-              type: 'stock_updated',
-              title: 'Stock Updated',
-              description: 'MacBook Pro stock reduced to 5 units',
-              timestamp: '5 hours ago',
-              icon: <Package size={16} />,
-              color: 'text-orange-600 bg-orange-100'
-            }
-          ],
-          lowStockAlerts: [
-            { id: '1', productName: 'MacBook Pro', currentStock: 2, threshold: 5 },
-            { id: '2', productName: 'iPhone 13 Pro', currentStock: 3, threshold: 5 },
-            { id: '3', productName: 'Samsung Galaxy S23', currentStock: 1, threshold: 5 }
-          ],
-          topPerformers: [
-            { id: '1', title: 'iPhone 13 Pro', views: 1240, sales: 15, revenue: 450000, image: '/placeholder.png' },
-            { id: '2', title: 'MacBook Pro M2', views: 980, sales: 8, revenue: 320000, image: '/placeholder.png' },
-            { id: '3', title: 'Samsung Galaxy S23', views: 756, sales: 12, revenue: 280000, image: '/placeholder.png' }
-          ]
+          latestListings
         };
 
-        setData(mockData);
+        setData(dashboardData);
       } catch (error) {
         console.error('Error loading dashboard data:', error);
       } finally {
@@ -209,14 +107,6 @@ export default function DashboardOverview() {
     return <div className="p-4 md:p-6 text-red-500">Failed to load dashboard data.</div>;
   }
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-NG', {
-      style: 'currency',
-      currency: 'NGN',
-      minimumFractionDigits: 0
-    }).format(amount);
-  };
-
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-NG', {
       month: 'short',
@@ -243,14 +133,8 @@ export default function DashboardOverview() {
           <div>
             <h1 className="text-2xl md:text-3xl font-bold mb-2">Welcome back, {vendorName}!</h1>
             <p className="text-lime-100 text-sm md:text-base">
-              Here's what's happening with your {data.businessCategory} store today.
+              Here&apos;s what&apos;s happening with your store today.
             </p>
-            <div className="mt-3 flex items-center gap-2 text-lime-100">
-              <Store size={16} />
-              <span className="text-sm">{data.storeName}</span>
-              <Tag size={16} />
-              <span className="text-sm">{data.businessCategory}</span>
-            </div>
           </div>
           <div className="mt-4 md:mt-0">
             <Link href="/dashboard/create-list">
@@ -283,7 +167,7 @@ export default function DashboardOverview() {
           </CardContent>
         </Card>
 
-        <Card className="hover:shadow-lg transition-shadow border-blue-200">
+        <Card className="hover:shadow-lg transition-shadow border-green-200">
           <CardContent className="p-4 md:p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -308,30 +192,28 @@ export default function DashboardOverview() {
                 <p className="text-sm font-medium text-gray-600">Inactive Listings</p>
                 <p className="text-2xl md:text-3xl font-bold text-gray-900">{data.inactiveListings}</p>
                 <p className="text-xs text-orange-600 flex items-center gap-1">
-                  <AlertTriangle size={12} />
                   {data.inactiveListings > 0 ? 'Needs attention' : 'All active'}
                 </p>
               </div>
               <div className="p-3 bg-orange-100 rounded-full">
-                <AlertTriangle className="h-6 w-6 text-orange-600" />
+                <Package className="h-6 w-6 text-orange-600" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="hover:shadow-lg transition-shadow border-purple-200">
+        <Card className="hover:shadow-lg transition-shadow border-yellow-200">
           <CardContent className="p-4 md:p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Total Revenue</p>
-                <p className="text-2xl md:text-3xl font-bold text-gray-900">{formatCurrency(data.totalRevenue)}</p>
-                <p className="text-xs text-green-600 flex items-center gap-1">
-                  <TrendingUp size={12} />
-                  +12.5% this month
+                <p className="text-sm font-medium text-gray-600">Pending Listings</p>
+                <p className="text-2xl md:text-3xl font-bold text-gray-900">{data.pendingListings}</p>
+                <p className="text-xs text-yellow-600 flex items-center gap-1">
+                  {data.pendingListings > 0 ? 'Awaiting approval' : 'None pending'}
                 </p>
               </div>
-              <div className="p-3 bg-purple-100 rounded-full">
-                <DollarSign className="h-6 w-6 text-purple-600" />
+              <div className="p-3 bg-yellow-100 rounded-full">
+                <Package className="h-6 w-6 text-yellow-600" />
               </div>
             </div>
           </CardContent>
@@ -374,9 +256,11 @@ export default function DashboardOverview() {
                     <div key={listing.id} className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                       <div className="w-12 h-12 rounded-lg bg-gray-200 flex items-center justify-center flex-shrink-0">
                         {listing.image ? (
-                          <img 
+                          <Image 
                             src={listing.image} 
                             alt={listing.title}
+                            width={48}
+                            height={48}
                             className="w-12 h-12 rounded-lg object-cover"
                           />
                         ) : (
@@ -394,7 +278,6 @@ export default function DashboardOverview() {
                       </div>
                       <div className="text-right text-sm text-gray-500 flex-shrink-0">
                         <div className="flex items-center gap-1">
-                          <Calendar size={14} />
                           {formatDate(listing.createdAt)}
                         </div>
                       </div>
@@ -408,156 +291,58 @@ export default function DashboardOverview() {
 
         {/* Right Sidebar */}
         <div className="space-y-6">
-          {/* Store Info */}
+          {/* Quick Actions */}
           <Card className="border-lime-200">
             <CardContent className="p-6">
               <div className="flex items-center gap-3 mb-4">
                 <Store size={20} className="text-lime-600" />
-                <h3 className="text-lg font-semibold">Store Information</h3>
+                <h3 className="text-lg font-semibold">Quick Actions</h3>
               </div>
               <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Store Name:</span>
-                  <span className="font-medium">{data.storeName}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Category:</span>
-                  <span className="font-medium">{data.businessCategory}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Status:</span>
-                  <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">
-                    Active
-                  </span>
-                </div>
+                <Link href="/dashboard/create-list">
+                  <Button variant="outline" className="w-full justify-start bg-lime-50 border-lime-200 hover:bg-lime-100">
+                    <Plus size={16} className="mr-2" />
+                    Add New Listing
+                  </Button>
+                </Link>
+                <Link href="/dashboard/promote">
+                  <Button variant="outline" className="w-full justify-start bg-blue-50 border-blue-200 hover:bg-blue-100">
+                    <TrendingUp size={16} className="mr-2" />
+                    Create Ad Campaign
+                  </Button>
+                </Link>
+                <Link href="/dashboard/vendor-listing">
+                  <Button variant="outline" className="w-full justify-start bg-green-50 border-green-200 hover:bg-green-100">
+                    <ShoppingBag size={16} className="mr-2" />
+                    Manage Products
+                  </Button>
+                </Link>
               </div>
             </CardContent>
           </Card>
 
-          {/* Low Stock Alerts */}
-          <Card className="border-red-200">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold">Low Stock Alerts</h3>
-                <AlertTriangle className="h-5 w-5 text-red-500" />
-              </div>
-              <div className="space-y-3">
-                {data.lowStockAlerts.map((alert) => (
-                  <div key={alert.id} className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
-                    <div>
-                      <p className="font-medium text-gray-900 text-sm">{alert.productName}</p>
-                      <p className="text-sm text-red-600">
-                        Stock: {alert.currentStock} (Threshold: {alert.threshold})
-                      </p>
-                    </div>
-                    <Button size="sm" variant="outline" className="text-red-600 border-red-200 hover:bg-red-50">
-                      Restock
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Top Performers */}
+          {/* Store Stats */}
           <Card className="border-blue-200">
             <CardContent className="p-6">
-              <h3 className="text-lg font-semibold mb-4">Top Performers</h3>
+              <h3 className="text-lg font-semibold mb-4">Store Statistics</h3>
               <div className="space-y-3">
-                {data.topPerformers.map((product) => (
-                  <div key={product.id} className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
-                    <img 
-                      src={product.image || '/placeholder.png'} 
-                      alt={product.title}
-                      className="w-10 h-10 rounded-lg object-cover"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-gray-900 truncate text-sm">{product.title}</p>
-                      <div className="flex items-center gap-2 text-xs text-gray-600">
-                        <span>{product.views} views</span>
-                        <span>{product.sales} sales</span>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-semibold text-lime-600 text-sm">{formatCurrency(product.revenue)}</p>
-                      <div className="flex items-center gap-1">
-                        <Star size={12} className="text-yellow-500 fill-current" />
-                        <span className="text-xs text-gray-500">4.8</span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+                <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+                  <span className="text-sm text-gray-600">Total Products</span>
+                  <span className="font-semibold text-blue-600">{data.totalListings}</span>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                  <span className="text-sm text-gray-600">Active Products</span>
+                  <span className="font-semibold text-green-600">{data.activeListings}</span>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-orange-50 rounded-lg">
+                  <span className="text-sm text-gray-600">Inactive Products</span>
+                  <span className="font-semibold text-orange-600">{data.inactiveListings}</span>
+                </div>
               </div>
             </CardContent>
           </Card>
         </div>
       </div>
-
-      {/* Recent Activity */}
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg md:text-xl font-semibold">Recent Activity</h3>
-            <Button variant="outline" size="sm">View All</Button>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {data.recentActivity.map((activity) => (
-              <div key={activity.id} className="flex items-start gap-3 p-4 rounded-lg hover:bg-gray-50 transition-colors">
-                <div className={`p-2 rounded-full ${activity.color}`}>
-                  {activity.icon}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-gray-900 text-sm">{activity.title}</p>
-                  <p className="text-sm text-gray-600 truncate">{activity.description}</p>
-                  <p className="text-xs text-gray-500 flex items-center gap-1 mt-1">
-                    <Clock size={12} />
-                    {activity.timestamp}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Quick Actions */}
-      <Card>
-        <CardContent className="p-6">
-          <h3 className="text-lg md:text-xl font-semibold mb-6">Quick Actions</h3>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-            <Link href="/dashboard/create-list">
-              <Button variant="outline" className="w-full h-20 flex-col gap-2 bg-lime-50 border-lime-200 hover:bg-lime-100">
-                <Package className="h-8 w-8 text-lime-600" />
-                <span className="text-sm font-medium">Add Listing</span>
-              </Button>
-            </Link>
-            <Link href="/dashboard/promote">
-              <Button variant="outline" className="w-full h-20 flex-col gap-2 bg-blue-50 border-blue-200 hover:bg-blue-100">
-                <TrendingUp className="h-8 w-8 text-blue-600" />
-                <span className="text-sm font-medium">Create Ad</span>
-              </Button>
-            </Link>
-            <Link href="/dashboard/orders">
-              <Button variant="outline" className="w-full h-20 flex-col gap-2 bg-purple-50 border-purple-200 hover:bg-purple-100">
-                <MessageSquare className="h-8 w-8 text-purple-600" />
-                <span className="text-sm font-medium">View Orders</span>
-              </Button>
-            </Link>
-            <Link href="/dashboard/analytics">
-              <Button variant="outline" className="w-full h-20 flex-col gap-2 bg-orange-50 border-orange-200 hover:bg-orange-100">
-                <BarChart3 className="h-8 w-8 text-orange-600" />
-                <span className="text-sm font-medium">Analytics</span>
-              </Button>
-            </Link>
-            <Link href="/dashboard/vendor-listing">
-              <Button variant="outline" className="w-full h-20 flex-col gap-2 bg-green-50 border-green-200 hover:bg-green-100">
-                <ShoppingBag className="h-8 w-8 text-green-600" />
-                <span className="text-sm font-medium">My Products</span>
-              </Button>
-            </Link>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }

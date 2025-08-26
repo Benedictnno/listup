@@ -33,9 +33,10 @@ export default function SignupPage() {
       await signup(form);
       reset();
       router.push("/dashboard"); // redirect after successful signup
-    } catch (err: any) {
-      console.error(err.response?.data || err.message);
-      setError(err.response?.data?.message || "Error creating account. Please try again.");
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { message?: string } }; message?: string };
+      console.error(error.response?.data || error.message);
+      setError(error.response?.data?.message || "Error creating account. Please try again.");
     } finally {
       setLoading(false);
     }

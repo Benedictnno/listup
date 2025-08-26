@@ -1,6 +1,5 @@
 import { create } from "zustand";
 import api from "@/utils/axios";
-import { log } from "console";
 
 type User = {
   id: string;
@@ -13,9 +12,9 @@ type User = {
 type AuthState = {
   user: User | null;
   login: (email: string, password: string) => Promise<void>;
-  signup: (userData: any) => Promise<void>;
+  signup: (userData: { name: string; email: string; password: string; role: string }) => Promise<void>;
   logout: () => void;
-  setAuth: (user: any) => void;
+  setAuth: (user: User) => void;
 };
 
 export const useAuthStore = create<AuthState>((set) => ({

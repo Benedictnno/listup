@@ -6,29 +6,23 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { fetchVendorListings, updateListing, deleteListing, createListing } from "@/lib/api/listing";
+import { fetchVendorListings, updateListing, deleteListing } from "@/lib/api/listing";
 import { safeLocalStorage } from "@/utils/helpers";
 import { 
-  Search, 
-  Filter, 
-  Plus, 
+  
   Edit, 
   Trash2, 
   Eye, 
   TrendingUp, 
   AlertTriangle,
-  Upload,
-  Download,
   BarChart3,
-  Tag,
-  Globe,
   CheckSquare,
   Square,
-  MoreHorizontal,
   SortAsc,
   SortDesc,
   Package
 } from "lucide-react";
+import Image from "next/image";
 
 interface Listing {
   id: string;
@@ -60,10 +54,19 @@ export default function VendorListingsPage() {
   const [listings, setListings] = useState<Listing[]>([]);
   const [filteredListings, setFilteredListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Promotion plans with per-day pricing
+  const promotionPlans = [
+    { type: "PRODUCT_PROMOTION", name: "Product Promotion", price: 300, description: "Boost individual product visibility" },
+    { type: "SEARCH_BOOST", name: "Search Boost", price: 200, description: "Rank higher in search results" }
+  ];
   const [editing, setEditing] = useState<Listing | null>(null);
-  const [creating, setCreating] = useState(false);
   const [selectedListings, setSelectedListings] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
+  const [showPromoteModal, setShowPromoteModal] = useState(false);
+  const [promoteListings, setPromoteListings] = useState<string[]>([]);
+  const [promotePlan, setPromotePlan] = useState<string>("");
+  const [promoteDuration, setPromoteDuration] = useState<number>(7);
   const [filters, setFilters] = useState<FilterState>({
     search: '',
     status: '',
@@ -81,7 +84,7 @@ export default function VendorListingsPage() {
       try {
         const res = await fetchVendorListings(id);
         // Add mock data for demonstration
-        const enhancedListings = res.map((listing: any) => ({
+        const enhancedListings = res.map((listing: { id: string; title: string; price: number; status: string; createdAt?: string; created_at?: string; image?: string; images?: string[]; category?: string }) => ({
           ...listing,
           status: listing.status || 'active',
           category: listing.category || 'Electronics',
@@ -146,16 +149,16 @@ export default function VendorListingsPage() {
 
     // Apply sorting
     filtered.sort((a, b) => {
-      let aValue: any = a[filters.sortBy as keyof Listing];
-      let bValue: any = b[filters.sortBy as keyof Listing];
+      let aValue = a[filters.sortBy as keyof Listing];
+      let bValue = b[filters.sortBy as keyof Listing];
       
       if (typeof aValue === 'string') aValue = aValue.toLowerCase();
       if (typeof bValue === 'string') bValue = bValue.toLowerCase();
       
       if (filters.sortOrder === 'asc') {
-        return aValue > bValue ? 1 : -1;
+        return (aValue as string | number) > (bValue as string | number) ? 1 : -1;
       } else {
-        return aValue < bValue ? 1 : -1;
+        return (aValue as string | number) < (bValue as string | number) ? 1 : -1;
       }
     });
 
@@ -204,6 +207,69 @@ export default function VendorListingsPage() {
     }
   };
 
+  const handlePromoteProducts = () => {
+    if (selectedListings.length === 0) {
+      alert('Please select products to promote');
+      return;
+    }
+    setPromoteListings([...selectedListings]);
+    setShowPromoteModal(true);
+  };
+
+  const calculatePromotionCost = () => {
+    if (!promotePlan || promoteDuration <= 0) return 0;
+    const plan = promotionPlans.find(p => p.type === promotePlan);
+    return plan ? plan.price * promoteDuration * promoteListings.length : 0;
+  };
+
+  const createPromotionAds = async () => {
+    try {
+      const token = safeLocalStorage.getItem("token");
+      if (!token) {
+        alert("Authentication required. Please login again.");
+        return;
+      }
+
+      const plan = promotionPlans.find(p => p.type === promotePlan);
+      if (!plan) {
+        alert("Invalid promotion plan selected");
+        return;
+      }
+
+      const totalAmount = calculatePromotionCost();
+      
+      // Create ads for each selected product
+      const adPromises = promoteListings.map(async (listingId) => {
+        const payload = {
+          type: promotePlan,
+          startDate: new Date().toISOString(),
+          endDate: new Date(Date.now() + promoteDuration * 24 * 60 * 60 * 1000).toISOString(),
+          vendorId: safeLocalStorage.getItem("id") || "",
+          amount: plan.price * promoteDuration,
+          status: "PENDING",
+          paymentStatus: "PENDING",
+          productId: listingId,
+          appliesToAllProducts: false
+        };
+
+        // Call your createAd API function here
+        // const ad = await createAd(payload);
+        return payload;
+      });
+
+      await Promise.all(adPromises);
+      alert(`Promotion ads created for ${promoteListings.length} products. Total cost: ₦${totalAmount.toLocaleString()}`);
+      setShowPromoteModal(false);
+      setPromoteListings([]);
+      setPromotePlan("");
+      setPromoteDuration(7);
+      setSelectedListings([]);
+    } catch (error) {
+      console.error('Error creating promotion ads:', error);
+      alert('Failed to create promotion ads. Please try again.');
+    }
+  };
+
   const toggleListingSelection = (listingId: string) => {
     setSelectedListings(prev => 
       prev.includes(listingId) 
@@ -212,13 +278,6 @@ export default function VendorListingsPage() {
     );
   };
 
-  const toggleSelectAll = () => {
-    if (selectedListings.length === filteredListings.length) {
-      setSelectedListings([]);
-    } else {
-      setSelectedListings(filteredListings.map(l => l.id));
-    }
-  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -257,7 +316,7 @@ export default function VendorListingsPage() {
           <h2 className="text-2xl font-semibold">My Listings</h2>
           <p className="text-gray-600">Manage your product listings and inventory</p>
         </div>
-        <div className="flex gap-2">
+        {/* <div className="flex gap-2">
           <Button onClick={() => setShowFilters(!showFilters)} variant="outline">
             <Filter size={16} className="mr-2" />
             Filters
@@ -266,7 +325,7 @@ export default function VendorListingsPage() {
             <Plus size={16} className="mr-2" />
             Add Listing
           </Button>
-        </div>
+        </div> */}
       </div>
 
       {/* Filters */}
@@ -409,30 +468,39 @@ export default function VendorListingsPage() {
                   {selectedListings.length} listing(s) selected
                 </span>
               </div>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleBulkStatusUpdate('active')}
-                >
-                  Activate All
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleBulkStatusUpdate('inactive')}
-                >
-                  Deactivate All
-                </Button>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={handleBulkDelete}
-                >
-                  <Trash2 size={16} className="mr-2" />
-                  Delete All
-                </Button>
-              </div>
+                             <div className="flex gap-2">
+                 <Button
+                   variant="outline"
+                   size="sm"
+                   onClick={() => handleBulkStatusUpdate('active')}
+                 >
+                   Activate All
+                 </Button>
+                 <Button
+                   variant="outline"
+                   size="sm"
+                   onClick={() => handleBulkStatusUpdate('inactive')}
+                 >
+                   Deactivate All
+                 </Button>
+                 <Button
+                   variant="default"
+                   size="sm"
+                   onClick={handlePromoteProducts}
+                   className="bg-blue-600 hover:bg-blue-700"
+                 >
+                   <TrendingUp size={16} className="mr-2" />
+                   Promote Selected
+                 </Button>
+                 <Button
+                   variant="destructive"
+                   size="sm"
+                   onClick={handleBulkDelete}
+                 >
+                   <Trash2 size={16} className="mr-2" />
+                   Delete All
+                 </Button>
+               </div>
             </div>
           </CardContent>
         </Card>
@@ -466,7 +534,8 @@ export default function VendorListingsPage() {
               </div>
 
               {/* Product Image */}
-              <img
+              <Image 
+                width={300}
                 src={listing.images?.[0] || "/placeholder.png"}
                 alt={listing.title}
                 className="w-full h-40 object-cover rounded-lg"
@@ -555,100 +624,183 @@ export default function VendorListingsPage() {
                 : 'Get started by creating your first listing'
               }
             </p>
-            {!filters.search && !filters.status && !filters.category && (
-              <Button onClick={() => setCreating(true)}>
-                <Plus size={16} className="mr-2" />
-                Create First Listing
-              </Button>
-            )}
+            
           </CardContent>
         </Card>
       )}
 
-      {/* Edit Modal */}
-      {editing && (
-        <Dialog open={!!editing} onOpenChange={() => setEditing(null)}>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Edit Listing</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">Title</label>
-                <Input
-                  value={editing.title}
-                  onChange={(e) => setEditing({ ...editing, title: e.target.value })}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">Description</label>
-                <textarea
-                  value={editing.description}
-                  onChange={(e) => setEditing({ ...editing, description: e.target.value })}
-                  className="w-full border rounded-lg px-3 py-2"
-                  rows={4}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2">Price (₦)</label>
-                  <Input
-                    type="number"
-                    value={editing.price}
-                    onChange={(e) => setEditing({ ...editing, price: Number(e.target.value) })}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">Stock</label>
-                  <Input
-                    type="number"
-                    value={editing.stock}
-                    onChange={(e) => setEditing({ ...editing, stock: Number(e.target.value) })}
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2">Status</label>
-                  <Select value={editing.status} onValueChange={(value) => setEditing({ ...editing, status: value as any })}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="active">Active</SelectItem>
-                      <SelectItem value="inactive">Inactive</SelectItem>
-                      <SelectItem value="pending">Pending</SelectItem>
-                      <SelectItem value="sold">Sold</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">Category</label>
-                  <Select value={editing.category} onValueChange={(value) => setEditing({ ...editing, category: value })}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Electronics">Electronics</SelectItem>
-                      <SelectItem value="Clothing">Clothing</SelectItem>
-                      <SelectItem value="Furniture">Furniture</SelectItem>
-                      <SelectItem value="Books">Books</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setEditing(null)}>
-                  Cancel
-                </Button>
-                <Button onClick={() => handleSave(editing)}>
-                  Save Changes
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
-    </div>
-  );
-}
+             {/* Edit Modal */}
+       {editing && (
+         <Dialog open={!!editing} onOpenChange={() => setEditing(null)}>
+           <DialogContent className="max-w-2xl">
+             <DialogHeader>
+               <DialogTitle>Edit Listing</DialogTitle>
+             </DialogHeader>
+             <div className="space-y-4">
+               <div>
+                 <label className="block text-sm font-medium mb-2">Title</label>
+                 <Input
+                   value={editing.title}
+                   onChange={(e) => setEditing({ ...editing, title: e.target.value })}
+                 />
+               </div>
+               <div>
+                 <label className="block text-sm font-medium mb-2">Description</label>
+                 <textarea
+                   value={editing.description}
+                   onChange={(e) => setEditing({ ...editing, description: e.target.value })}
+                   className="w-full border rounded-lg px-3 py-2"
+                   rows={4}
+                 />
+               </div>
+               <div className="grid grid-cols-2 gap-4">
+                 <div>
+                   <label className="block text-sm font-medium mb-2">Price (₦)</label>
+                   <Input
+                     type="number"
+                     value={editing.price}
+                     onChange={(e) => setEditing({ ...editing, price: Number(e.target.value) })}
+                   />
+                 </div>
+                 <div>
+                   <label className="block text-sm font-medium mb-2">Stock</label>
+                   <Input
+                     type="number"
+                     value={editing.stock}
+                     onChange={(e) => setEditing({ ...editing, stock: Number(e.target.value) })}
+                   />
+                 </div>
+               </div>
+               <div className="grid grid-cols-2 gap-4">
+                 <div>
+                   <label className="block text-sm font-medium mb-2">Status</label>
+                   <Select value={editing.status} onValueChange={(value) => setEditing({ ...editing, status: value as 'active' | 'inactive' | 'pending' | 'sold' })}>
+                     <SelectTrigger>
+                       <SelectValue />
+                     </SelectTrigger>
+                     <SelectContent>
+                       <SelectItem value="active">Active</SelectItem>
+                       <SelectItem value="inactive">Inactive</SelectItem>
+                       <SelectItem value="pending">Pending</SelectItem>
+                       <SelectItem value="sold">Sold</SelectItem>
+                     </SelectContent>
+                   </Select>
+                 </div>
+                 <div>
+                   <label className="block text-sm font-medium mb-2">Category</label>
+                   <Select value={editing.category} onValueChange={(value) => setEditing({ ...editing, category: value })}>
+                     <SelectTrigger>
+                       <SelectValue />
+                     </SelectTrigger>
+                     <SelectContent>
+                       <SelectItem value="Electronics">Electronics</SelectItem>
+                       <SelectItem value="Clothing">Clothing</SelectItem>
+                       <SelectItem value="Furniture">Furniture</SelectItem>
+                       <SelectItem value="Books">Books</SelectItem>
+                     </SelectContent>
+                   </Select>
+                 </div>
+               </div>
+               <div className="flex justify-end gap-2">
+                 <Button variant="outline" onClick={() => setEditing(null)}>
+                   Cancel
+                 </Button>
+                 <Button onClick={() => handleSave(editing)}>
+                   Save Changes
+                 </Button>
+               </div>
+             </div>
+           </DialogContent>
+         </Dialog>
+       )}
+
+       {/* Promotion Modal */}
+       {showPromoteModal && (
+         <Dialog open={showPromoteModal} onOpenChange={setShowPromoteModal}>
+           <DialogContent className="max-w-2xl">
+             <DialogHeader>
+               <DialogTitle>Promote Selected Products</DialogTitle>
+             </DialogHeader>
+             <div className="space-y-4">
+               <div>
+                 <p className="text-sm text-gray-600 mb-3">
+                   Promoting {promoteListings.length} selected product{promoteListings.length > 1 ? 's' : ''}
+                 </p>
+                 
+                 <div className="max-h-32 overflow-y-auto border rounded-lg p-3 bg-gray-50">
+                   {promoteListings.map(listingId => {
+                     const listing = listings.find(l => l.id === listingId);
+                     return listing ? (
+                       <div key={listingId} className="flex items-center gap-2 py-1">
+                         <span className="text-sm font-medium">{listing.title}</span>
+                         <span className="text-sm text-gray-500">₦{listing.price.toLocaleString()}</span>
+                       </div>
+                     ) : null;
+                   })}
+                 </div>
+               </div>
+
+               <div>
+                 <label className="block text-sm font-medium mb-2">Promotion Plan</label>
+                 <Select value={promotePlan} onValueChange={setPromotePlan}>
+                   <SelectTrigger>
+                     <SelectValue placeholder="Choose a promotion plan" />
+                   </SelectTrigger>
+                   <SelectContent>
+                     {promotionPlans.map((plan) => (
+                       <SelectItem key={plan.type} value={plan.type}>
+                         <div>
+                           <div className="font-medium">{plan.name}</div>
+                           <div className="text-sm text-gray-500">₦{plan.price}/day - {plan.description}</div>
+                         </div>
+                       </SelectItem>
+                     ))}
+                   </SelectContent>
+                 </Select>
+               </div>
+
+               <div>
+                 <label className="block text-sm font-medium mb-2">Duration (days)</label>
+                 <Input
+                   type="number"
+                   placeholder="Duration in days"
+                   value={promoteDuration}
+                   onChange={(e) => setPromoteDuration(Number(e.target.value))}
+                   min="1"
+                   max="365"
+                 />
+               </div>
+
+               {promotePlan && promoteDuration > 0 && (
+                 <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                   <h4 className="font-medium text-blue-900 mb-2">Cost Breakdown</h4>
+                   <div className="space-y-1 text-sm text-blue-800">
+                     <p>Price per day: ₦{promotionPlans.find(p => p.type === promotePlan)?.price}</p>
+                     <p>Duration: {promoteDuration} days</p>
+                     <p>Products: {promoteListings.length}</p>
+                     <p className="text-lg font-semibold border-t pt-2">
+                       Total Cost: ₦{calculatePromotionCost().toLocaleString()}
+                     </p>
+                   </div>
+                 </div>
+               )}
+
+               <div className="flex justify-end gap-2">
+                 <Button variant="outline" onClick={() => setShowPromoteModal(false)}>
+                   Cancel
+                 </Button>
+                 <Button 
+                   onClick={createPromotionAds}
+                   disabled={!promotePlan || promoteDuration <= 0}
+                   className="bg-blue-600 hover:bg-blue-700"
+                 >
+                   Create Promotion Ads
+                 </Button>
+               </div>
+             </div>
+           </DialogContent>
+         </Dialog>
+       )}
+     </div>
+   );
+ }

@@ -3,6 +3,35 @@ import { safeLocalStorage } from "@/utils/helpers";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api"; 
 
+// Define proper types for the API
+interface ListingData {
+  title: string;
+  price: number;
+  categoryId: string;
+  description: string;
+  images: string[];
+  location: string;
+  condition: string;
+}
+
+interface UpdateListingData {
+  title?: string;
+  price?: number;
+  categoryId?: string;
+  description?: string;
+  images?: string[];
+  location?: string;
+  condition?: string;
+  status?: string;
+}
+
+interface ApiError {
+  response?: {
+    data?: unknown;
+  };
+  message?: string;
+}
+
 // ✅ Fetch all listings for a vendor
 export async function fetchVendorListings(vendorId: string | undefined) {
   try {
@@ -17,8 +46,9 @@ export async function fetchVendorListings(vendorId: string | undefined) {
       }
     });
     return res.data;
-  } catch (error: any) {
-    console.error("Error fetching listings:", error.response?.data || error.message);
+  } catch (error: unknown) {
+    const apiError = error as ApiError;
+    console.error("Error fetching listings:", apiError.response?.data || apiError.message);
     throw new Error("Failed to fetch listings");
   }
 }
@@ -52,11 +82,11 @@ export async function createListing(listingData: FormData) {
     console.log("Uploaded Images:", uploadedImages);
 
     // build final payload
-    const newListingData = {
-      title: listingData.get("title"),
+    const newListingData: ListingData = {
+      title: listingData.get("title") as string,
       price: Number(listingData.get("price")),
-      categoryId: listingData.get("categoryId"),
-      description: listingData.get("description"),
+      categoryId: listingData.get("categoryId") as string,
+      description: listingData.get("description") as string,
       images: uploadedImages, // array of uploaded URLs
       location: "eksu",
       condition: "brand new",
@@ -67,14 +97,15 @@ export async function createListing(listingData: FormData) {
     });
 
     return listingRes.data;
-  } catch (error: any) {
-    console.error("Error creating listing:", error.response?.data || error.message);
+  } catch (error: unknown) {
+    const apiError = error as ApiError;
+    console.error("Error creating listing:", apiError.response?.data || apiError.message);
     throw new Error("Failed to create listing");
   }
 }
 
 // ✅ Update an existing listing
-export async function updateListing(listingId: string, listingData: any) {
+export async function updateListing(listingId: string, listingData: UpdateListingData) {
   try {
     const token = safeLocalStorage.getItem("token");
     if (!token) {
@@ -85,8 +116,9 @@ export async function updateListing(listingId: string, listingData: any) {
       headers: { Authorization: `Bearer ${token}` },
     });
     return res.data;
-  } catch (error: any) {
-    console.error("Error updating listing:", error.response?.data || error.message);
+  } catch (error: unknown) {
+    const apiError = error as ApiError;
+    console.error("Error updating listing:", apiError.response?.data || apiError.message);
     throw new Error("Failed to update listing");
   }
 }
@@ -103,8 +135,9 @@ export async function deleteListing(listingId: string) {
       headers: { Authorization: `Bearer ${token}` },
     });
     return res.data;
-  } catch (error: any) {
-    console.error("Error deleting listing:", error.response?.data || error.message);
+  } catch (error: unknown) {
+    const apiError = error as ApiError;
+    console.error("Error deleting listing:", apiError.response?.data || apiError.message);
     throw new Error("Failed to delete listing");
   }
 }

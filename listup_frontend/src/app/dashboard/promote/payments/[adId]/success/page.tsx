@@ -1,6 +1,6 @@
 "use client"
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { CheckCircle, XCircle, Loader2 } from "lucide-react";
 import { safeLocalStorage } from "@/utils/helpers";
 
@@ -12,13 +12,7 @@ export default function PaymentSuccessPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (adId) {
-      checkPaymentStatus();
-    }
-  }, [adId]);
-
-  const checkPaymentStatus = async () => {
+  const checkPaymentStatus = useCallback(async () => {
     try {
       const token = safeLocalStorage.getItem("token");
       if (!token) {
@@ -46,7 +40,13 @@ export default function PaymentSuccessPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [adId]);
+
+  useEffect(() => {
+    if (adId) {
+      checkPaymentStatus();
+    }
+  }, [adId, checkPaymentStatus]);
 
   const manualVerifyPayment = async () => {
     try {

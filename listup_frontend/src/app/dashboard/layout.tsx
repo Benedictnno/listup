@@ -169,7 +169,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             >
               <FiMenu size={22} />
             </button>
-            <h1 className="font-bold text-lg">Dashboard</h1>
+            <h1 className="font-bold text-lg"><Link href="/dashboard">Dashboard</Link></h1>
           </div>
 
           {/* Search Bar */}

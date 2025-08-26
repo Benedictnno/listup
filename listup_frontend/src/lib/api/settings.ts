@@ -1,6 +1,16 @@
-import { getToken } from './auth';
+import { safeLocalStorage } from "@/utils/helpers";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
+
+// Helper function to get token safely
+const getToken = () => {
+  try {
+    return safeLocalStorage.getItem("token");
+  } catch (error) {
+    console.error("Error getting token:", error);
+    return null;
+  }
+};
 
 // Helper function to make authenticated API calls
 const makeAuthenticatedRequest = async (endpoint: string, options: RequestInit = {}) => {

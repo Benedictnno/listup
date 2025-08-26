@@ -5,6 +5,7 @@ import { useFilterStore } from "@/store/useFilterStore";
 import SearchBar from "@/components/SearchBar";
 import Link from "next/link";
 import { Search, X, Filter, RotateCcw, MapPin, Calendar } from "lucide-react";
+import Image from "next/image";
 
 interface Listing {
   id: number;
@@ -80,41 +81,7 @@ export default function Marketplace() {
     return filters.categoryId || filters.minPrice || filters.maxPrice || filters.location;
   }, [filters]);
 
-  // Search effect - only update when search changes from external source
-  useEffect(() => {
-    if (search !== filters.search) {
-      setFilters(prev => ({
-        ...prev,
-        search,
-        page: 1
-      }));
-    }
-  }, [search, filters.search]);
 
-  // Fetch listings when filters change
-  useEffect(() => {
-    fetchListings();
-  }, [filters.categoryId, filters.minPrice, filters.maxPrice, filters.location, filters.sort, filters.page, filters.search]);
-
-  // Initial load and URL search params
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const urlParams = new URLSearchParams(window.location.search);
-      const searchQuery = urlParams.get('q');
-      
-      if (searchQuery && !filters.search) {
-        setSearch(searchQuery);
-        setFilters(prev => ({
-          ...prev,
-          search: searchQuery
-        }));
-      } else if (!searchQuery && !filters.search) {
-        fetchListings();
-      }
-    }
-  }, []);
-
-  // API functions
   const fetchListings = useCallback(async () => {
     setLoading(true);
     try {
@@ -156,6 +123,43 @@ export default function Marketplace() {
       setLoading(false);
     }
   }, [filters]);
+
+  // Search effect - only update when search changes from external source
+  useEffect(() => {
+    if (search !== filters.search) {
+      setFilters(prev => ({
+        ...prev,
+        search,
+        page: 1
+      }));
+    }
+  }, [search, filters.search]);
+
+  // Fetch listings when filters change
+  useEffect(() => {
+    fetchListings();
+  }, [fetchListings]);
+
+  // Initial load and URL search params
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const searchQuery = urlParams.get('q');
+      
+      if (searchQuery && !filters.search) {
+        setSearch(searchQuery);
+        setFilters(prev => ({
+          ...prev,
+          search: searchQuery
+        }));
+      } else if (!searchQuery && !filters.search) {
+        fetchListings();
+      }
+    }
+  }, [filters.search, setSearch, fetchListings]);
+
+  // API functions
+  
 
   // Filter actions
   const updateFilter = useCallback((key: keyof FilterState, value: string | number) => {
@@ -399,7 +403,7 @@ export default function Marketplace() {
         <div className="mb-4 flex items-center gap-2 bg-slate-50 px-4 py-2 rounded-xl border border-slate-200">
           <Search size={16} className="text-slate-500" />
           <span className="text-sm text-slate-700">
-            Search results for <span className="font-medium">"{filters.search}"</span>
+            Search results for <span className="font-medium">&quot;{filters.search}&quot;</span>
           </span>
           <button 
             onClick={clearSearch}
@@ -448,9 +452,9 @@ export default function Marketplace() {
           <h3 className="text-lg font-semibold text-slate-800 mb-1">No listings found</h3>
           <p className="text-slate-500 max-w-md mx-auto">
             {filters.search ? (
-              <>No results found for <span className="font-medium">"{filters.search}"</span>. Try different keywords or adjust your filters.</>
+              <>No results found for <span className="font-medium">&quot;{filters.search}&quot;</span>. Try different keywords or adjust your filters.</>
             ) : (
-              <>Try adjusting your filter criteria to find what you're looking for.</>
+              <>Try adjusting your filter criteria to find what you&apos;re looking for.</>
             )}
           </p>
           {hasActiveFilters && (
@@ -472,9 +476,11 @@ export default function Marketplace() {
             <div className="border border-slate-200 rounded-xl overflow-hidden hover:shadow-lg transition bg-white">
               <div className="h-40 bg-slate-100 relative overflow-hidden">
                 {listing.images?.[0] ? (
-                  <img
+                  <Image
                     src={listing.images[0]}
                     alt={listing.title}
+                    width={400}
+                    height={160}
                     className="h-40 w-full object-cover group-hover:scale-105 transition duration-300"
                   />
                 ) : (

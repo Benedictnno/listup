@@ -37,9 +37,9 @@ type Product = {
 
 export default function AdsPage() {
   const [plans] = useState<AdPlan[]>([
-    { type: "STOREFRONT", description: "Highlight your store on the homepage", price: 5000 },
-    { type: "PRODUCT_PROMOTION", description: "Boost your product visibility", price: 3000 },
-    { type: "SEARCH_BOOST", description: "Rank higher in search results", price: 2000 },
+    { type: "STOREFRONT", description: "Highlight your store on the homepage", price: 500 }, // ₦500 per day
+    { type: "PRODUCT_PROMOTION", description: "Boost your product visibility", price: 300 }, // ₦300 per day
+    { type: "SEARCH_BOOST", description: "Rank higher in search results", price: 200 }, // ₦200 per day
   ]);
   const [ads, setAds] = useState<Ad[]>([]);
   const [stores, setStores] = useState<Store[]>([]);
@@ -48,6 +48,15 @@ export default function AdsPage() {
   const [storeId, setStoreId] = useState<string>("");
   const [productId, setProductId] = useState<string>("");
   const [duration, setDuration] = useState<number>(7);
+
+  // Calculate total amount based on selected plan and duration
+  const calculateAmount = () => {
+    if (!selectedPlan || duration <= 0) return 0;
+    const plan = plans.find(p => p.type === selectedPlan);
+    return plan ? plan.price * duration : 0;
+  };
+
+  const amount = calculateAmount();
 
 //   const token = localStorage.getItem("token");
 //   const id = localStorage.getItem("id");
@@ -120,21 +129,27 @@ export default function AdsPage() {
 
   const handleCreateAd = async () => {
     try {
-      // Get the plan price based on selected plan
-      const planPrices: { [key: string]: number } = {
-        "STOREFRONT": 5000,
-        "PRODUCT_PROMOTION": 3000,
-        "SEARCH_BOOST": 2000
-      };
+             // Get the plan price per day based on selected plan
+       const planPricesPerDay: { [key: string]: number } = {
+         "STOREFRONT": 500,
+         "PRODUCT_PROMOTION": 300,
+         "SEARCH_BOOST": 200
+       };
+       
+       const pricePerDay = planPricesPerDay[selectedPlan] || 0;
+       const amount = pricePerDay * duration; // Total amount = price per day × number of days
       
-      const amount = planPrices[selectedPlan] || 0;
-      
-      const payload: any = {
-        type: selectedPlan,
-        startDate: new Date().toISOString(),
-        endDate: new Date(Date.now() + duration * 24 * 60 * 60 * 1000).toISOString(),
-        amount: amount, // Add the amount field
-      };
+             const payload: { type: string; startDate: string; endDate: string; vendorId: string; amount: number; status: string; paymentStatus: string; storeId: string; productId?: string; appliesToAllProducts?: boolean } = {
+         type: selectedPlan,
+         startDate: new Date().toISOString(),
+         endDate: new Date(Date.now() + duration * 24 * 60 * 60 * 1000).toISOString(),
+         vendorId: safeLocalStorage.getItem("id") || "",
+         amount: amount,
+         status: "PENDING",
+         paymentStatus: "PENDING",
+         storeId: "",
+         appliesToAllProducts: false
+       };
 
       if (selectedPlan === "STOREFRONT") {
         const storeId = safeLocalStorage.getItem("id");
@@ -168,9 +183,10 @@ export default function AdsPage() {
       } else {
         alert(ad.message || "Error creating ad");
       }
-    } catch (err: any) {
-      console.error(err);
-      alert(err.message || "Failed to create ad. Please try again.");
+              } catch (err: unknown) {
+       console.error(err);
+       const errorMessage = err instanceof Error ? err.message : "Failed to create ad. Please try again.";
+       alert(errorMessage);
     }
   };
 
@@ -183,9 +199,11 @@ export default function AdsPage() {
           {plans.map((plan) => (
             <Card key={plan.type} className="p-4 border rounded-2xl">
               <CardContent>
-                <h3 className="font-semibold">{plan.type}</h3>
-                <p className="text-sm text-gray-500">{plan.description}</p>
-                <p className="font-bold mt-2">₦{plan.price}</p>
+                                 <h3 className="font-semibold">{plan.type}</h3>
+                 <p className="text-sm text-gray-500">{plan.description}</p>
+                 <p className="font-bold mt-2">₦{plan.price}/day</p>
+                 <p className="text-xs text-gray-400">7 days = ₦{(plan.price * 7).toLocaleString()}</p>
+                 <p className="text-xs text-gray-400">30 days = ₦{(plan.price * 30).toLocaleString()}</p>
                 <Button
                   className="mt-3 w-full"
                   onClick={() => {
@@ -246,16 +264,32 @@ export default function AdsPage() {
             </div>
           )}
 
-          {/* Duration */}
-          <Input
-            type="number"
-            placeholder="Duration in days"
-            value={duration}
-            onChange={(e) => setDuration(Number(e.target.value))}
-            className="mb-3"
-          />
+                     {/* Duration */}
+           <div className="mb-3">
+             <label className="block mb-1 font-medium">Duration (days)</label>
+             <Input
+               type="number"
+               placeholder="Duration in days"
+               value={duration}
+               onChange={(e) => setDuration(Number(e.target.value))}
+               min="1"
+               max="365"
+             />
+           </div>
 
-          <Button onClick={handleCreateAd}>Create & Pay</Button>
+           {/* Price Preview */}
+           {duration > 0 && (
+             <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+               <p className="text-sm text-gray-600">Price Breakdown:</p>
+               <p className="text-lg font-semibold text-green-600">
+                 ₦{duration} days × ₦{plans.find(p => p.type === selectedPlan)?.price}/day = ₦{amount.toLocaleString()}
+               </p>
+             </div>
+           )}
+
+           <Button onClick={handleCreateAd} disabled={duration <= 0}>
+             Create & Pay ₦{amount.toLocaleString()}
+           </Button>
         </section>
       )}
 

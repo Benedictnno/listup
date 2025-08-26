@@ -17,6 +17,20 @@ const getToken = () => {
   }
 };
 
+// Define proper types for ad data
+interface AdData {
+  type: string;
+  startDate: string;
+  endDate: string;
+  vendorId: string;
+  amount: number;
+  status: string;
+  paymentStatus: string;
+  storeId?: string;
+  productId?: string;
+  appliesToAllProducts?: boolean;
+}
+
 // Ads
 export const fetchActiveAds = async () => {
   try {
@@ -34,7 +48,7 @@ export const fetchActiveAds = async () => {
   }
 };
 
-export const createAd = async (adData: any) => {
+export const createAd = async (adData: AdData) => {
   try {
     const token = getToken();
     if (!token) {

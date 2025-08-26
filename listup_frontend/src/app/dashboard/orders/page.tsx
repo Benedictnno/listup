@@ -6,8 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Search, 
+import {  
   Filter, 
   Eye, 
   MessageSquare, 
@@ -15,18 +14,17 @@ import {
   CheckCircle, 
   XCircle,
   Clock,
-  AlertTriangle,
-  Star,
+
   User,
   Phone,
   Mail,
   MapPin,
   Calendar,
   Package,
-  DollarSign,
   Download
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import Image from "next/image";
 
 interface Order {
   id: string;
@@ -461,7 +459,8 @@ export default function OrdersPage() {
                   <div className="space-y-2">
                     {order.items.map((item) => (
                       <div key={item.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                        <img 
+                        <Image 
+                        sizes="100"
                           src={item.image || '/placeholder.png'} 
                           alt={item.name}
                           className="w-12 h-12 rounded-lg object-cover"
@@ -633,7 +632,8 @@ export default function OrdersPage() {
                 <div className="space-y-3">
                   {selectedOrder.items.map((item) => (
                     <div key={item.id} className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg">
-                      <img 
+                      <Image 
+                      sizes="100"
                         src={item.image || '/placeholder.png'} 
                         alt={item.name}
                         className="w-16 h-16 rounded-lg object-cover"

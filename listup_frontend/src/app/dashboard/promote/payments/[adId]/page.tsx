@@ -1,14 +1,20 @@
 "use client"
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { fetchAdById } from "@/lib/api/ad";
 import { safeLocalStorage } from "@/utils/helpers";
 
 export default function PaymentPage() {
-  const router = useRouter();
   const params = useParams();
   const adId = params.adId;
-  const [ad, setAd] = useState<any>(null);
+  const [ad, setAd] = useState<{ 
+    id: string; 
+    type: string; 
+    amount: number; 
+    startDate: string;
+    endDate: string;
+    vendor: { email: string; name: string } 
+  } | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -24,6 +30,11 @@ export default function PaymentPage() {
   }, [adId]);
 
   const handlePay = async () => {
+    if (!ad) {
+      setError("Ad data not available");
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
@@ -36,7 +47,7 @@ export default function PaymentPage() {
       }
 
       // Get email from ad data (vendor's email) or localStorage as fallback
-      let userEmail = ad?.vendor?.email;
+      let userEmail: string | null = ad.vendor?.email;
       if (!userEmail) {
         userEmail = safeLocalStorage.getItem("email");
       }
@@ -46,17 +57,22 @@ export default function PaymentPage() {
         return;
       }
       
-      // Get amount from ad or use default plan prices
+      // Get amount from ad or calculate based on plan type and duration
       let amount = ad.amount;
       if (!amount) {
-        const planPrices: { [key: string]: number } = {
-          "STOREFRONT": 5000,
-          "PRODUCT_PROMOTION": 3000,
-          "SEARCH_BOOST": 2000
+        const planPricesPerDay: { [key: string]: number } = {
+          "STOREFRONT": 500,
+          "PRODUCT_PROMOTION": 300,
+          "SEARCH_BOOST": 200
         };
-        amount = planPrices[ad.type] || 0;
+        const pricePerDay = planPricesPerDay[ad.type] || 0;
+        // Calculate duration from start and end dates
+        const startDate = new Date(ad.startDate);
+        const endDate = new Date(ad.endDate);
+        const durationDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+        amount = pricePerDay * durationDays;
       }
-      
+     
       // initiate payment session
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/payments/initialize`, {
         method: "POST",
@@ -83,9 +99,10 @@ export default function PaymentPage() {
       } else {
         setError("Payment initialization failed - no authorization URL received");
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      setError(err.message || "Payment failed. Please try again.");
+      const errorMessage = err instanceof Error ? err.message : "Payment failed. Please try again.";
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }

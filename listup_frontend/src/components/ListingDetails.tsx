@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { Phone, MessageSquare } from "lucide-react";
 
 type Seller = {
@@ -31,19 +32,23 @@ export default function ListingDetails({ listing }: { listing: Listing }) {
       {/* Left - Images */}
       <div className="col-span-2">
         {/* Main Image */}
-        <img
+        <Image
           src={selectedImage}
           alt={listing.title}
+          width={600}
+          height={400}
           className="w-full h-[400px] object-cover rounded-xl shadow"
         />
 
         {/* Thumbnail Gallery */}
         <div className="flex gap-3 mt-4">
           {listing.images.map((img, idx) => (
-            <img
+            <Image
               key={idx}
               src={img}
               alt={`Thumbnail ${idx + 1}`}
+              width={80}
+              height={80}
               className={`w-20 h-20 object-cover rounded-lg cursor-pointer border-2 ${
                 selectedImage === img ? "border-green-600" : "border-transparent"
               }`}
