@@ -5,7 +5,6 @@ import { ArrowRight, Search, ShoppingBag, Tag, Menu, X, Facebook, Twitter, Insta
 import Footer from "@/components/Footer";
 import {  tips } from "@/utils/constants";
 import { GhostButton, PrimaryButton, SectionEyebrow } from "@/utils/helpers";
-import Category from "@/components/Category";
 import NavBar from "@/components/NavBar";
 import Link from "next/link";
 import Image from "next/image";

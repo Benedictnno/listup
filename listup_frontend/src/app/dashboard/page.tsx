@@ -5,7 +5,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { 
   TrendingUp, 
-  Eye, 
   ShoppingCart, 
   MessageSquare, 
   DollarSign, 
@@ -92,21 +91,21 @@ export default function DashboardOverview() {
         const listings = await fetchVendorListings(vendorId || '');
         
         // Calculate metrics from real data
-        const activeListings = listings.filter((l: any) => l.status === 'active');
-        const inactiveListings = listings.filter((l: any) => l.status === 'inactive');
-        const pendingListings = listings.filter((l: any) => l.status === 'pending');
+        const activeListings = listings.filter((l: { status: string }) => l.status === 'active');
+        const inactiveListings = listings.filter((l: { status: string }) => l.status === 'inactive');
+        const pendingListings = listings.filter((l: { status: string }) => l.status === 'pending');
         
         // Get latest listings (last 5 created)
         const latestListings = listings
-          .sort((a: any, b: any) => new Date(b.createdAt || b.created_at || Date.now()).getTime() - new Date(a.createdAt || a.created_at || Date.now()).getTime())
+          .sort((a: { createdAt?: string; created_at?: string }, b: { createdAt?: string; created_at?: string }) => new Date(b.createdAt || b.created_at || Date.now()).getTime() - new Date(a.createdAt || a.created_at || Date.now()).getTime())
           .slice(0, 5)
-          .map((listing: any) => ({
+          .map((listing: { id: string; title: string; price: number; status: string; createdAt?: string; created_at?: string; image?: string }) => ({
             id: listing.id,
             title: listing.title,
             price: listing.price,
             status: listing.status || 'active',
             createdAt: listing.createdAt || listing.created_at || new Date().toISOString(),
-            image: listing.images?.[0]
+            image: listing.image
           }));
 
         // Mock data for demonstration - in real app, these would come from API

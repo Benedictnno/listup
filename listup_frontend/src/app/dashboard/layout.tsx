@@ -1,24 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import { FiMenu, FiHome, FiBarChart2, FiSettings, FiX, FiSearch, FiLogOut, FiUser, FiBell } from "react-icons/fi";
+import { FiMenu, FiSettings, FiLogOut } from "react-icons/fi";
 import { CiBoxList } from "react-icons/ci";
 import { AiOutlineRise } from "react-icons/ai";
-import { ChevronDown, Crown, Shield, TrendingUp, ShoppingBag } from "lucide-react";
+import { Crown, ShoppingBag } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { safeLocalStorage } from "@/utils/helpers";
-import { ShoppingCart } from "lucide-react";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [isOpen, setIsOpen] = useState(true);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
-  const [showQuickActions, setShowQuickActions] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
 
-  const vendorId = safeLocalStorage.getItem("id");
   const vendorName = safeLocalStorage.getItem("name") || "Vendor";
-  const storeName = safeLocalStorage.getItem("storeName") || "My Store";
 
   const handleLogout = () => {
     safeLocalStorage.clear();
