@@ -1,7 +1,5 @@
+import api from "@/utils/axios"; 
 import axios from "axios";
-import { safeLocalStorage } from "@/utils/helpers";
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api"; 
 
 // Define proper types for the API
 interface ListingData {
@@ -25,30 +23,15 @@ interface UpdateListingData {
   status?: string;
 }
 
-interface ApiError {
-  response?: {
-    data?: unknown;
-  };
-  message?: string;
-}
+
 
 // ✅ Fetch all listings for a vendor
 export async function fetchVendorListings(vendorId: string | undefined) {
   try {
-    const token = safeLocalStorage.getItem("token");
-    if (!token) {
-      throw new Error("No authentication token found");
-    }
-
-    const res = await axios.get(`${API_BASE}/listings/vendors/${vendorId}/listings`, {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    });
+    const res = await api.get(`/listings/vendors/${vendorId}/listings`);
     return res.data;
   } catch (error: unknown) {
-    const apiError = error as ApiError;
-    console.error("Error fetching listings:", apiError.response?.data || apiError.message);
+    console.error("Error fetching listings:", error);
     throw new Error("Failed to fetch listings");
   }
 }
@@ -56,11 +39,6 @@ export async function fetchVendorListings(vendorId: string | undefined) {
 // ✅ Create a new listing
 export async function createListing(listingData: FormData) {
   try {
-    const token = safeLocalStorage.getItem("token");
-    if (!token) {
-      throw new Error("No authentication token found");
-    }
-
     // normalize FileList → Array<File>
     const imagesArray = listingData.getAll("images") as File[];
 
@@ -70,10 +48,9 @@ export async function createListing(listingData: FormData) {
       const formData = new FormData();
       formData.append("image", img as File); // ✅ explicitly tell TS it's a File
 
-      const res = await axios.post(`${API_BASE}/uploads/image`, formData, {
+      const res = await api.post(`/uploads/image`, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
-          Authorization: `Bearer ${token}`,
         },
       });
 
@@ -92,14 +69,11 @@ export async function createListing(listingData: FormData) {
       condition: "brand new",
     };
 
-    const listingRes = await axios.post(`${API_BASE}/listings`, newListingData, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const listingRes = await api.post(`/listings`, newListingData);
 
     return listingRes.data;
   } catch (error: unknown) {
-    const apiError = error as ApiError;
-    console.error("Error creating listing:", apiError.response?.data || apiError.message);
+    console.error("Error creating listing:", error);
     throw new Error("Failed to create listing");
   }
 }
@@ -107,18 +81,10 @@ export async function createListing(listingData: FormData) {
 // ✅ Update an existing listing
 export async function updateListing(listingId: string, listingData: UpdateListingData) {
   try {
-    const token = safeLocalStorage.getItem("token");
-    if (!token) {
-      throw new Error("No authentication token found");
-    }
-
-    const res = await axios.put(`${API_BASE}/listings/${listingId}`, listingData, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const res = await api.put(`/listings/${listingId}`, listingData);
     return res.data;
   } catch (error: unknown) {
-    const apiError = error as ApiError;
-    console.error("Error updating listing:", apiError.response?.data || apiError.message);
+    console.error("Error updating listing:", error);
     throw new Error("Failed to update listing");
   }
 }
@@ -126,18 +92,12 @@ export async function updateListing(listingId: string, listingData: UpdateListin
 // ✅ Delete a listing
 export async function deleteListing(listingId: string) {
   try {
-    const token = safeLocalStorage.getItem("token");
-    if (!token) {
-      throw new Error("No authentication token found");
-    }
 
-    const res = await axios.delete(`${API_BASE}/listings/${listingId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+
+    const res = await api.delete(`/listings/${listingId}`);
     return res.data;
   } catch (error: unknown) {
-    const apiError = error as ApiError;
-    console.error("Error deleting listing:", apiError.response?.data || apiError.message);
+    console.error("Error deleting listing:", error);
     throw new Error("Failed to delete listing");
   }
 }

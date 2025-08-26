@@ -6,6 +6,7 @@ import SearchBar from "@/components/SearchBar";
 import Link from "next/link";
 import { Search, X, Filter, RotateCcw, MapPin, Calendar } from "lucide-react";
 import Image from "next/image";
+import api from "@/utils/axios";
 
 interface Listing {
   id: number;
@@ -97,15 +98,8 @@ export default function Marketplace() {
       params.append("page", filters.page.toString());
       params.append("limit", filters.limit.toString());
 
-      const response = await fetch(
-        `http://localhost:4000/api/listings/search?${params.toString()}`
-      );
-      
-      if (!response.ok) {
-        throw new Error(`Error: ${response.status} ${response.statusText}`);
-      }
-      
-      const data = await response.json();
+      const response = await api.get(`/listings/search?${params.toString()}`);
+      const data = response.data;
       setListings(data.items || []);
       setTotalPages(data.pages || 1);
 

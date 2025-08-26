@@ -3,8 +3,23 @@
 
 import axios from "axios";
 
+// Get base URL from environment variable, with proper fallback
+const getBaseURL = () => {
+  const envURL = process.env.NEXT_PUBLIC_API_URL;
+  if (envURL) {
+    // If the env URL already ends with /api, use it as is
+    if (envURL.endsWith('/api')) {
+      return envURL;
+    }
+    // If it doesn't end with /api, append it
+    return envURL.endsWith('/') ? `${envURL}api` : `${envURL}/api`;
+  }
+  // Fallback to localhost
+  return "http://localhost:4000/api";
+};
+
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api", // 🔑 change this to your backend
+  baseURL: getBaseURL(),
   headers: {
     "Content-Type": "application/json",
   },

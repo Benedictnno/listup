@@ -3,6 +3,7 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { fetchAdById } from "@/lib/api/ad";
 import { safeLocalStorage } from "@/utils/helpers";
+import api from "@/utils/axios";
 
 export default function PaymentPage() {
   const params = useParams();
@@ -74,25 +75,13 @@ export default function PaymentPage() {
       }
      
       // initiate payment session
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/payments/initialize`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          adId,
-          email: userEmail,
-          amount,
-        }),
+      const response = await api.post("/payments/initialize", {
+        adId,
+        email: userEmail,
+        amount,
       });
       
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || "Payment initialization failed");
-      }
-      
-      const data = await res.json();
+      const data = response.data;
       
       if (data.authorizationUrl) {
         window.location.href = data.authorizationUrl; // redirect to payment gateway

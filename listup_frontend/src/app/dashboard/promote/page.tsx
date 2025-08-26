@@ -73,9 +73,7 @@ export default function AdsPage() {
         return;
       }
 
-      const adsRes = await api.get(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/ads/vendor/${id}`, { 
-        headers: { Authorization: `Bearer ${token}` } 
-      });
+      const adsRes = await api.get(`/ads/vendor/${id}`);
 
       console.log("Ads refreshed:", adsRes.data);
       setAds(adsRes.data);
@@ -96,19 +94,11 @@ export default function AdsPage() {
           return;
         }
 
-        const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
-        
         // Fire requests in parallel
         const [adsRes, storesRes, productsRes] = await Promise.all([
-          api.get(`${apiBase}/api/ads/vendor/${id}`, { 
-            headers: { Authorization: `Bearer ${token}` } 
-          }),
-          api.get(`${apiBase}/api/stores/vendor/${id}`, { 
-            headers: { Authorization: `Bearer ${token}` } 
-          }),
-          api.get(`${apiBase}/api/products/vendor/${id}`, { 
-            headers: { Authorization: `Bearer ${token}` } 
-          }),
+          api.get(`/ads/vendor/${id}`),
+          api.get(`/stores/vendor/${id}`),
+          api.get(`/products/vendor/${id}`),
         ]);
 
         console.log("Vendor ads fetched:", adsRes.data);

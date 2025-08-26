@@ -1,41 +1,4 @@
-import { safeLocalStorage } from "@/utils/helpers";
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
-
-// Helper function to get token safely
-const getToken = () => {
-  try {
-    return safeLocalStorage.getItem("token");
-  } catch (error) {
-    console.error("Error getting token:", error);
-    return null;
-  }
-};
-
-// Helper function to make authenticated API calls
-const makeAuthenticatedRequest = async (endpoint: string, options: RequestInit = {}) => {
-  const token = getToken();
-  
-  if (!token) {
-    throw new Error('No authentication token found');
-  }
-
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`,
-      ...options.headers,
-    },
-  });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
-  }
-
-  return response.json();
-};
+import api from "@/utils/axios";
 
 // Types for settings data
 export interface StoreSettings {
@@ -114,84 +77,68 @@ export interface ImageUpload {
 export const settingsApi = {
   // Get all user settings
   getUserSettings: async () => {
-    return makeAuthenticatedRequest('/settings');
+    const response = await api.get('/settings');
+    return response.data;
   },
 
   // Update store settings
   updateStoreSettings: async (data: StoreSettings) => {
-    return makeAuthenticatedRequest('/settings/store', {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
+    const response = await api.put('/settings/store', data);
+    return response.data;
   },
 
   // Update personal information
   updatePersonalInfo: async (data: PersonalInfo) => {
-    return makeAuthenticatedRequest('/settings/personal', {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
+    const response = await api.put('/settings/personal', data);
+    return response.data;
   },
 
   // Update password
   updatePassword: async (data: SecuritySettings) => {
-    return makeAuthenticatedRequest('/settings/password', {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
+    const response = await api.put('/settings/password', data);
+    return response.data;
   },
 
   // Update notification settings
   updateNotificationSettings: async (data: NotificationSettings) => {
-    return makeAuthenticatedRequest('/settings/notifications', {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
+    const response = await api.put('/settings/notifications', data);
+    return response.data;
   },
 
   // Update user preferences
   updateUserPreferences: async (data: UserPreferences) => {
-    return makeAuthenticatedRequest('/settings/preferences', {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
+    const response = await api.put('/settings/preferences', data);
+    return response.data;
   },
 
   // Update store preferences
   updateStorePreferences: async (data: StorePreferences) => {
-    return makeAuthenticatedRequest('/settings/store-preferences', {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
+    const response = await api.put('/settings/store-preferences', data);
+    return response.data;
   },
 
   // Upload profile image
   uploadProfileImage: async (data: ImageUpload) => {
-    return makeAuthenticatedRequest('/settings/profile-image', {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
+    const response = await api.put('/settings/profile-image', data);
+    return response.data;
   },
 
   // Upload store image
   uploadStoreImage: async (data: ImageUpload) => {
-    return makeAuthenticatedRequest('/settings/store-image', {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
+    const response = await api.put('/settings/store-image', data);
+    return response.data;
   },
 
   // Get user profile (alternative endpoint)
   getUserProfile: async () => {
-    return makeAuthenticatedRequest('/users/profile');
+    const response = await api.get('/users/profile');
+    return response.data;
   },
 
   // Update user profile (alternative endpoint)
   updateUserProfile: async (data: PersonalInfo) => {
-    return makeAuthenticatedRequest('/users/profile', {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
+    const response = await api.put('/users/profile', data);
+    return response.data;
   },
 };
 

@@ -1,11 +1,13 @@
 import ListingDetails from "@/components/ListingDetails";
+import api from "@/utils/axios";
 
 async function getListing(id: string) {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/listings/${id}`, {
-    cache: "no-store",
-  });
-  if (!res.ok) throw new Error("Failed to fetch listing");
-  return res.json();
+  try {
+    const response = await api.get(`/listings/${id}`);
+    return response.data;
+  } catch (error) {
+    throw new Error("Failed to fetch listing");
+  }
 }
 
 export default async function SingleProductPage({ params }: { params: Promise<{ id: string }> }) {

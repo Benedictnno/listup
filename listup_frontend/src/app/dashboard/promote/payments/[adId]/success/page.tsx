@@ -3,6 +3,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
 import { CheckCircle, XCircle, Loader2 } from "lucide-react";
 import { safeLocalStorage } from "@/utils/helpers";
+import api from "@/utils/axios";
 
 export default function PaymentSuccessPage() {
   const router = useRouter();
@@ -22,15 +23,10 @@ export default function PaymentSuccessPage() {
       }
 
       // Check payment status from backend
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/payments/ad/${adId}/status`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const res = await api.get(`/payments/ad/${adId}/status`);
 
-      if (res.ok) {
-        const data = await res.json();
-        setPaymentStatus(data.paymentStatus);
+      if (res.data) {
+        setPaymentStatus(res.data.paymentStatus);
       } else {
         setError("Failed to fetch payment status");
       }
@@ -58,20 +54,13 @@ export default function PaymentSuccessPage() {
       }
 
       // Call manual verification endpoint
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/payments/verify-payment/${adId}`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const res = await api.post(`/payments/verify-payment/${adId}`);
 
-      if (res.ok) {
-        const data = await res.json();
-        setPaymentStatus(data.paymentStatus);
+      if (res.data) {
+        setPaymentStatus(res.data.paymentStatus);
         alert("Payment manually verified for testing!");
       } else {
-        const errorData = await res.json();
-        setError(errorData.error || "Manual verification failed");
+        setError(res.data.error || "Manual verification failed");
       }
     } catch (err) {
       console.error("Manual verification error:", err);

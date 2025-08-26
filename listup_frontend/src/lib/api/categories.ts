@@ -1,6 +1,4 @@
-import axios from "axios";
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api";
+import api from "@/utils/axios";
 
 export interface Category {
   id: string;
@@ -14,15 +12,11 @@ export interface Category {
 export const fetchCategories = async (): Promise<Category[]> => {
   try {
     console.log("🔄 Fetching categories...");
-    const response = await axios.get(`${API_BASE}/categories`);
+    const response = await api.get(`/categories`);
     console.log(`✅ Fetched ${response.data.length} categories`);
     return response.data;
   } catch (error) {
     console.error("❌ Error fetching categories:", error);
-    if (axios.isAxiosError(error)) {
-      console.error("Response data:", error.response?.data);
-      console.error("Response status:", error.response?.status);
-    }
     throw new Error("Failed to fetch categories");
   }
 };
@@ -31,15 +25,11 @@ export const fetchCategories = async (): Promise<Category[]> => {
 export const fetchCategoryById = async (id: string): Promise<Category> => {
   try {
     console.log(`🔍 Fetching category by ID: ${id}`);
-    const response = await axios.get(`${API_BASE}/categories/${id}`);
+    const response = await api.get(`/categories/${id}`);
     console.log("✅ Category fetched successfully:", response.data);
     return response.data;
   } catch (error) {
     console.error(`❌ Error fetching category ${id}:`, error);
-    if (axios.isAxiosError(error)) {
-      console.error("Response data:", error.response?.data);
-      console.error("Response status:", error.response?.status);
-    }
     throw new Error("Failed to fetch category");
   }
 };
@@ -48,15 +38,11 @@ export const fetchCategoryById = async (id: string): Promise<Category> => {
 export const createCategory = async (categoryData: { name: string; slug: string }): Promise<Category> => {
   try {
     console.log("🚀 Creating category with data:", categoryData);
-    const response = await axios.post(`${API_BASE}/categories`, categoryData);
+    const response = await api.post(`/categories`, categoryData);
     console.log("✅ Category created successfully:", response.data);
     return response.data;
   } catch (error) {
     console.error("❌ Error creating category:", error);
-    if (axios.isAxiosError(error)) {
-      console.error("Response data:", error.response?.data);
-      console.error("Response status:", error.response?.status);
-    }
     throw new Error("Failed to create category");
   }
 };
@@ -65,15 +51,11 @@ export const createCategory = async (categoryData: { name: string; slug: string 
 export const updateCategory = async (id: string, categoryData: { name: string; slug: string }): Promise<Category> => {
   try {
     console.log(`🔄 Updating category ${id} with data:`, categoryData);
-    const response = await axios.put(`${API_BASE}/categories/${id}`, categoryData);
+    const response = await api.put(`/categories/${id}`, categoryData);
     console.log("✅ Category updated successfully:", response.data);
     return response.data;
   } catch (error) {
     console.error(`❌ Error updating category ${id}:`, error);
-    if (axios.isAxiosError(error)) {
-      console.error("Response data:", error.response?.data);
-      console.error("Response status:", error.response?.status);
-    }
     throw new Error("Failed to update category");
   }
 };
@@ -82,14 +64,10 @@ export const updateCategory = async (id: string, categoryData: { name: string; s
 export const deleteCategory = async (id: string): Promise<void> => {
   try {
     console.log(`🗑️ Deleting category ${id}`);
-    await axios.delete(`${API_BASE}/categories/${id}`);
+    await api.delete(`/categories/${id}`);
     console.log("✅ Category deleted successfully");
   } catch (error) {
     console.error(`❌ Error deleting category ${id}:`, error);
-    if (axios.isAxiosError(error)) {
-      console.error("Response data:", error.response?.data);
-      console.error("Response status:", error.response?.status);
-    }
     throw new Error("Failed to delete category");
   }
 };
