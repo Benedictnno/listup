@@ -50,13 +50,7 @@ export default function AdsPage() {
   const [productId, setProductId] = useState<string>("");
   const [duration, setDuration] = useState<number>(7);
 
-  // Main categories we want to show
-  const mainCategories = [
-    "Fashion & Clothing",
-    "Beauty & Personal Care", 
-    "Food & Snacks",
-    "Handmade & Crafts"
-  ];
+
 
   // Calculate total amount based on selected plan and duration
   const calculateAmount = () => {
@@ -91,6 +85,14 @@ export default function AdsPage() {
   
   // fetch vendor ads, stores & products
   useEffect(() => {
+    // Main categories we want to show
+    const mainCategories = [
+      "Fashion & Clothing",
+      "Beauty & Personal Care", 
+      "Food & Snacks",
+      "Handmade & Crafts"
+    ];
+
     async function fetchData() {
       try {
         const token = safeLocalStorage.getItem("token");

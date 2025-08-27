@@ -44,7 +44,7 @@ export default function SearchBar() {
 
   useEffect(() => {
     // Update input value when search changes externally
-    setInputValue(search);
+    setInputValue(search || '');
   }, [search]);
 
   useEffect(() => {
@@ -261,7 +261,7 @@ export default function SearchBar() {
         {renderSuggestions()}
 
         {/* Search Tips */}
-        {!showSuggestions && !inputValue && (
+        {/* {!showSuggestions && !inputValue && (
           <div className="mt-3 text-center">
             <div className="flex items-center justify-center gap-4 text-xs text-gray-500">
               <span className="flex items-center gap-1">
@@ -274,7 +274,7 @@ export default function SearchBar() {
               </span>
             </div>
           </div>
-        )}
+        )} */}
       </div>
     </div>
   );

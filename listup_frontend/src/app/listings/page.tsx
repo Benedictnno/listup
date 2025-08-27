@@ -1,588 +1,503 @@
 "use client";
-import { useState, useEffect, useCallback, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { useFilterStore } from "@/store/useFilterStore";
+
+import { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
+import { fetchListings } from "@/lib/api/listing";
+import ListingCard from "@/components/ListingCard";
 import SearchBar from "@/components/SearchBar";
-import Link from "next/link";
-import { Search, X, Filter, RotateCcw, MapPin, Calendar } from "lucide-react";
-import Image from "next/image";
-import api from "@/utils/axios";
+import { Filter, SortAsc, SortDesc, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { useFilterStore } from "@/store/useFilterStore";
 
 interface Listing {
-  id: number;
+  id: string;
   title: string;
   description: string;
   price: number;
+  images: string[];
   location: string;
   condition: string;
-  images: string[];
-  category: string;
-  createdAt?: string;
+  createdAt: string;
+  category: {
+    id: string;
+    name: string;
+    slug: string;
+  };
+  seller: {
+    id: string;
+    name: string;
+  };
 }
 
 interface FilterState {
-  categoryId: string;
-  minPrice: string;
-  maxPrice: string;
-  location: string;
   search: string;
-  sort: string;
-  page: number;
-  limit: number;
+  category: string;
+  minPrice: number | null;
+  maxPrice: number | null;
+  condition: string;
+  location: string;
+  sortBy: string;
+  sortOrder: 'asc' | 'desc';
 }
 
-const INITIAL_FILTERS: FilterState = {
-  categoryId: "",
-  minPrice: "",
-  maxPrice: "",
-  location: "",
-  search: "",
-  sort: "recent",
-  page: 1,
-  limit: 12,
-};
-
-const CATEGORIES = [
-  { id: "", name: "All Categories" },
-  { id: "1", name: "Phones" },
-  { id: "2", name: "Electronics" },
-  { id: "3", name: "Fashion" },
-  { id: "4", name: "Home & Garden" },
-  { id: "5", name: "Vehicles" },
-  { id: "6", name: "Books & Media" },
-  { id: "7", name: "Sports & Outdoors" },
-  { id: "8", name: "Toys & Games" },
-  { id: "9", name: "Health & Wellness" },
-];
-
-const SORT_OPTIONS = [
-  { value: "recent", label: "Most Recent" },
-  { value: "lowToHigh", label: "Price: Low to High" },
-  { value: "highToLow", label: "Price: High to Low" },
-  { value: "name", label: "Name: A to Z" },
-];
-
-export default function Marketplace() {
-  // State management
+function ListingsPageContent() {
+  const searchParams = useSearchParams();
+  const { search, minPrice, maxPrice, setSearch } = useFilterStore();
   const [listings, setListings] = useState<Listing[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [totalPages, setTotalPages] = useState(1);
-  const [filters, setFilters] = useState<FilterState>(INITIAL_FILTERS);
-  const [showFilters, setShowFilters] = useState(false);
+  const [filteredListings, setFilteredListings] = useState<Listing[]>([]);
 
-  // Filter store
-  const { search, setSearch } = useFilterStore();
+  const [loading, setLoading] = useState(true);
+  const [filters, setFilters] = useState<FilterState>({
+    search: '',
+    category: '',
+    minPrice: null,
+    maxPrice: null,
+    condition: '',
+    location: '',
+    sortBy: 'createdAt',
+    sortOrder: 'desc'
+  });
 
-  // Computed values
-  const hasActiveFilters = useMemo(() => {
-    return filters.categoryId || filters.minPrice || filters.maxPrice || filters.location || filters.search;
-  }, [filters]);
-
-  const hasNonSearchFilters = useMemo(() => {
-    return filters.categoryId || filters.minPrice || filters.maxPrice || filters.location;
-  }, [filters]);
-
-
-  const fetchListings = useCallback(async () => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams();
-      
-      // Add filter parameters
-      if (filters.search) params.append("q", filters.search);
-      if (filters.categoryId) params.append("categoryId", filters.categoryId);
-      if (filters.minPrice) params.append("minPrice", filters.minPrice);
-      if (filters.maxPrice) params.append("maxPrice", filters.maxPrice);
-      if (filters.location) params.append("location", filters.location);
-      if (filters.sort) params.append("sort", filters.sort);
-      params.append("page", filters.page.toString());
-      params.append("limit", filters.limit.toString());
-
-      const response = await api.get(`/listings/search?${params.toString()}`);
-      const data = response.data;
-      setListings(data.items || []);
-      setTotalPages(data.pages || 1);
-
-      // Update URL if search is present
-      if (filters.search) {
-        const url = new URL(window.location.href);
-        url.searchParams.set('q', filters.search);
-        window.history.replaceState({}, '', url);
-      }
-    } catch (error) {
-      console.error("Error fetching listings:", error);
-      setListings([]);
-      setTotalPages(1);
-    } finally {
-      setLoading(false);
+  // Handle URL query parameters for search
+  useEffect(() => {
+    const query = searchParams.get('q');
+    if (query) {
+      console.log('Setting search from URL:', query);
+      setSearch(query);
     }
-  }, [filters]);
+  }, [searchParams, setSearch]);
 
-  // Search effect - only update when search changes from external source
+  // Load listings
   useEffect(() => {
-    if (search !== filters.search) {
-      setFilters(prev => ({
-        ...prev,
-        search,
-        page: 1
-      }));
-    }
-  }, [search, filters.search]);
-
-  // Fetch listings when filters change
-  useEffect(() => {
-    fetchListings();
-  }, [fetchListings]);
-
-  // Initial load and URL search params
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const urlParams = new URLSearchParams(window.location.search);
-      const searchQuery = urlParams.get('q');
-      
-      if (searchQuery && !filters.search) {
-        setSearch(searchQuery);
-        setFilters(prev => ({
-          ...prev,
-          search: searchQuery
-        }));
-      } else if (!searchQuery && !filters.search) {
-        fetchListings();
+    async function loadData() {
+      try {
+        setLoading(true);
+        const listingsData = await fetchListings();
+        setListings(listingsData);
+      } catch (error) {
+        console.error("Error loading data:", error);
+      } finally {
+        setLoading(false);
       }
     }
-  }, [filters.search, setSearch, fetchListings]);
-
-  // API functions
-  
-
-  // Filter actions
-  const updateFilter = useCallback((key: keyof FilterState, value: string | number) => {
-    setFilters(prev => ({
-      ...prev,
-      [key]: value,
-      page: 1 // Reset to first page when filters change
-    }));
+    loadData();
   }, []);
 
-  const clearAllFilters = useCallback(() => {
-    setFilters(INITIAL_FILTERS);
-    setSearch("");
-    setShowFilters(false);
-    
-    // Clear URL search params
-    if (typeof window !== 'undefined') {
-      const url = new URL(window.location.href);
-      url.searchParams.delete('q');
-      window.history.replaceState({}, '', url);
-    }
-  }, [setSearch]);
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && event.key === 'f') {
+        event.preventDefault();
+        // Focus the search input in SearchBar component
+        const searchInput = document.querySelector('input[placeholder*="Search"]') as HTMLInputElement;
+        if (searchInput) {
+          searchInput.focus();
+        }
+      }
+    };
 
-  const clearSearch = useCallback(() => {
-    setSearch("");
-    setFilters(prev => ({
-      ...prev,
-      search: "",
-      page: 1
-    }));
-    
-    // Clear URL search params
-    if (typeof window !== 'undefined') {
-      const url = new URL(window.location.href);
-      url.searchParams.delete('q');
-      window.history.replaceState({}, '', url);
-    }
-  }, [setSearch]);
-
-  const goToPage = useCallback((page: number) => {
-    setFilters(prev => ({ ...prev, page }));
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Render functions
-  const renderFilterBar = () => (
-    <div className="hidden lg:grid grid-cols-5 gap-4 mb-6">
-      <select
-        className="border p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-200 focus:border-lime-400"
-        value={filters.categoryId}
-        onChange={(e) => updateFilter('categoryId', e.target.value)}
-      >
-        {CATEGORIES.map(cat => (
-          <option key={cat.id} value={cat.id}>{cat.name}</option>
-        ))}
-      </select>
-      
-      <input
-        type="number"
-        placeholder="Min Price"
-        className="border p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-200 focus:border-lime-400"
-        value={filters.minPrice}
-        onChange={(e) => updateFilter('minPrice', e.target.value)}
-      />
-      
-      <input
-        type="number"
-        placeholder="Max Price"
-        className="border p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-200 focus:border-lime-400"
-        value={filters.maxPrice}
-        onChange={(e) => updateFilter('maxPrice', e.target.value)}
-      />
-      
-      <input
-        type="text"
-        placeholder="Location"
-        className="border p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-200 focus:border-lime-400"
-        value={filters.location}
-        onChange={(e) => updateFilter('location', e.target.value)}
-      />
-      
-      <select
-        className="border p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-200 focus:border-lime-400"
-        value={filters.sort}
-        onChange={(e) => updateFilter('sort', e.target.value)}
-      >
-        {SORT_OPTIONS.map(option => (
-          <option key={option.value} value={option.value}>{option.label}</option>
-        ))}
-      </select>
-    </div>
-  );
+  // Apply filters whenever filters or listings change
+  useEffect(() => {
+    let filtered = [...listings];
 
-  const renderMobileFilterDrawer = () => (
-    <AnimatePresence>
-      {showFilters && (
-        <>
-          {/* Overlay */}
-          <motion.div
-            key="overlay"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 0.5 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            onClick={() => setShowFilters(false)}
-            className="fixed inset-0 bg-black z-40"
-          />
-
-          {/* Sidebar */}
-          <motion.div
-            key="sidebar"
-            initial={{ x: "100%" }}
-            animate={{ x: 0 }}
-            exit={{ x: "100%" }}
-            transition={{ type: "tween", duration: 0.3 }}
-            className="fixed top-0 right-0 w-72 h-full bg-white shadow-lg p-4 z-50 overflow-y-auto"
-          >
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold">Filters</h2>
-              <button
-                onClick={() => setShowFilters(false)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                ✕
-              </button>
-            </div>
-
-            {/* Search */}
-            <div className="relative mb-4">
-              <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
-                <Search size={18} />
-              </div>
-              <input
-                type="text"
-                placeholder="Search listings..."
-                className="w-full border border-slate-300 rounded-xl pl-10 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-lime-200 focus:border-lime-400"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-            </div>
-
-            {/* Category */}
-            <div className="mb-4">
-              <h3 className="font-semibold mb-2">Category</h3>
-              <div className="flex flex-wrap gap-2">
-                {CATEGORIES.map((cat) => (
-                  <button
-                    key={cat.id}
-                    className={`px-3 py-1.5 rounded-xl text-sm font-medium transition ${
-                      filters.categoryId === cat.id
-                        ? "bg-lime-400 text-slate-900 shadow-[inset_0_-2px_0_rgba(0,0,0,0.15)]"
-                        : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                    }`}
-                    onClick={() => updateFilter('categoryId', cat.id)}
-                  >
-                    {cat.name}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Price Range */}
-            <div className="mb-4">
-              <h3 className="font-semibold mb-2">Price Range</h3>
-              <div className="flex gap-3">
-                <div className="w-1/2 relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">₦</span>
-                  <input
-                    type="number"
-                    placeholder="Min"
-                    className="w-full border border-slate-300 rounded-xl pl-7 pr-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-lime-200 focus:border-lime-400 transition"
-                    value={filters.minPrice}
-                    onChange={(e) => updateFilter('minPrice', e.target.value)}
-                  />
-                </div>
-                <div className="w-1/2 relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">₦</span>
-                  <input
-                    type="number"
-                    placeholder="Max"
-                    className="w-full border border-slate-300 rounded-xl pl-7 pr-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-lime-200 focus:border-lime-400 transition"
-                    value={filters.minPrice}
-                    onChange={(e) => updateFilter('maxPrice', e.target.value)}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Location */}
-            <div className="mb-6">
-              <h3 className="font-semibold mb-2">Location</h3>
-              <input
-                type="text"
-                placeholder="Enter location"
-                className="w-full border border-slate-300 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-lime-200 focus:border-lime-400 transition"
-                value={filters.location}
-                onChange={(e) => updateFilter('location', e.target.value)}
-              />
-            </div>
-
-            {/* Sort */}
-            <div className="mb-6">
-              <h3 className="font-semibold mb-2">Sort By</h3>
-              <select
-                className="w-full border border-slate-300 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-lime-200 focus:border-lime-400 transition appearance-none bg-white"
-                value={filters.sort}
-                onChange={(e) => updateFilter('sort', e.target.value)}
-              >
-                {SORT_OPTIONS.map(option => (
-                  <option key={option.value} value={option.value}>{option.label}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Action buttons */}
-            <div className="space-y-3">
-              <button
-                className="w-full rounded-xl bg-lime-400 py-3 text-sm font-semibold text-slate-900 shadow-[inset_0_-2px_0_rgba(0,0,0,0.15)] transition hover:-translate-y-0.5 hover:bg-lime-300 focus:outline-none focus:ring-4 focus:ring-lime-200"
-                onClick={() => setShowFilters(false)}
-              >
-                Apply Filters
-              </button>
-              {hasActiveFilters && (
-                <button
-                  className="w-full rounded-xl bg-slate-100 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-200 focus:outline-none focus:ring-4 focus:ring-slate-200"
-                  onClick={clearAllFilters}
-                >
-                  Clear All Filters
-                </button>
-              )}
-            </div>
-          </motion.div>
-        </>
-      )}
-    </AnimatePresence>
-  );
-
-  const renderFilterIndicators = () => (
-    <>
-      {/* Search indicator */}
-      {filters.search && (
-        <div className="mb-4 flex items-center gap-2 bg-slate-50 px-4 py-2 rounded-xl border border-slate-200">
-          <Search size={16} className="text-slate-500" />
-          <span className="text-sm text-slate-700">
-            Search results for <span className="font-medium">&quot;{filters.search}&quot;</span>
-          </span>
-          <button 
-            onClick={clearSearch}
-            className="ml-auto flex items-center gap-1 text-xs font-medium text-slate-500 hover:text-slate-700 transition"
-          >
-            <X size={14} />
-            Clear
-          </button>
-        </div>
-      )}
-
-      {/* Active filters indicator */}
-      {hasNonSearchFilters && !filters.search && (
-        <div className="mb-4 flex items-center gap-2 bg-blue-50 px-4 py-2 rounded-xl border border-blue-200">
-          <Filter size={16} className="text-blue-500" />
-          <span className="text-sm text-blue-700">
-            Active filters applied
-          </span>
-          <button 
-            onClick={clearAllFilters}
-            className="ml-auto flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-800 transition"
-          >
-            <RotateCcw size={14} />
-            Clear All
-          </button>
-        </div>
-      )}
-    </>
-  );
-
-  const renderListings = () => {
-    if (loading) {
-      return (
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-lime-400"></div>
-        </div>
+    // Search filter (from global store)
+    if (search) {
+      console.log('Applying search filter:', search);
+      filtered = filtered.filter(listing =>
+        listing.title.toLowerCase().includes(search.toLowerCase()) ||
+        listing.description.toLowerCase().includes(search.toLowerCase()) ||
+        listing.location.toLowerCase().includes(search.toLowerCase())
       );
     }
 
-    if (listings.length === 0) {
-      return (
-        <div className="text-center py-16 px-4">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-slate-100 mb-4">
-            <Search size={32} className="text-slate-400" />
-          </div>
-          <h3 className="text-lg font-semibold text-slate-800 mb-1">No listings found</h3>
-          <p className="text-slate-500 max-w-md mx-auto">
-            {filters.search ? (
-              <>No results found for <span className="font-medium">&quot;{filters.search}&quot;</span>. Try different keywords or adjust your filters.</>
-            ) : (
-              <>Try adjusting your filter criteria to find what you&apos;re looking for.</>
-            )}
-          </p>
-          {hasActiveFilters && (
-            <button 
-              onClick={clearAllFilters}
-              className="mt-4 px-4 py-2 text-sm font-medium text-slate-700 bg-slate-100 rounded-xl hover:bg-slate-200 transition"
-            >
-              Clear all filters
-            </button>
-          )}
-        </div>
-      );
+
+
+    // Price range filter (from global store)
+    if (minPrice !== null) {
+      const validMinPrice = Math.max(minPrice, 10); // Ensure minimum is at least 10
+      filtered = filtered.filter(listing => listing.price >= validMinPrice);
+    }
+    if (maxPrice !== null) {
+      filtered = filtered.filter(listing => listing.price <= maxPrice);
     }
 
+    // Apply sorting
+    filtered.sort((a, b) => {
+      let aValue: string | number;
+      let bValue: string | number;
+      
+      if (filters.sortBy === 'price') {
+        aValue = a.price;
+        bValue = b.price;
+      } else if (filters.sortBy === 'createdAt') {
+        aValue = new Date(a.createdAt).getTime();
+        bValue = new Date(b.createdAt).getTime();
+      } else {
+        aValue = String(a[filters.sortBy as keyof Listing] || '');
+        bValue = String(b[filters.sortBy as keyof Listing] || '');
+        if (typeof aValue === 'string' && typeof bValue === 'string') {
+          aValue = aValue.toLowerCase();
+          bValue = bValue.toLowerCase();
+        }
+      }
+      
+      if (filters.sortOrder === 'asc') {
+        return aValue > bValue ? 1 : -1;
+      } else {
+        return aValue < bValue ? 1 : -1;
+      }
+    });
+
+    setFilteredListings(filtered);
+  }, [listings, filters, search, minPrice, maxPrice]);
+
+  const clearFilters = () => {
+    setFilters({
+      search: '',
+      category: '',
+      minPrice: null,
+      maxPrice: null,
+      condition: '',
+      location: '',
+      sortBy: 'createdAt',
+      sortOrder: 'desc'
+    });
+    // Clear global filters
+    setSearch('');
+    useFilterStore.getState().setMinPrice(10);
+    useFilterStore.getState().setMaxPrice(null);
+  };
+
+  const hasActiveFilters = () => {
+    return search || (minPrice !== null && minPrice > 10) || maxPrice !== null;
+  };
+
+  if (loading) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        {listings.map((listing) => (
-          <Link href={`/listings/${listing.id}`} key={listing.id} className="block group">
-            <div className="border border-slate-200 rounded-xl overflow-hidden hover:shadow-lg transition bg-white">
-              <div className="h-40 bg-slate-100 relative overflow-hidden">
-                {listing.images?.[0] ? (
-                  <Image
-                    src={listing.images[0]}
-                    alt={listing.title}
-                    width={400}
-                    height={160}
-                    className="h-40 w-full object-cover group-hover:scale-105 transition duration-300"
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-lime-500 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading listings...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!listings || listings.length === 0) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center max-w-md mx-auto p-6">
+          <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <svg className="h-10 w-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+          </div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-3">
+            No Listings Available
+          </h1>
+          <p className="text-gray-600 mb-6">
+            There are currently no listings available. Check back later!
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="container mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-4">All Listings</h1>
+          <SearchBar />
+          <div className="mt-2 text-xs text-gray-500 text-center">
+            💡 Tip: Use Ctrl+F to quickly search, or click the filter button to refine results
+          </div>
+        </div>
+
+        {/* Filters and Controls */}
+        <div className="mb-6 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+          {/* Filter Info */}
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <Filter size={16} />
+              Filters
+                             {hasActiveFilters() && (
+                 <Badge variant="secondary" className="ml-2">
+                   {[search, minPrice, maxPrice]
+                     .filter(v => v !== '' && v !== null).length}
+                 </Badge>
+               )}
+            </div>
+            
+            {hasActiveFilters() && (
+              <Button
+                variant="ghost"
+                onClick={clearFilters}
+                className="text-gray-500 hover:text-gray-700"
+                aria-label="Clear all filters"
+              >
+                <X size={16} className="mr-1" />
+                Clear All
+              </Button>
+            )}
+          </div>
+
+          {/* Sort Controls */}
+          <div className="flex items-center gap-3">
+            <Select
+              value={filters.sortBy}
+              onValueChange={(value) => setFilters(prev => ({ ...prev, sortBy: value }))}
+            >
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="Sort by" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="createdAt">Date</SelectItem>
+                <SelectItem value="price">Price</SelectItem>
+                <SelectItem value="title">Title</SelectItem>
+                <SelectItem value="location">Location</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setFilters(prev => ({ 
+                ...prev, 
+                sortOrder: prev.sortOrder === 'asc' ? 'desc' : 'asc' 
+              }))}
+              className="px-3"
+              aria-label={`Sort ${filters.sortOrder === 'asc' ? 'descending' : 'ascending'}`}
+            >
+              {filters.sortOrder === 'asc' ? <SortAsc size={16} /> : <SortDesc size={16} />}
+            </Button>
+          </div>
+        </div>
+
+                {/* Enhanced Filter Section */}
+        <div className="mb-6 bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+          {/* Filter Header */}
+          <div className="bg-gradient-to-r from-lime-50 to-emerald-50 px-6 py-4 border-b border-gray-100">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-lime-100 rounded-lg flex items-center justify-center">
+                <Filter size={18} className="text-lime-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900">Price Range Filter</h3>
+                <p className="text-sm text-gray-600">Set your budget range to find the perfect items</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Filter Controls */}
+          <div className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
+              {/* Min Price */}
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-gray-700">
+                  Minimum Price
+                  <span className="text-lime-600 ml-1">*</span>
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 font-medium">
+                    ₦
+                  </span>
+                  <Input
+                    type="number"
+                    min="10"
+                    placeholder="10"
+                    value={minPrice || ''}
+                    onChange={(e) => {
+                      const value = e.target.value ? Number(e.target.value) : null;
+                      if (value !== null && value < 10) {
+                        useFilterStore.getState().setMinPrice(10);
+                      } else {
+                        useFilterStore.getState().setMinPrice(value);
+                      }
+                    }}
+                    onBlur={(e) => {
+                      const value = e.target.value ? Number(e.target.value) : null;
+                      if (value !== null && value < 10) {
+                        useFilterStore.getState().setMinPrice(10);
+                      }
+                    }}
+                    className="w-full pl-8 pr-4 py-3 border-gray-200 focus:border-lime-500 focus:ring-lime-500"
                   />
-                ) : (
-                  <div className="h-40 w-full flex items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200">
-                    <div className="text-center">
-                      <div className="text-3xl mb-2">📦</div>
-                      <span className="text-slate-500 text-sm">No Image</span>
+                </div>
+                <p className="text-xs text-gray-500">Minimum price is ₦10</p>
+              </div>
+
+              {/* Max Price */}
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-gray-700">
+                  Maximum Price
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 font-medium">
+                    ₦
+                  </span>
+                  <Input
+                    type="number"
+                    min={minPrice || 10}
+                    placeholder="No limit"
+                    value={maxPrice || ''}
+                    onChange={(e) => {
+                      const value = e.target.value ? Number(e.target.value) : null;
+                      if (value !== null && minPrice !== null && value < minPrice) {
+                        useFilterStore.getState().setMaxPrice(minPrice);
+                      } else {
+                        useFilterStore.getState().setMaxPrice(value);
+                      }
+                    }}
+                    className="w-full pl-8 pr-4 py-3 border-gray-200 focus:border-lime-500 focus:ring-lime-500"
+                  />
+                </div>
+                <p className="text-xs text-gray-500">Leave empty for no limit</p>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-col gap-3">
+                <Button
+                  onClick={clearFilters}
+                  className="w-full bg-lime-500 hover:bg-lime-600 text-white border-0 shadow-sm"
+                  disabled={!hasActiveFilters()}
+                >
+                  <X size={16} className="mr-2" />
+                  Clear All
+                </Button>
+                
+                {hasActiveFilters() && (
+                  <div className="text-center">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-lime-100 text-lime-800 text-xs font-medium rounded-full">
+                      <div className="w-2 h-2 bg-lime-500 rounded-full animate-pulse"></div>
+                      Active Filters
                     </div>
                   </div>
                 )}
-                <div className="absolute top-3 right-3 bg-lime-400 text-slate-900 font-semibold px-3 py-1 rounded-full text-sm shadow-[inset_0_-1px_0_rgba(0,0,0,0.15)]">
-                  ₦{listing.price?.toLocaleString() || 'N/A'}
-                </div>
-              </div>
-              <div className="p-4">
-                <h2 className="font-semibold text-lg truncate group-hover:text-lime-600 transition">
-                  {listing.title}
-                </h2>
-                <p className="text-slate-600 text-sm line-clamp-2 mb-3">
-                  {listing.description}
-                </p>
-                <div className="flex items-center text-slate-500 text-xs">
-                  <MapPin size={14} className="mr-1" />
-                  {listing.location}
-                </div>
-                {listing.createdAt && (
-                  <div className="flex items-center text-slate-400 text-xs mt-1">
-                    <Calendar size={12} className="mr-1" />
-                    {new Date(listing.createdAt).toLocaleDateString()}
-                  </div>
-                )}
               </div>
             </div>
-          </Link>
-        ))}
-      </div>
-    );
-  };
 
-  const renderPagination = () => {
-    if (totalPages <= 1) return null;
-
-    return (
-      <div className="flex justify-center mt-8 gap-3">
-        <button
-          onClick={() => goToPage(Math.max(1, filters.page - 1))}
-          disabled={filters.page === 1}
-          className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 transition disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm"
-        >
-          Previous
-        </button>
-        <span className="px-4 py-2 rounded-xl bg-lime-400 text-slate-900 font-medium text-sm shadow-[inset_0_-2px_0_rgba(0,0,0,0.15)]">
-          Page {filters.page} of {totalPages}
-        </span>
-        <button
-          onClick={() => goToPage(Math.min(totalPages, filters.page + 1))}
-          disabled={filters.page === totalPages}
-          className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 transition disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm"
-        >
-          Next
-        </button>
-      </div>
-    );
-  };
-
-  return (
-    <div className="min-h-screen bg-gray-50 px-4 py-8">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold text-gray-800">Marketplace</h1>
-          <div className="flex gap-3">
-            {hasActiveFilters && (
-              <button
-                onClick={clearAllFilters}
-                className="flex items-center gap-2 bg-slate-100 text-slate-700 px-4 py-2 rounded-lg hover:bg-slate-200 transition"
-              >
-                <RotateCcw size={16} />
-                Clear All
-              </button>
+            {/* Price Range Preview */}
+            {(minPrice !== null || maxPrice !== null) && (
+              <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-2 h-2 bg-lime-500 rounded-full"></div>
+                    <span className="text-sm font-medium text-gray-700">Current Price Range:</span>
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    ₦{minPrice || 10} - ₦{maxPrice || '∞'}
+                  </div>
+                </div>
+                <div className="mt-3 w-full bg-gray-200 rounded-full h-2">
+                  <div 
+                    className="bg-gradient-to-r from-lime-500 to-emerald-500 h-2 rounded-full transition-all duration-300"
+                    style={{ 
+                      width: `${maxPrice ? ((maxPrice - (minPrice || 10)) / (maxPrice * 2)) * 100 : 50}%`,
+                      marginLeft: `${minPrice ? ((minPrice - 10) / (maxPrice || 1000)) * 100 : 0}%`
+                    }}
+                  ></div>
+                </div>
+              </div>
             )}
-            <button
-              onClick={() => setShowFilters(true)}
-              className="lg:hidden flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition"
-            >
-              <Filter size={16} />
-              Filters
-            </button>
           </div>
         </div>
 
-        <SearchBar />
 
-        {/* Desktop filter bar */}
-        {renderFilterBar()}
 
-        {/* Mobile filter drawer */}
-        {renderMobileFilterDrawer()}
+        {/* Results Summary */}
+        <div className="mb-6 flex items-center justify-between">
+          <div className="text-sm text-gray-600">
+            Showing {filteredListings.length} of {listings.length} listings
+            {hasActiveFilters() && (
+              <span className="ml-2 text-lime-600">
+                (filtered results)
+              </span>
+            )}
+          </div>
+          
+          {/* Active Filters Display */}
+          {hasActiveFilters() && (
+            <div className="flex items-center gap-2 text-sm">
+              <span className="text-gray-500">Active filters:</span>
+              {search && (
+                <Badge variant="secondary" className="text-xs">
+                  Search: &quot;{search}&quot;
+                </Badge>
+              )}
+                             {(minPrice !== null || maxPrice !== null) && (
+                 <Badge variant="secondary" className="text-xs">
+                   Price: ₦{minPrice || 10} - ₦{maxPrice || '∞'}
+                 </Badge>
+               )}
+            </div>
+          )}
+        </div>
 
-        {/* Filter indicators */}
-        {renderFilterIndicators()}
+        {/* Listings Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {filteredListings.map((listing) => (
+            <ListingCard key={listing.id} listing={listing} />
+          ))}
+        </div>
 
-        {/* Listings */}
-        {renderListings()}
-
-        {/* Pagination */}
-        {renderPagination()}
+        {/* No Results */}
+        {filteredListings.length === 0 && hasActiveFilters() && (
+          <div className="text-center py-12">
+            <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+              <svg className="h-10 w-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No listings found</h3>
+            <p className="text-gray-600 mb-4">
+              {search ? `No results found for &quot;${search}&quot;` : 'No results match your current filters'}
+            </p>
+            <div className="space-y-3">
+              <p className="text-sm text-gray-500">Try:</p>
+              <div className="flex flex-wrap justify-center gap-2">
+                                 <Button 
+                   variant="outline" 
+                   size="sm"
+                   onClick={() => setSearch('')}
+                 >
+                   Clear search
+                 </Button>
+                
+                                 <Button 
+                   variant="outline" 
+                   size="sm"
+                   onClick={() => {
+                     useFilterStore.getState().setMinPrice(10);
+                     useFilterStore.getState().setMaxPrice(null);
+                   }}
+                 >
+                   Clear price range
+                 </Button>
+                <Button variant="outline" onClick={clearFilters}>
+                  Clear all filters
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
+  );
+}
+
+export default function ListingsPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ListingsPageContent />
+    </Suspense>
   );
 }

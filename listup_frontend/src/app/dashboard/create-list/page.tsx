@@ -23,16 +23,16 @@ export default function CreateListingPage() {
   const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [categoriesError, setCategoriesError] = useState<string | null>(null);
 
-  // Main categories we want to show
-  const mainCategories = [
-    "Fashion & Clothing",
-    "Beauty & Personal Care", 
-    "Food & Snacks",
-    "Handmade & Crafts"
-  ];
-
   // Fetch categories on component mount
   useEffect(() => {
+    // Main categories we want to show
+    const mainCategories = [
+      "Fashion & Clothing",
+      "Beauty & Personal Care", 
+      "Food & Snacks",
+      "Handmade & Crafts"
+    ];
+
     const loadCategories = async () => {
       try {
         setCategoriesLoading(true);
