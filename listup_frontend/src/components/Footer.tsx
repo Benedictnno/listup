@@ -1,9 +1,26 @@
 import React from "react";
 import { Facebook, Twitter, Instagram, Linkedin } from "lucide-react"; // 👈 make sure you import icons
+import Image from "next/image";
 
 const Footer: React.FC = () => {
   return (
     <footer className="bg-[#0B0B0E] text-slate-300">
+      {/* LOGO SECTION */}
+      <div className="mx-auto max-w-7xl px-4 py-8 md:px-6">
+        <div className="flex items-center justify-center">
+          <div className="flex items-center gap-3">
+            <Image 
+              src="/logo.svg" 
+              alt="ListUp Logo" 
+              width={40} 
+              height={40}
+              className="h-10 w-10"
+            />
+            <span className="text-2xl font-bold text-white">ListUp</span>
+          </div>
+        </div>
+      </div>
+
       {/* FOOTER / NEWSLETTER */}
       <div className="mx-auto max-w-7xl px-4 py-14 md:px-6">
         {/* CTA */}
@@ -93,7 +110,7 @@ const Footer: React.FC = () => {
 
         {/* Bottom bar */}
         <div className="mt-10 flex flex-col items-center justify-between gap-4 border-t border-white/10 pt-6 text-xs text-slate-400 md:flex-row">
-          <p>© {new Date().getFullYear()} Marketly, Inc. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} ListUp, Inc. All rights reserved.</p>
           <div className="flex items-center gap-4 text-slate-300">
             <a href="#" aria-label="Facebook" className="hover:text-white"><Facebook className="h-4 w-4" /></a>
             <a href="#" aria-label="Twitter" className="hover:text-white"><Twitter className="h-4 w-4" /></a>
