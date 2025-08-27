@@ -10,7 +10,7 @@ require('./config/passport'); // init strategies
 const app = express();
 app.use(cors(
     {
-        origin: ['http://localhost:3000', 'https://listup-three.vercel.app',"www.listup.ng"],
+        origin: ['http://localhost:3000', 'https://listup-three.vercel.app',"https://listup.ng"],
         methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
         allowedHeaders: ['Content-Type', 'Authorization'],
          credentials: true, 
