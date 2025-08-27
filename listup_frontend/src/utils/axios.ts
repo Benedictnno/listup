@@ -6,7 +6,7 @@ import axios from "axios";
 // Get base URL from environment variable, with proper fallback
 const getBaseURL = () => {
   // For now, use hardcoded localhost URL
-  return "http://localhost:4000/api";
+  return process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api";
 };
 
 const api = axios.create({
