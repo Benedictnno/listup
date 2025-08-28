@@ -12,13 +12,10 @@ const app = express();
 // CORS configuration
 const corsOptions = {
     origin: [
+        'https://listup.ng', // Custom domain
         'http://localhost:3000', // Local development
         'https://listup-three.vercel.app', // Old Vercel project
-        'https://listup.ng', // Custom domain
-        // Add your new Vercel project domain here
-        'https://listup-frontend.vercel.app', // Common pattern
-        'https://listup-marketplace.vercel.app', // Common pattern
-        'https://listup-app.vercel.app', // Common pattern
+     
         // You can also use a wildcard for all Vercel subdomains (less secure but more flexible)
         /^https:\/\/.*\.vercel\.app$/, // All Vercel subdomains
     ],
