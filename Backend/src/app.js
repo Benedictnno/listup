@@ -12,6 +12,7 @@ const app = express();
 // CORS configuration
 const corsOptions = {
     origin: [
+        '*',
         'https://listup.ng', // Custom domain
         'http://localhost:3000', // Local development
         'https://listup-three.vercel.app', // Old Vercel project
