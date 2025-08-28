@@ -27,6 +27,7 @@ const corsOptions = {
         // You can also use a wildcard for all Vercel subdomains (less secure but more flexible)
         /^https:\/\/.*\.vercel\.app$/, // All Vercel subdomains
     ],
+    
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
     credentials: true,

@@ -3,7 +3,7 @@ import { ArrowRight } from "lucide-react";
 
 export function PrimaryButton({ children }: { children: React.ReactNode }) {
   return (
-    <button className="inline-flex items-center gap-2 cursor-pointer rounded-xl bg-lime-400 px-4 py-2 text-sm font-semibold text-slate-900 shadow-[inset_0_-2px_0_rgba(0,0,0,0.15)] transition hover:-translate-y-0.5 hover:bg-lime-300 focus:outline-none focus:ring-4 focus:ring-lime-200">
+    <button className="inline-flex items-center gap-2 cursor-pointer rounded-xl bg-lime-400 px-4 py-2 text-sm max-sm:text-xs font-semibold text-slate-900 shadow-[inset_0_-2px_0_rgba(0,0,0,0.15)] transition hover:-translate-y-0.5 hover:bg-lime-300 focus:outline-none focus:ring-4 focus:ring-lime-200">
       {children}
       <ArrowRight className="h-4 w-4" />
     </button>

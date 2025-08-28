@@ -12,5 +12,7 @@ router.use('/phone', require('./phone.routes'));
 router.use('/ads', require('./ads.routes'));
 router.use('/payments', require('./payments.routes'));
 router.use('/settings', require('./settings.routes'));
+router.use('/favourites', require('./favourites.routes'));
+router.use('/saved-searches', require('./saved-searches.routes'));
 
 module.exports = router;

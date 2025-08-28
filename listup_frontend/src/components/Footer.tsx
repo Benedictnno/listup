@@ -1,25 +1,11 @@
 import React from "react";
 import { Facebook, Twitter, Instagram, Linkedin } from "lucide-react"; // 👈 make sure you import icons
-import Image from "next/image";
 
 const Footer: React.FC = () => {
   return (
     <footer className="bg-[#0B0B0E] text-slate-300">
       {/* LOGO SECTION */}
-      <div className="mx-auto max-w-7xl px-4 py-8 md:px-6">
-        <div className="flex items-center justify-center">
-          <div className="flex items-center gap-3">
-            <Image 
-              src="/logo.svg" 
-              alt="ListUp Logo" 
-              width={40} 
-              height={40}
-              className="h-10 w-10"
-            />
-            <span className="text-2xl font-bold text-white">ListUp</span>
-          </div>
-        </div>
-      </div>
+      
 
       {/* FOOTER / NEWSLETTER */}
       <div className="mx-auto max-w-7xl px-4 py-14 md:px-6">
