@@ -1,5 +1,5 @@
 // Server-side API functions for Next.js App Router
-const API_BASE_URL = "http://localhost:4000/api";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api";
 
 // Define proper types for the API
 interface CreateListingPayload {
@@ -28,13 +28,12 @@ interface UpdateListingPayload {
 // ✅ Fetch all listings (Server-side)
 export async function fetchListings() {
   try {
-    console.log("Fetching all listings");
-    console.log("API Base URL:", API_BASE_URL);
-    
+   
     const response = await fetch(`${API_BASE_URL}/listings`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
       },
       // Add cache options for better performance
       next: { revalidate: 60 } // Revalidate every 60 seconds
@@ -125,7 +124,11 @@ export async function fetchListingById(listingId: string) {
 // ✅ Fetch all listings for a vendor (Client-side)
 export async function fetchVendorListings(vendorId: string | undefined) {
   try {
-    const res = await fetch(`${API_BASE_URL}/listings/vendors/${vendorId}/listings`);
+    const res = await fetch(`${API_BASE_URL}/listings/vendors/${vendorId}/listings`,{
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      },
+    });
     if (!res.ok) {
       throw new Error("Failed to fetch listings");
     }
