@@ -3,8 +3,6 @@ const nextConfig = {
   images: {
     domains: ["cloudinary.com","res.cloudinary.com","images.unsplash.com"], // ✅ Cloudinary images usually come from here
   },
-  // Ensure proper output for Vercel
-  output: 'standalone',
   // Add trailing slash for better compatibility
   trailingSlash: false,
   // Webpack configuration to handle native modules
