@@ -201,3 +201,251 @@ exports.login = async (req, res, next) => {
     });
   }
 };
+
+// Generate a random 6-digit verification code
+function generateVerificationCode() {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+// Send verification code via email (placeholder - implement with your email service)
+async function sendVerificationEmail(email, code) {
+  // TODO: Implement email sending logic
+  // For now, just log the code (in production, use a proper email service)
+  console.log(`📧 Verification code for ${email}: ${code}`);
+  
+  // Example email service integration:
+  // const emailService = require('../lib/email');
+  // await emailService.sendPasswordResetCode(email, code);
+  
+  return true;
+}
+
+exports.forgotPassword = async (req, res, next) => {
+  try {
+    // Check for validation errors
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      const errorMessages = errors.array().map(err => ({
+        field: err.path,
+        message: err.msg,
+        value: err.value
+      }));
+      
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: errorMessages
+      });
+    }
+
+    const { email } = req.body;
+    const normalizedEmail = email.toLowerCase().trim();
+
+    console.log('🔐 Password reset requested for:', normalizedEmail);
+
+    // Check if user exists
+    const user = await prisma.user.findUnique({
+      where: { email: normalizedEmail }
+    });
+
+    if (!user) {
+      // Don't reveal if email exists or not for security
+      return res.json({
+        success: true,
+        message: 'If an account with this email exists, a verification code has been sent'
+      });
+    }
+
+    // Generate 6-digit verification code
+    const verificationCode = generateVerificationCode();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes from now
+
+    // Delete any existing unused codes for this email
+    await prisma.passwordReset.deleteMany({
+      where: {
+        email: normalizedEmail,
+        used: false
+      }
+    });
+
+    // Create new verification code
+    await prisma.passwordReset.create({
+      data: {
+        email: normalizedEmail,
+        code: verificationCode,
+        expiresAt: expiresAt
+      }
+    });
+
+    // Send verification code via email
+    await sendVerificationEmail(normalizedEmail, verificationCode);
+
+    console.log('✅ Verification code created and sent for:', normalizedEmail);
+
+    res.json({
+      success: true,
+      message: 'Verification code sent to your email'
+    });
+
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error during password reset request'
+    });
+  }
+};
+
+exports.verifyResetCode = async (req, res, next) => {
+  try {
+    // Check for validation errors
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      const errorMessages = errors.array().map(err => ({
+        field: err.path,
+        message: err.msg,
+        value: err.value
+      }));
+      
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: errorMessages
+      });
+    }
+
+    const { email, code } = req.body;
+    const normalizedEmail = email.toLowerCase().trim();
+
+    console.log('🔍 Verifying reset code for:', normalizedEmail);
+
+    // Find the verification code
+    const passwordReset = await prisma.passwordReset.findFirst({
+      where: {
+        email: normalizedEmail,
+        code: code,
+        used: false,
+        expiresAt: {
+          gt: new Date() // Not expired
+        }
+      }
+    });
+
+    if (!passwordReset) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid or expired verification code'
+      });
+    }
+
+    console.log('✅ Reset code verified for:', normalizedEmail);
+
+    res.json({
+      success: true,
+      message: 'Verification code is valid'
+    });
+
+  } catch (error) {
+    console.error('Verify reset code error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error during code verification'
+    });
+  }
+};
+
+exports.resetPassword = async (req, res, next) => {
+  try {
+    // Check for validation errors
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      const errorMessages = errors.array().map(err => ({
+        field: err.path,
+        message: err.msg,
+        value: err.value
+      }));
+      
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: errorMessages
+      });
+    }
+
+    const { email, code, newPassword } = req.body;
+    const normalizedEmail = email.toLowerCase().trim();
+
+    console.log('🔄 Resetting password for:', normalizedEmail);
+
+    // Find and validate the verification code
+    const passwordReset = await prisma.passwordReset.findFirst({
+      where: {
+        email: normalizedEmail,
+        code: code,
+        used: false,
+        expiresAt: {
+          gt: new Date() // Not expired
+        }
+      }
+    });
+
+    if (!passwordReset) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid or expired verification code'
+      });
+    }
+
+    // Check if user exists
+    const user = await prisma.user.findUnique({
+      where: { email: normalizedEmail }
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    // Hash the new password
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
+
+    // Update user's password
+    await prisma.user.update({
+      where: { email: normalizedEmail },
+      data: {
+        password: hashedPassword,
+        updatedAt: new Date()
+      }
+    });
+
+    // Mark the verification code as used
+    await prisma.passwordReset.update({
+      where: { id: passwordReset.id },
+      data: { used: true }
+    });
+
+    // Delete any other unused codes for this email
+    await prisma.passwordReset.deleteMany({
+      where: {
+        email: normalizedEmail,
+        used: false
+      }
+    });
+
+    console.log('✅ Password reset successful for:', normalizedEmail);
+
+    res.json({
+      success: true,
+      message: 'Password reset successfully'
+    });
+
+  } catch (error) {
+    console.error('Reset password error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error during password reset'
+    });
+  }
+};

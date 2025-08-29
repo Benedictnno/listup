@@ -23,7 +23,7 @@ export default async function SingleProductPage({
       notFound();
     }
 
-    console.log("Listing fetched successfully:", listing);
+   
     return <ListingDetails listing={listing} />;
   } catch (error: unknown) {
     console.error("Error in SingleProductPage:", error);

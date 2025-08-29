@@ -528,6 +528,7 @@ export default function VendorListingsPage() {
               {/* Product Image */}
               <Image 
                 width={300}
+                height={300}
                 src={listing.images?.[0] || "/placeholder.png"}
                 alt={listing.title}
                 className="w-full h-40 object-cover rounded-lg"

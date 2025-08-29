@@ -87,4 +87,44 @@ router.post('/login',
   AuthCtrl.login
 );
 
+// Password reset routes
+router.post('/forgot-password',
+  [
+    body('email')
+      .isEmail()
+      .normalizeEmail()
+      .withMessage('Please provide a valid email address'),
+  ],
+  AuthCtrl.forgotPassword
+);
+
+router.post('/verify-reset-code',
+  [
+    body('email')
+      .isEmail()
+      .normalizeEmail()
+      .withMessage('Please provide a valid email address'),
+    body('code')
+      .isLength({ min: 6, max: 6 })
+      .withMessage('Verification code must be exactly 6 digits'),
+  ],
+  AuthCtrl.verifyResetCode
+);
+
+router.post('/reset-password',
+  [
+    body('email')
+      .isEmail()
+      .normalizeEmail()
+      .withMessage('Please provide a valid email address'),
+    body('code')
+      .isLength({ min: 6, max: 6 })
+      .withMessage('Verification code must be exactly 6 digits'),
+    body('newPassword')
+      .isLength({ min: 6 })
+      .withMessage('Password must be at least 6 characters long'),
+  ],
+  AuthCtrl.resetPassword
+);
+
 module.exports = router;

@@ -3,8 +3,9 @@ import { useState } from "react";
 import { useSignupStore } from "@/store/signupStore";
 import { useAuthStore } from "@/store/authStore";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Store, AlertCircle, CheckCircle } from "lucide-react";
+import { ArrowRight, Store, AlertCircle, CheckCircle, Eye, EyeOff, RefreshCw } from "lucide-react";
 import Link from "next/link";
+import { parseApiError, parseValidationErrors, getFieldErrorMessage, isRetryableError } from "@/utils/errorHandler";
 
 interface ValidationError {
   field: string;
@@ -21,6 +22,8 @@ export default function SignupPage() {
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [success, setSuccess] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
 
   const clearErrors = () => {
     setError("");
@@ -45,36 +48,33 @@ export default function SignupPage() {
     let isValid = true;
 
     // Name validation
-    if (!form.name.trim()) {
-      setFieldError("name", "Full name is required");
-      isValid = false;
-    } else if (form.name.trim().length < 2) {
-      setFieldError("name", "Name must be at least 2 characters long");
+    const nameError = getFieldErrorMessage('name', form.name);
+    if (nameError) {
+      setFieldError("name", nameError);
       isValid = false;
     }
 
     // Email validation
-    if (!form.email.trim()) {
-      setFieldError("email", "Email address is required");
-      isValid = false;
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
-      setFieldError("email", "Please enter a valid email address");
+    const emailError = getFieldErrorMessage('email', form.email);
+    if (emailError) {
+      setFieldError("email", emailError);
       isValid = false;
     }
 
     // Password validation
-    if (!form.password) {
-      setFieldError("password", "Password is required");
-      isValid = false;
-    } else if (form.password.length < 6) {
-      setFieldError("password", "Password must be at least 6 characters long");
+    const passwordError = getFieldErrorMessage('password', form.password);
+    if (passwordError) {
+      setFieldError("password", passwordError);
       isValid = false;
     }
 
     // Phone validation (optional but if provided, must be valid)
-    if (form.phone.trim() && form.phone.trim().length < 10) {
-      setFieldError("phone", "Phone number must be at least 10 digits");
-      isValid = false;
+    if (form.phone.trim()) {
+      const phoneError = getFieldErrorMessage('phone', form.phone);
+      if (phoneError) {
+        setFieldError("phone", phoneError);
+        isValid = false;
+      }
     }
 
     if (!isValid) {
@@ -88,27 +88,21 @@ export default function SignupPage() {
     clearErrors();
     let isValid = true;
 
-    if (!form.storeName?.trim()) {
-      setFieldError("storeName", "Store name is required");
-      isValid = false;
-    } else if (form.storeName.trim().length < 2) {
-      setFieldError("storeName", "Store name must be at least 2 characters long");
+    const storeNameError = getFieldErrorMessage('storeName', form.storeName || '');
+    if (storeNameError) {
+      setFieldError("storeName", storeNameError);
       isValid = false;
     }
 
-    if (!form.storeAddress?.trim()) {
-      setFieldError("storeAddress", "Store address is required");
-      isValid = false;
-    } else if (form.storeAddress.trim().length < 5) {
-      setFieldError("storeAddress", "Store address must be at least 5 characters long");
+    const storeAddressError = getFieldErrorMessage('storeAddress', form.storeAddress || '');
+    if (storeAddressError) {
+      setFieldError("storeAddress", storeAddressError);
       isValid = false;
     }
 
-    if (!form.businessCategory?.trim()) {
-      setFieldError("businessCategory", "Business category is required");
-      isValid = false;
-    } else if (form.businessCategory.trim().length < 2) {
-      setFieldError("businessCategory", "Business category must be at least 2 characters long");
+    const businessCategoryError = getFieldErrorMessage('businessCategory', form.businessCategory || '');
+    if (businessCategoryError) {
+      setFieldError("businessCategory", businessCategoryError);
       isValid = false;
     }
 
@@ -150,9 +144,6 @@ export default function SignupPage() {
     clearErrors();
     
     try {
-      // Debug: Show form state
-      console.log('📝 Form state before processing:', form);
-      
       // Prepare signup data based on role
       const signupData = {
         name: form.name.trim(),
@@ -169,9 +160,6 @@ export default function SignupPage() {
         }),
       };
 
-      // Debug: Log what we're sending
-      console.log('📤 Sending signup data:', signupData);
-
       // Create account
       await signup(signupData);
       
@@ -185,30 +173,27 @@ export default function SignupPage() {
     } catch (err: unknown) {
       console.error("Signup error:", err);
       
-      // Handle different error types
-      if (err instanceof Error) {
-        setError(err.message);
-              } else if (typeof err === 'object' && err !== null && 'response' in err) {
-          const response = (err as { response?: { data?: { message?: string; errors?: ValidationError[] } } }).response;
-          if (response?.data?.message) {
-            setError(response.data.message);
-          } else if (response?.data?.errors) {
-            // Handle field-specific errors from backend
-            const errors = response.data.errors;
-            errors.forEach((error: ValidationError) => {
-              if (error.field) {
-                setFieldError(error.field, error.message);
-              }
-            });
-            
-            if (errors.length > 0) {
-              setError("Please fix the errors below to continue");
-            }
-          } else {
-            setError("Signup failed. Please try again.");
+      // Parse API errors using the new utility
+      const errorMessage = parseApiError(err);
+      setError(errorMessage);
+      
+      // Handle field-specific validation errors
+      const validationErrors = parseValidationErrors(err);
+      if (validationErrors.length > 0) {
+        validationErrors.forEach((error: ValidationError) => {
+          if (error.field) {
+            setFieldError(error.field, error.message);
           }
-        } else {
-        setError("An unexpected error occurred. Please try again.");
+        });
+        
+        if (validationErrors.length > 0) {
+          setError("Please fix the errors below to continue");
+        }
+      }
+      
+      // Increment retry count for retryable errors
+      if (isRetryableError(err)) {
+        setRetryCount(prev => prev + 1);
       }
     } finally {
       setLoading(false);
@@ -233,7 +218,14 @@ export default function SignupPage() {
   };
 
   const isFieldValid = (field: string): boolean => {
-    return !fieldErrors[field] && Boolean(form[field as keyof typeof form]?.trim());
+    const value = form[field as keyof typeof form] || '';
+    return !getFieldError(field) && Boolean(value.toString().trim());
+  };
+
+  const handleRetry = () => {
+    setError("");
+    setRetryCount(0);
+    handleSubmit(new Event('submit') as any);
   };
 
   return (
@@ -261,9 +253,23 @@ export default function SignupPage() {
 
         {/* Error Display */}
         {error && (
-          <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm flex items-center gap-2">
-            <AlertCircle className="w-4 h-4" />
-            {error}
+          <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm">
+            <div className="flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+              <div className="flex-1">
+                <p className="font-medium">{error}</p>
+                {isRetryableError(error) && retryCount < 3 && (
+                  <button
+                    type="button"
+                    onClick={handleRetry}
+                    className="mt-2 inline-flex items-center gap-1 text-xs text-red-600 hover:text-red-700 underline"
+                  >
+                    <RefreshCw className="w-3 h-3" />
+                    Try again
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
         )}
 
@@ -371,20 +377,29 @@ export default function SignupPage() {
               <label className="block text-sm font-medium mb-1 text-slate-700">
                 Password *
               </label>
-              <input
-                type="password"
-                value={form.password}
-                onChange={(e) => handleFieldChange("password", e.target.value)}
-                placeholder="••••••••"
-                className={`w-full border p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-lime-200 focus:border-lime-400 transition-colors ${
-                  getFieldError("password") 
-                    ? "border-red-300 bg-red-50" 
-                    : isFieldValid("password") 
-                    ? "border-green-300 bg-green-50" 
-                    : "border-slate-300"
-                }`}
-                required
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={form.password}
+                  onChange={(e) => handleFieldChange("password", e.target.value)}
+                  placeholder="••••••••"
+                  className={`w-full border p-3 pr-12 rounded-xl focus:outline-none focus:ring-2 focus:ring-lime-200 focus:border-lime-400 transition-colors ${
+                    getFieldError("password") 
+                      ? "border-red-300 bg-red-50" 
+                      : isFieldValid("password") 
+                      ? "border-green-300 bg-green-50" 
+                      : "border-slate-300"
+                  }`}
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
               {getFieldError("password") && (
                 <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
                   <AlertCircle className="w-3 h-3" />
@@ -416,8 +431,17 @@ export default function SignupPage() {
               disabled={loading}
               className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-lime-400 px-4 py-3 text-sm font-semibold text-slate-900 shadow-[inset_0_-2px_0_rgba(0,0,0,0.15)] transition hover:-translate-y-0.5 hover:bg-lime-300 focus:outline-none focus:ring-4 focus:ring-lime-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
             >
-              {loading ? "Processing..." : (form.role === "VENDOR" ? "Next Step" : "Create Account")}
-              <ArrowRight className="h-4 w-4" />
+              {loading ? (
+                <>
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                <>
+                  {form.role === "VENDOR" ? "Next Step" : "Create Account"}
+                  <ArrowRight className="h-4 w-4" />
+                </>
+              )}
             </button>
           </form>
         )}
@@ -537,8 +561,17 @@ export default function SignupPage() {
                 disabled={loading}
                 className="w-1/2 inline-flex items-center justify-center gap-2 rounded-xl bg-lime-400 px-4 py-3 text-sm font-semibold text-slate-900 shadow-[inset_0_-2px_0_rgba(0,0,0,0.15)] transition hover:-translate-y-0.5 hover:bg-lime-300 focus:outline-none focus:ring-4 focus:ring-lime-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {loading ? "Creating..." : "Create Account"}
-                {!loading && <ArrowRight className="h-4 w-4" />}
+                {loading ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 animate-spin" />
+                    Creating...
+                  </>
+                ) : (
+                  <>
+                    Create Account
+                    <ArrowRight className="h-4 w-4" />
+                  </>
+                )}
               </button>
             </div>
           </form>

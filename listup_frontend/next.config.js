@@ -6,7 +6,7 @@ const nextConfig = {
   // Add trailing slash for better compatibility
   trailingSlash: false,
   // Webpack configuration to handle native modules
-  webpack: (config: any, { isServer }: { isServer: boolean }) => {
+  webpack: (config, { isServer }) => {
     if (!isServer) {
       config.resolve.fallback = {
         ...config.resolve.fallback,
@@ -19,4 +19,4 @@ const nextConfig = {
   },
 };
 
-export default nextConfig;
+module.exports = nextConfig;

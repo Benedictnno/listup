@@ -152,6 +152,9 @@ export async function createListing(listingData: FormData) {
       formData.append("image", img as File); // ✅ explicitly tell TS it's a File
 
       const res = await fetch(`${API_BASE_URL}/uploads/image`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
         method: 'POST',
         body: formData,
       });

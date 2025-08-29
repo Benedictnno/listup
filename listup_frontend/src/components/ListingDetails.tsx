@@ -26,6 +26,7 @@ type Listing = {
 
 export default function ListingDetails({ listing }: { listing: Listing }) {
   const [selectedImage, setSelectedImage] = useState(listing.images[0]);
+  const [showPhone , setShowPhone] = useState(false);
 
   return (
       <div className="grid md:grid-cols-3 gap-6 p-6">
@@ -49,7 +50,7 @@ export default function ListingDetails({ listing }: { listing: Listing }) {
               alt={`Thumbnail ${idx + 1}`}
               width={80}
               height={80}
-              className={`w-20 h-20 object-cover rounded-lg cursor-pointer border-2 ${
+              className={`w-20 h-20 object-cover object-center rounded-lg cursor-pointer border-2 ${
                 selectedImage === img ? "border-green-600" : "border-transparent"
               }`}
               onClick={() => setSelectedImage(img)}
@@ -81,9 +82,11 @@ export default function ListingDetails({ listing }: { listing: Listing }) {
           <h2 className="font-semibold">Seller Info</h2>
           <p className="mt-1">{listing.seller.name}</p>
           <div className="flex gap-2 mt-3">
-            <button className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-xl shadow hover:bg-green-700">
-              <Phone size={18} /> Show Contact
-            </button>
+           {showPhone ? <button className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-xl shadow hover:bg-green-700" onClick={() => setShowPhone(false)}>
+              <Phone size={18} /> {listing.seller.phone}
+            </button> : <button className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-xl shadow hover:bg-green-700" onClick={() => setShowPhone(true)}>
+              <Phone size={18} /> Show Contact 
+            </button>}
             <button className="flex items-center gap-2 px-4 py-2 border rounded-xl shadow hover:bg-gray-100">
               <MessageSquare size={18} /> Start Chat
             </button>

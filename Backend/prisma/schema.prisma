@@ -52,6 +52,10 @@ model User {
   zipCode      String?
   country      String?
 
+  // Password reset fields
+  resetPasswordToken    String?
+  resetPasswordExpires  DateTime?
+
   // Relations
   listings             Listing[]
   ads                  Ad[]
@@ -293,4 +297,18 @@ model NotificationSettings {
 
   userId String @unique @db.ObjectId
   user   User   @relation(fields: [userId], references: [id])
+}
+
+// Password reset verification codes
+model PasswordReset {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  email     String
+  code      String   // 6-digit verification code
+  expiresAt DateTime // When the code expires
+  used      Boolean  @default(false) // Whether the code has been used
+  createdAt DateTime @default(now())
+  
+  // Index for quick lookups
+  @@index([email, code])
+  @@index([expiresAt])
 }
