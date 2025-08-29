@@ -106,7 +106,7 @@ exports.getAllAds = async (req, res, next) => {
       orderBy: { createdAt: 'desc' },
     });
 
-    console.log(`Total ads found: ${ads.length}`);
+
     res.json(ads);
   } catch (e) {
     console.error("Error fetching all ads:", e);
@@ -118,7 +118,7 @@ exports.getAllAds = async (req, res, next) => {
 exports.getActiveAds = async (req, res, next) => {
   try {
     const now = new Date();
-    console.log(`Fetching active ads at: ${now.toISOString()}`);
+    
     
     const ads = await prisma.ad.findMany({
       where: {
@@ -158,7 +158,7 @@ exports.getActiveAds = async (req, res, next) => {
       orderBy: { createdAt: 'desc' },
     });
 
-    console.log(`Found ${ads.length} active ads`);
+   
     res.json(ads);
   } catch (e) {
     console.error("Error fetching active ads:", e);
@@ -270,7 +270,7 @@ exports.updateAdStatus = async (req, res, next) => {
 exports.getAdsByVendor = async (req, res, next) => {
   try {
     const { vendorId } = req.params;
-    console.log(`🔍 Fetching ads for vendor: ${vendorId}`);
+  
 
     const ads = await prisma.ad.findMany({
       where: { vendorId },
@@ -293,7 +293,6 @@ exports.getAdsByVendor = async (req, res, next) => {
       orderBy: { createdAt: 'desc' },
     });
 
-    console.log(`✅ Found ${ads.length} ads for vendor ${vendorId}`);
     res.json(ads);
   } catch (e) {
     console.error(`❌ Error fetching ads for vendor ${req.params.vendorId}:`, e);

@@ -1,25 +1,17 @@
+
 import type { Metadata } from "next";
-import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import NavBar from "@/components/NavBar";
 import Footer from "@/components/Footer";
 import AuthProvider from "@/components/AuthProvider";
 
-const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
-});
-
-const jetbrainsMono = JetBrains_Mono({
-  variable: "--font-jetbrains-mono",
-  subsets: ["latin"],
-});
-
 export const metadata: Metadata = {
   title: "ListUp - Marketplace",
   description: "Find your next great deal on ListUp, the community-driven marketplace for buying and selling.",
   icons: {
-    icon: "/images/lu.png",
+    icon: "/favicon.png",
+    shortcut: "/favicon.png",
+    apple: "/favicon.png",
   },
 };
 
@@ -30,9 +22,16 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${inter.variable} ${jetbrainsMono.variable} antialiased`}
-      >
+      <head>
+        {/* Google Fonts CDN */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link 
+          href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Roboto+Mono:wght@400;500;600;700&display=swap" 
+          rel="stylesheet" 
+        />
+      </head>
+      <body className="antialiased">
         <AuthProvider>
           <NavBar />
           {children}

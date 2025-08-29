@@ -15,14 +15,10 @@ import Image from "next/image";
  * - This file can be used directly as `app/page.tsx` in a Next.js project.
  */
 
-
-
-
-
 export default function MarketplaceLanding() {
 
   return (
-    <div className="min-h-screen w-full font-[ui-sans-serif] text-slate-800">
+    <div className="min-h-screen w-full text-slate-800 font-montserrat">
       {/* NAVBAR */}
 
       {/* HERO */}
@@ -36,12 +32,12 @@ export default function MarketplaceLanding() {
             className="relative z-10"
           >
             <SectionEyebrow>New</SectionEyebrow>
-            <h1 className="text-3xl font-bold leading-tight text-white md:text-4xl">
+            <h1 className="text-3xl font-bold leading-tight text-white md:text-4xl font-montserrat">
               Find Your Next Great
               <br />
               Deal Today!
             </h1>
-            <p className="mt-3 max-w-xl text-sm leading-relaxed text-slate-300">
+            <p className="mt-3 max-w-xl text-sm leading-relaxed text-slate-300 font-montserrat">
               Browse thousands of verified listings across categories. Buy and sell
               smarter with our community-driven marketplace.
             </p>
@@ -69,17 +65,17 @@ export default function MarketplaceLanding() {
                 <Search className="h-5 w-10 ml-2" />
                 <input 
                   type="text" 
-                  className="w-full h-full bg-transparent text-white outline-0 px-2" 
+                  className="w-full h-full bg-transparent text-white outline-0 px-2 font-montserrat" 
                   placeholder="Search listings..."
                 />
                 <button 
                   type="submit" 
-                  className="h-full px-4 bg-lime-400 text-slate-900 font-medium hover:bg-lime-300 transition"
+                  className="h-full px-4 bg-lime-400 text-slate-900 font-medium hover:bg-lime-300 transition font-montserrat"
                 >
                   Search
                 </button>
             </form>
-            <p className="mt-2 text-xs text-slate-400">No fees to browse. Secure checkout on eligible items.</p>
+            <p className="mt-2 text-xs text-slate-400 font-montserrat">No fees to browse. Secure checkout on eligible items.</p>
           </motion.div>
 
           <motion.div
@@ -96,7 +92,7 @@ export default function MarketplaceLanding() {
                 height={600}
                 className="h-72 w-full object-cover md:h-96"
               />
-              <div className="absolute bottom-3 right-3 rounded-xl bg-slate-900/80 px-3 py-1.5 text-[11px] text-white backdrop-blur">
+              <div className="absolute bottom-3 right-3 rounded-xl bg-slate-900/80 px-3 py-1.5 text-[11px] text-white backdrop-blur font-montserrat">
                 Verified Sellers Only
               </div>
             </div>
@@ -113,10 +109,10 @@ export default function MarketplaceLanding() {
         <div className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-8 px-4 py-14 md:grid-cols-2 md:px-6">
           <div>
             <SectionEyebrow>Blog</SectionEyebrow>
-            <h3 className="text-2xl font-semibold text-slate-900 md:text-3xl">
+            <h3 className="text-2xl font-semibold text-slate-900 md:text-3xl font-montserrat">
               Find Your Next Great Deal Today!
             </h3>
-            <p className="mt-2 text-sm text-slate-600">
+            <p className="mt-2 text-sm text-slate-600 font-montserrat">
               Discover hidden gems and smart tips for buying pre‑loved items.
               We curate the best deals so you don’t have to.
             </p>
@@ -164,8 +160,8 @@ export default function MarketplaceLanding() {
           <div className="absolute inset-0 bg-slate-900/60"/>
           <div className="relative flex max-sm:flex-col max-sm:p-8 z-10 mx-auto h-full max-w-7xl items-center justify-between px-4 md:px-6">
             <div >
-              <h3 className="text-lg font-semibold text-white md:text-2xl">Discover Amazing Deals Today!</h3>
-              <p className="mt-1 text-sm text-slate-200">Limited‑time offers across popular categories.</p>
+              <h3 className="text-lg font-semibold text-white md:text-2xl font-montserrat">Discover Amazing Deals Today!</h3>
+              <p className="mt-1 text-sm text-slate-200 font-montserrat">Limited‑time offers across popular categories.</p>
             </div>
             <div className=" m-auto">
               <PrimaryButton>Explore Now</PrimaryButton>
@@ -179,8 +175,8 @@ export default function MarketplaceLanding() {
         <div className="mx-auto max-w-7xl px-4 py-14 md:px-6">
           <div className="mb-8 text-center">
             <SectionEyebrow>Tips</SectionEyebrow>
-            <h3 className="text-2xl font-semibold text-white md:text-3xl">Buying and Selling Tips</h3>
-            <p className="mt-2 text-sm text-slate-300">Actionable insights to help you transact with confidence.</p>
+            <h3 className="text-2xl font-semibold text-white md:text-3xl font-montserrat">Buying and Selling Tips</h3>
+            <p className="mt-2 text-sm text-slate-300 font-montserrat">Actionable insights to help you transact with confidence.</p>
           </div>
 
           <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
@@ -188,7 +184,7 @@ export default function MarketplaceLanding() {
               <article key={i} className="overflow-hidden rounded-2xl border border-white/10 bg-white/5 shadow-sm">
                 <Image src={t.img} alt={t.title} width={500} height={300} className="h-44 w-full object-cover" />
                 <div className="p-4">
-                  <h4 className="text-base font-semibold text-white">{t.title}</h4>
+                  <h4 className="text-base font-semibold text-white font-montserrat">{t.title}</h4>
                   <div className="mt-3 flex items-center justify-between text-[11px] text-slate-300">
                     <span>3 min read</span>
                     <a href="#" className="inline-flex items-center gap-1 font-semibold text-white/90 hover:text-white">

@@ -74,7 +74,7 @@ exports.search = async (req, res, next) => {
 };
 
 exports.getOne = async (req, res, next) => {
-  console.log( req.params.id);
+ 
   
   try {
     const item = await prisma.listing.findUnique({

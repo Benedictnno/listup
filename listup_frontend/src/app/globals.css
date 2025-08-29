@@ -2,12 +2,30 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  html {
+    font-family: 'Montserrat', system-ui, sans-serif;
+  }
+  
+  body {
+    font-family: 'Montserrat', system-ui, sans-serif;
+  }
+}
+
 @layer utilities {
   .line-clamp-2 {
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+  }
+  
+  .font-montserrat {
+    font-family: 'Montserrat', system-ui, sans-serif;
+  }
+  
+  .font-roboto-mono {
+    font-family: 'Roboto Mono', monospace;
   }
 }
 

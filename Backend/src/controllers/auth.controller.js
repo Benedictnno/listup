@@ -35,7 +35,7 @@ exports.register = async (req, res, next) => {
       businessCategory
     } = req.body;
 
-    console.log('✅ Registration attempt for:', { email, role, name, phone: phone || 'not provided' });
+    console.log('Registration attempt for:', { email, role, name, phone: phone || 'not provided' });
 
     // Check if email already exists
     const existingUser = await prisma.user.findUnique({ 

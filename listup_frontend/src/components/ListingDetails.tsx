@@ -30,16 +30,16 @@ export default function ListingDetails({ listing }: { listing: Listing }) {
   const [showPhone , setShowPhone] = useState(false);
 
   return (
-      <div className="grid md:grid-cols-3 gap-6 p-6">
+      <div className="grid md:grid-cols-4 gap-6 p-6 lg:mx-24">
       {/* Left - Images */}
       <div className="col-span-2">
         {/* Main Image */}
         <Image
           src={selectedImage}
           alt={listing.title}
-          width={600}
-          height={400}
-          className="w-full h-[400px] object-cover rounded-xl shadow"
+          width={100}
+          height={100}
+          className="w-auto h-[400px] object-center rounded-xl shadow"
         />
 
         {/* Thumbnail Gallery */}
@@ -67,7 +67,7 @@ export default function ListingDetails({ listing }: { listing: Listing }) {
       </div>
 
       {/* Right - Info */}
-      <div className="col-span-1 flex flex-col gap-4">
+      <div className="col-span-2 flex flex-col gap-4 lg:mx-24">
         <div>
           <h1 className="text-2xl font-semibold">
             {listing.title || "Untitled"}
