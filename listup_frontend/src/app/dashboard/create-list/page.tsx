@@ -174,7 +174,7 @@ export default function CreateListingPage() {
                           : "Select a category"
                   } />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="max-h-[200px] overflow-y-auto bg-white">
                   {categories.map((category) => (
                     <SelectItem key={category.id} value={category.id}>
                       {category.name}
@@ -186,20 +186,22 @@ export default function CreateListingPage() {
                 <p className="text-sm text-red-600 mt-1">{categoriesError}</p>
               )}
               {!categoriesLoading && !categoriesError && categories.length > 0 && (
-                <div className="mt-2">
-                  <p className="text-sm text-muted-foreground">
-                    {categories.length} main categories available
-                  </p>
+                // <div className="mt-2">
+                //   <p className="text-sm text-muted-foreground">
+                //     {categories.length} main categories available
+                //   </p>
                   
-                  {/* Category Display */}
-                  <div className="grid grid-cols-2 gap-2 mt-3">
-                    {categories.map((category) => (
-                      <div key={category.id} className="p-3 bg-gray-50 rounded-lg border">
-                        <span className="text-sm font-medium text-gray-700">{category.name}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                //   {/* Category Display */}
+                //   <div className="grid grid-cols-2 gap-2 mt-3">
+                //     {categories.map((category) => (
+                //       <div key={category.id} className="p-3 bg-gray-50 rounded-lg border">
+                //         <span className="text-sm font-medium text-gray-700">{category.name}</span>
+                //       </div>
+                //     ))}
+                //   </div>
+                // </div>
+
+                <></>
               )}
             </div>
 
