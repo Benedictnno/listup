@@ -18,6 +18,9 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "ListUp - Marketplace",
   description: "Find your next great deal on ListUp, the community-driven marketplace for buying and selling.",
+  icons: {
+    icon: "/images/lu.png",
+  },
 };
 
 export default function RootLayout({

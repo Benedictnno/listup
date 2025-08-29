@@ -558,7 +558,7 @@ export default function VendorListingsPage() {
                 </div>
 
                 {/* Performance Metrics */}
-                <div className="grid grid-cols-3 gap-2 mt-3 pt-3 border-t">
+                {/* <div className="grid grid-cols-3 gap-2 mt-3 pt-3 border-t">
                   <div className="text-center">
                     <div className="flex items-center justify-center gap-1 text-blue-600">
                       <Eye size={14} />
@@ -580,23 +580,23 @@ export default function VendorListingsPage() {
                     </div>
                     <span className="text-xs text-gray-500">SEO</span>
                   </div>
-                </div>
+                </div> */}
 
                 {/* Low Stock Alert */}
-                {listing.stock <= 5 && listing.stock > 0 && (
+                {/* {listing.stock <= 5 && listing.stock > 0 && (
                   <div className="flex items-center gap-2 mt-2 p-2 bg-orange-50 rounded-lg">
                     <AlertTriangle size={14} className="text-orange-600" />
                     <span className="text-xs text-orange-700">Low stock alert</span>
                   </div>
-                )}
+                )} */}
 
                 {/* Out of Stock Alert */}
-                {listing.stock === 0 && (
+                {/* {listing.stock === 0 && (
                   <div className="flex items-center gap-2 mt-2 p-2 bg-red-50 rounded-lg">
                     <AlertTriangle size={14} className="text-red-600" />
                     <span className="text-xs text-red-700">Out of stock</span>
                   </div>
-                )}
+                )} */}
               </div>
             </CardContent>
           </Card>

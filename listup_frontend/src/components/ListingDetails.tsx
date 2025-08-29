@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { Phone, MessageSquare } from "lucide-react";
 
 type Seller = {
@@ -80,7 +81,13 @@ export default function ListingDetails({ listing }: { listing: Listing }) {
 
         <div className="p-4 border rounded-xl shadow-sm">
           <h2 className="font-semibold">Seller Info</h2>
-          <p className="mt-1">{listing.seller.name}</p>
+          <Link 
+            href={`/vendors/${listing.seller.id}`}
+            className="mt-1 block text-green-600 hover:text-green-700 font-medium cursor-pointer hover:underline transition-colors"
+          >
+            {listing.seller.name}
+            <span className="text-xs ml-2">→ View Store</span>
+          </Link>
           <div className="flex gap-2 mt-3">
            {showPhone ? <button className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-xl shadow hover:bg-green-700" onClick={() => setShowPhone(false)}>
               <Phone size={18} /> {listing.seller.phone}

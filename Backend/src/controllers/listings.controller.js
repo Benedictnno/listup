@@ -149,7 +149,7 @@ exports.remove = async (req, res, next) => {
   } catch (e) { next(e); }
 };
 
-exports.getByVendorId =async (req, res) => {
+exports.getByVendorId = async (req, res) => {
   try {
     const { vendorId } = req.params;
 
@@ -169,6 +169,221 @@ exports.getByVendorId =async (req, res) => {
   } catch (error) {
     console.error("Error fetching vendor listings:", error);
     res.status(500).json({ message: "Server error" });
+  }
+};
+
+// Public endpoint to get all listings for a specific vendor
+exports.getPublicVendorListings = async (req, res) => {
+  try {
+    const { vendorId } = req.params;
+    const { page = 1, limit = 20 } = req.query;
+    
+    const take = Math.min(parseInt(limit), 50);
+    const skip = (Math.max(parseInt(page), 1) - 1) * take;
+
+    // First, verify the vendor exists and get their profile
+    const vendor = await prisma.user.findUnique({
+      where: { 
+        id: vendorId,
+        role: 'VENDOR'
+      },
+      select: {
+        id: true,
+        name: true,
+        vendorProfile: {
+          select: {
+            storeName: true,
+            storeAddress: true,
+            businessCategory: true,
+            coverImage: true
+          }
+        }
+      }
+    });
+
+    if (!vendor) {
+      return res.status(404).json({ 
+        success: false,
+        message: 'Vendor not found' 
+      });
+    }
+
+    // Get vendor's active listings
+    const [listings, total] = await Promise.all([
+      prisma.listing.findMany({
+        where: { 
+          sellerId: vendorId,
+          isActive: true // Only show active listings
+        },
+        orderBy: [
+          { boostScore: "desc" },
+          { createdAt: "desc" }
+        ],
+        skip,
+        take,
+        select: {
+          id: true,
+          title: true,
+          description: true,
+          price: true,
+          images: true,
+          location: true,
+          condition: true,
+          createdAt: true,
+          category: {
+            select: { 
+              id: true, 
+              name: true, 
+              slug: true 
+            }
+          }
+        }
+      }),
+      prisma.listing.count({ 
+        where: { 
+          sellerId: vendorId,
+          isActive: true 
+        } 
+      })
+    ]);
+
+    res.json({
+      success: true,
+      data: {
+        vendor: {
+          id: vendor.id,
+          name: vendor.name,
+          storeName: vendor.vendorProfile?.storeName,
+          storeAddress: vendor.vendorProfile?.storeAddress,
+          businessCategory: vendor.vendorProfile?.businessCategory,
+          coverImage: vendor.vendorProfile?.coverImage
+        },
+        listings,
+        pagination: {
+          total,
+          page: Number(page),
+          pages: Math.ceil(total / take),
+          limit: take
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error("Error fetching public vendor listings:", error);
+    res.status(500).json({ 
+      success: false,
+      message: "Server error while fetching vendor listings" 
+    });
+  }
+};
+
+// Public endpoint to get vendor listings by store name (more user-friendly)
+exports.getVendorListingsByStore = async (req, res) => {
+  try {
+    const { storeName } = req.params;
+    const { page = 1, limit = 20 } = req.query;
+    
+    const take = Math.min(parseInt(limit), 50);
+    const skip = (Math.max(parseInt(page), 1) - 1) * take;
+
+    // Find vendor by store name
+    const vendor = await prisma.user.findFirst({
+      where: { 
+        role: 'VENDOR',
+        vendorProfile: {
+          storeName: {
+            contains: storeName,
+            mode: 'insensitive' // Case-insensitive search
+          }
+        }
+      },
+      select: {
+        id: true,
+        name: true,
+        vendorProfile: {
+          select: {
+            storeName: true,
+            storeAddress: true,
+            businessCategory: true,
+            coverImage: true
+          }
+        }
+      }
+    });
+
+    if (!vendor) {
+      return res.status(404).json({ 
+        success: false,
+        message: 'Store not found' 
+      });
+    }
+
+    // Get vendor's active listings
+    const [listings, total] = await Promise.all([
+      prisma.listing.findMany({
+        where: { 
+          sellerId: vendor.id,
+          isActive: true
+        },
+        orderBy: [
+          { boostScore: "desc" },
+          { createdAt: "desc" }
+        ],
+        skip,
+        take,
+        select: {
+          id: true,
+          title: true,
+          description: true,
+          price: true,
+          images: true,
+          location: true,
+          condition: true,
+          createdAt: true,
+          category: {
+            select: { 
+              id: true, 
+              name: true, 
+              slug: true 
+            }
+          }
+        }
+      }),
+      prisma.listing.count({ 
+        where: { 
+          sellerId: vendor.id,
+          isActive: true 
+        } 
+      })
+    ]);
+
+    res.json({
+      success: true,
+      data: {
+        vendor: {
+          id: vendor.id,
+          name: vendor.name,
+          storeName: vendor.vendorProfile?.storeName,
+          storeAddress: vendor.vendorProfile?.storeAddress,
+          businessCategory: vendor.vendorProfile?.businessCategory,
+          coverImage: vendor.vendorProfile?.coverImage
+        },
+        listings,
+        pagination: {
+          total,
+          page: Number(page),
+          pages: Math.ceil(total / take),
+          limit: take
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error("Error fetching vendor listings by store:", error);
+    res.status(500).json({ 
+      success: false,
+      message: "Server error while fetching vendor listings" 
+    });
   }
 };
 

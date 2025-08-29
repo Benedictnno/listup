@@ -32,6 +32,6 @@ export const tips = [
   },
   {
     title: "Avoid Common Scams",
-    img: "https://images.unsplash.com/photo-1515879218367-8466d910aaa4?q=80&w=1200&auto=format&fit=crop",
+    img: "/images/avoidScam.png",
   },
 ];

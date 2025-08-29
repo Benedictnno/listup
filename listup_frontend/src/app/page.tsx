@@ -90,7 +90,7 @@ export default function MarketplaceLanding() {
           >
             <div className="relative mx-auto w-full max-w-md overflow-hidden rounded-3xl border border-white/10 bg-white/5 shadow-2xl">
               <Image
-                src="https://images.unsplash.com/photo-1517263904808-5dc91e3e7044?q=80&w=1400&auto=format&fit=crop"
+                src={"/images/mainImg.jpg"}
                 alt="Friends shopping in a cafe"
                 width={500}
                 height={600}
@@ -141,7 +141,7 @@ export default function MarketplaceLanding() {
           <div>
             <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
               <Image
-                src="https://images.unsplash.com/photo-1519337265831-281ec6cc8514?q=80&w=1400&auto=format&fit=crop"
+                src={"/images/nextDeal.jpg"}
                 alt="Happy couple shopping online"
                 width={500}
                 height={600}
@@ -161,7 +161,7 @@ export default function MarketplaceLanding() {
               "url(https://images.unsplash.com/photo-1517816743773-6e0fd518b4a6?q=80&w=1600&auto=format&fit=crop)",
           }}
         >
-          <div className="absolute inset-0 bg-slate-900/60 "  />
+          <div className="absolute inset-0 bg-slate-900/60"/>
           <div className="relative flex max-sm:flex-col max-sm:p-8 z-10 mx-auto h-full max-w-7xl items-center justify-between px-4 md:px-6">
             <div >
               <h3 className="text-lg font-semibold text-white md:text-2xl">Discover Amazing Deals Today!</h3>

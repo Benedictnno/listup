@@ -8,6 +8,12 @@ router.get("/", ListingsCtrl.getAll);
 router.get('/search', ListingsCtrl.search);
 router.get('/:id', ListingsCtrl.getOne);
 
+// Public endpoint to view vendor listings (no authentication required)
+router.get("/vendors/:vendorId/public", ListingsCtrl.getPublicVendorListings);
+
+// Public endpoint to view vendor listings by store name (more user-friendly)
+router.get("/stores/:storeName", ListingsCtrl.getVendorListingsByStore);
+
 
 router.get("/vendors/:vendorId/listings", auth, allow('VENDOR'), ListingsCtrl.getByVendorId);
 // 👇 only VENDORs can create listings

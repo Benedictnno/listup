@@ -4,6 +4,7 @@ import { Menu, X } from 'lucide-react';
 import Link from 'next/link';
 import React from 'react';
 import { useAuthStore } from '@/store/authStore';
+import Image from 'next/image';
 
 function NavBar() {
   const [open, setOpen] = React.useState(false);
@@ -28,8 +29,9 @@ function NavBar() {
     <header className="sticky top-0 z-40 w-full border-b border-slate-200/20 bg-slate-900/90 backdrop-blur">
       <div className="mx-auto flex max-w-7xl items-center text-lg justify-between px-4 py-3 md:px-6">
         <Link href="/" className="flex items-center gap-2 text-white">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-lime-400 text-slate-900 font-black">LU</div>
-          <span className="text-sm font-semibold tracking-wide">ListUp</span>
+          {/* <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-lime-400 text-slate-900 font-black">LU</div>
+          <span className="text-sm font-semibold tracking-wide">ListUp</span> */}
+          <Image src="/images/Listup.png" alt="ListUp" width={100} height={100}/>
         </Link>
 
         <nav className="hidden items-center gap-8 text-[13px] text-white/80 md:flex">
