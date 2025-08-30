@@ -140,59 +140,78 @@ export async function fetchVendorListings(vendorId: string | undefined) {
 }
 
 // ✅ Create a new listing (Client-side)
-export async function createListing(listingData: FormData) {
+export async function createListing(listingData: FormData | CreateListingPayload) {
   try {
-    // normalize FileList → Array<File>
-    const imagesArray = listingData.getAll("images") as File[];
+    // If FormData is passed, use the existing logic
+    if (listingData instanceof FormData) {
+      // normalize FileList → Array<File>
+      const imagesArray = listingData.getAll("images") as File[];
 
-    // upload each image
-    const uploadedImages: string[] = [];
-    for (const img of imagesArray) {
-      const formData = new FormData();
-      formData.append("image", img as File); // ✅ explicitly tell TS it's a File
+      // upload each image
+      const uploadedImages: string[] = [];
+      for (const img of imagesArray) {
+        const formData = new FormData();
+        formData.append("image", img as File); // ✅ explicitly tell TS it's a File
 
-      const res = await fetch(`${API_BASE_URL}/uploads/image`, {
+        const res = await fetch(`${API_BASE_URL}/uploads/image`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          },
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!res.ok) {
+          throw new Error("Failed to upload image");
+        }
+
+        const imageData = await res.json();
+        uploadedImages.push(imageData.url);
+      }
+      console.log("Uploaded Images:", uploadedImages);
+
+      // build final payload
+      const newListingData: CreateListingPayload = {
+        title: listingData.get("title") as string,
+        price: Number(listingData.get("price")),
+        categoryId: listingData.get("categoryId") as string,
+        description: listingData.get("description") as string,
+        images: uploadedImages, // array of uploaded URLs
+        location: listingData.get("location") as string || "eksu",
+        condition: listingData.get("condition") as string || "brand new",
+      };
+
+      const listingRes = await fetch(`${API_BASE_URL}/listings`, {
+        method: 'POST',
         headers: {
+          'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
         },
-        method: 'POST',
-        body: formData,
+        body: JSON.stringify(newListingData),
       });
 
-      if (!res.ok) {
-        throw new Error("Failed to upload image");
+      if (!listingRes.ok) {
+        throw new Error("Failed to create listing");
       }
 
-      const imageData = await res.json();
-      uploadedImages.push(imageData.url);
+      return listingRes.json();
+    } else {
+      // If plain object is passed, send directly to listings endpoint
+      const listingRes = await fetch(`${API_BASE_URL}/listings`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+        body: JSON.stringify(listingData),
+      });
+
+      if (!listingRes.ok) {
+        throw new Error("Failed to create listing");
+      }
+
+      return listingRes.json();
     }
-    console.log("Uploaded Images:", uploadedImages);
-
-    // build final payload
-    const newListingData: CreateListingPayload = {
-      title: listingData.get("title") as string,
-      price: Number(listingData.get("price")),
-      categoryId: listingData.get("categoryId") as string,
-      description: listingData.get("description") as string,
-      images: uploadedImages, // array of uploaded URLs
-      location: "eksu",
-      condition: "brand new",
-    };
-
-    const listingRes = await fetch(`${API_BASE_URL}/listings`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('token')}`,
-      },
-      body: JSON.stringify(newListingData),
-    });
-
-    if (!listingRes.ok) {
-      throw new Error("Failed to create listing");
-    }
-
-    return listingRes.json();
   } catch (error: unknown) {
     console.error("Error creating listing:", error);
     throw new Error("Failed to create listing");
@@ -235,7 +254,7 @@ export async function deleteListing(listingId: string) {
     if (!res.ok) {
       throw new Error("Failed to delete listing");
     }
-    
+   
     return res.json();
   } catch (error: unknown) {
     console.error("Error deleting listing:", error);

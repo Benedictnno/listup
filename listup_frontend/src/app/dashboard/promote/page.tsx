@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { createAd } from "@/lib/api/ad";
+import { fetchCategories } from "@/lib/api/categories";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useRouter } from "next/navigation";
 import api from "@/utils/axios";
@@ -45,6 +46,7 @@ export default function AdsPage() {
   const [ads, setAds] = useState<Ad[]>([]);
   const [stores, setStores] = useState<Store[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
   const [selectedPlan, setSelectedPlan] = useState<string>("");
   const [storeId, setStoreId] = useState<string>("");
   const [productId, setProductId] = useState<string>("");
@@ -85,14 +87,6 @@ export default function AdsPage() {
   
   // fetch vendor ads, stores & products
   useEffect(() => {
-    // Main categories we want to show
-    const mainCategories = [
-      "Fashion & Clothing",
-      "Beauty & Personal Care", 
-      "Food & Snacks",
-      "Handmade & Crafts"
-    ];
-
     async function fetchData() {
       try {
         const token = safeLocalStorage.getItem("token");
@@ -104,19 +98,27 @@ export default function AdsPage() {
         }
 
         // Fire requests in parallel
-        const [adsRes, storesRes, productsRes] = await Promise.all([
+        const [adsRes, storesRes, productsRes, categoriesRes] = await Promise.all([
           api.get(`/ads/vendor/${id}`),
           api.get(`/stores/vendor/${id}`),
           api.get(`/products/vendor/${id}`),
+          fetchCategories(),
         ]);
 
         console.log("Vendor ads fetched:", adsRes.data);
         console.log("Vendor stores fetched:", storesRes.data);
         console.log("Vendor products fetched:", productsRes.data);
+        console.log("Categories fetched:", categoriesRes);
+
+        // Set categories (filter out "All Categories")
+        const categoryNames = categoriesRes
+          .filter((cat: any) => cat.slug !== "all-categories")
+          .map((cat: any) => cat.name);
+        setCategories(categoryNames);
 
         // Filter products to only show those in our main categories
         const filteredProducts = productsRes.data.filter((product: Product) => 
-          mainCategories.includes(product.category)
+          categoryNames.includes(product.category)
         );
 
         // Axios auto-parses JSON → use .data directly

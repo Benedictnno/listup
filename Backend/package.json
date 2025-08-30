@@ -11,7 +11,9 @@
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
     "prisma": "prisma",
-    "add-categories": "node add-categories.js"
+    "add-categories": "node add-categories.js",
+    "update-categories": "node update-categories.js",
+    "migrate-listings": "node migrate-listings-categories.js"
   },
   "keywords": [],
   "author": "",
@@ -29,6 +31,7 @@
     "express-validator": "^7.2.1",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
+    "mongodb": "^6.19.0",
     "morgan": "^1.10.1",
     "multer": "^2.0.2",
     "multer-storage-cloudinary": "^4.0.0",

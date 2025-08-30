@@ -199,7 +199,7 @@ export default function StorePage() {
                       <CardContent className="p-0">
                         <div className="relative">
                           <Image
-                            src={listing.images[0] || '/placeholder.png'}
+                            src={listing.images[0] || '/placeholder.svg'}
                             alt={listing.title}
                             width={300}
                             height={200}

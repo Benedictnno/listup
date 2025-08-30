@@ -14,7 +14,7 @@ function NavBar() {
 
   const nav = [
     { label: "Listings", href: "/listings" },
-    { label: "Categories", href: "#categories" },
+    { label: "Categories", href: "/categories" },
     { label: "Deals", href: "#deals" },
     { label: "Blog", href: "#blog" },
   ];

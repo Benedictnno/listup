@@ -109,7 +109,7 @@ exports.create = async (req, res, next) => {
         title,
         description,
         price: Number(price),
-        location,
+        location: location || "none",
         condition,
        
         sellerId: req.user.id,   // 👈 correct field

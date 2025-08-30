@@ -39,9 +39,6 @@ app.use(cors(corsOptions));
 // Add CORS debugging middleware
 app.use((req, res, next) => {
   const origin = req.headers.origin;
-  console.log('🌐 Request origin:', origin);
-  console.log('🌐 Request method:', req.method);
-  console.log('🌐 Request headers:', req.headers);
   next();
 });
 

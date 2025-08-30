@@ -8,6 +8,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useAuthStore } from "@/store/authStore";
 import { createListing } from "@/lib/api/listing";
+import { uploadImage } from "@/lib/api/upload";
+import { fetchCategories, Category } from "@/lib/api/categories";
 import { useRouter } from "next/navigation";
 
 export default function CreateListing() {
@@ -17,13 +19,15 @@ export default function CreateListing() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
-  const [category, setCategory] = useState("");
+  const [categoryId, setCategoryId] = useState("");
   const [condition, setCondition] = useState("");
   const [location, setLocation] = useState("");
   const [image, setImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loadingCategories, setLoadingCategories] = useState(true);
 
   // Auto-populate location from user's signup data
   useEffect(() => {
@@ -32,23 +36,23 @@ export default function CreateListing() {
     }
   }, [user]);
 
-  const mainCategories = [
-    "Electronics",
-    "Fashion & Accessories", 
-    "Home & Garden",
-    "Sports & Outdoors",
-    "Books & Media",
-    "Toys & Games",
-    "Automotive",
-    "Health & Beauty",
-    "Jewelry & Watches",
-    "Collectibles",
-    "Tools & Hardware",
-    "Baby & Kids",
-    "Pet Supplies",
-    "Music & Instruments",
-    "Art & Crafts"
-  ];
+  // Fetch categories from backend
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        setLoadingCategories(true);
+        const categoriesData = await fetchCategories();
+        setCategories(categoriesData);
+      } catch (err) {
+        console.error("Failed to load categories:", err);
+        setError("Failed to load categories. Please refresh the page.");
+      } finally {
+        setLoadingCategories(false);
+      }
+    };
+
+    loadCategories();
+  }, []);
 
   const conditions = [
     "New",
@@ -84,7 +88,7 @@ export default function CreateListing() {
       return;
     }
 
-    if (!title.trim() || !description.trim() || !price || !category || !condition || !location.trim()) {
+    if (!title.trim() || !description.trim() || !price || !categoryId || !condition) {
       setError("Please fill in all required fields");
       return;
     }
@@ -93,19 +97,34 @@ export default function CreateListing() {
     setError("");
 
     try {
-      const formData = new FormData();
-      formData.append("title", title.trim());
-      formData.append("description", description.trim());
-      formData.append("price", price);
-      formData.append("category", category);
-      formData.append("condition", condition);
-      formData.append("location", location.trim());
-      formData.append("image", image);
+      // First upload the image
+      const imageUploadResponse = await uploadImage(image);
+      const imageUrl = imageUploadResponse.url;
 
-      await createListing(formData);
+      // Then create the listing with the image URL
+      const listingData = {
+        title: title.trim(),
+        description: description.trim(),
+        price: parseFloat(price),
+        categoryId: categoryId,
+        condition,
+        location: location.trim(),
+        images: [imageUrl] // Send as array with the uploaded image URL
+      };
+
+      await createListing(listingData);
       router.push("/dashboard");
     } catch (err: any) {
-      setError(err.message || "Failed to create listing");
+      console.error("Error creating listing:", err);
+      if (err.message) {
+        setError(err.message);
+      } else if (err.response?.data?.message) {
+        setError(err.response.data.message);
+      } else if (err.response?.data?.error) {
+        setError(err.response.data.error);
+      } else {
+        setError("Failed to create listing. Please try again.");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -156,13 +175,13 @@ export default function CreateListing() {
                 <div>
                   <Label htmlFor="price">Price *</Label>
                   <div className="relative mt-1">
-                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
+                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500"></span>
                     <Input
                       id="price"
                       type="number"
                       value={price}
                       onChange={(e) => setPrice(e.target.value)}
-                      placeholder="0.00"
+                      placeholder="0.00 NGN"
                       min="0"
                       step="0.01"
                       className="pl-8"
@@ -172,16 +191,22 @@ export default function CreateListing() {
 
                 <div>
                   <Label htmlFor="category">Category *</Label>
-                  <Select value={category} onValueChange={setCategory}>
+                  <Select value={categoryId} onValueChange={setCategoryId}>
                     <SelectTrigger className="mt-1">
                       <SelectValue placeholder="Select category" />
                     </SelectTrigger>
                     <SelectContent className="bg-white">
-                      {mainCategories.map((cat) => (
-                        <SelectItem key={cat} value={cat}>
-                          {cat}
-                        </SelectItem>
-                      ))}
+                      {loadingCategories ? (
+                        <SelectItem value="loading" disabled>Loading categories...</SelectItem>
+                      ) : categories.length === 0 ? (
+                        <SelectItem value="no-categories" disabled>No categories found</SelectItem>
+                      ) : (
+                        categories.map((cat) => (
+                          <SelectItem key={cat.id} value={cat.id}>
+                            {cat.name}
+                          </SelectItem>
+                        ))
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
@@ -204,13 +229,13 @@ export default function CreateListing() {
                   </Select>
                 </div>
 
-                {/* <div>
+                <div>
                   <Label htmlFor="location">Location *</Label>
                   <Input
                     id="location"
                     value={location}
                     onChange={(e) => setLocation(e.target.value)}
-                    placeholder="City, State"
+                    placeholder="Where in School area are you delievering from"
                     className="mt-1"
                     readOnly={!!user?.vendorProfile?.storeAddress}
                   />
@@ -219,7 +244,7 @@ export default function CreateListing() {
                       📍 Location automatically filled from your store address
                     </p>
                   )}
-                </div> */}
+                </div>
               </div>
             </div>
 
@@ -276,7 +301,32 @@ export default function CreateListing() {
             {/* Error Message */}
             {error && (
               <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-red-600 text-sm">{error}</p>
+                <div className="flex items-start gap-2">
+                  <span className="text-red-500 text-lg">⚠️</span>
+                  <div className="flex-1">
+                    <p className="text-red-600 text-sm font-medium">{error}</p>
+                    {error.includes('categoryId') && (
+                      <p className="text-red-500 text-xs mt-1">
+                        💡 Please select a category from the dropdown above
+                      </p>
+                    )}
+                    {error.includes('image') && (
+                      <p className="text-red-500 text-xs mt-1">
+                        💡 Please select an image file (JPG, PNG, or GIF)
+                      </p>
+                    )}
+                    {error.includes('price') && (
+                      <p className="text-red-500 text-xs mt-1">
+                        💡 Please enter a valid price (e.g., 25.99)
+                      </p>
+                    )}
+                    {error.includes('location') && (
+                      <p className="text-red-500 text-xs mt-1">
+                        💡 Location is automatically filled from your store address
+                      </p>
+                    )}
+                  </div>
+                </div>
               </div>
             )}
 

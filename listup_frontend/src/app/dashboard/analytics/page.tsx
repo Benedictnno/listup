@@ -115,11 +115,11 @@ export default function AnalyticsPage() {
             }))
           },
           topProducts: [
-            { id: '1', name: 'iPhone 13 Pro', revenue: 450000, orders: 15, views: 1240, conversionRate: 1.21, image: '/placeholder.png' },
-            { id: '2', name: 'MacBook Pro M2', revenue: 320000, orders: 8, views: 980, conversionRate: 0.82, image: '/placeholder.png' },
-            { id: '3', name: 'Samsung Galaxy S23', revenue: 280000, orders: 12, views: 756, conversionRate: 1.59, image: '/placeholder.png' },
-            { id: '4', name: 'iPad Air', revenue: 180000, orders: 9, views: 520, conversionRate: 1.73, image: '/placeholder.png' },
-            { id: '5', name: 'AirPods Pro', revenue: 120000, orders: 18, views: 890, conversionRate: 2.02, image: '/placeholder.png' }
+            { id: '1', name: 'iPhone 13 Pro', revenue: 450000, orders: 15, views: 1240, conversionRate: 1.21, image: '/placeholder.svg' },
+{ id: '2', name: 'MacBook Pro M2', revenue: 320000, orders: 8, views: 980, conversionRate: 0.82, image: '/placeholder.svg' },
+{ id: '3', name: 'Samsung Galaxy S23', revenue: 280000, orders: 12, views: 756, conversionRate: 1.59, image: '/placeholder.svg' },
+{ id: '4', name: 'iPad Air', revenue: 180000, orders: 9, views: 520, conversionRate: 1.73, image: '/placeholder.svg' },
+{ id: '5', name: 'AirPods Pro', revenue: 120000, orders: 18, views: 890, conversionRate: 2.02, image: '/placeholder.svg' }
           ],
           customerMetrics: {
             lifetimeValue: [
@@ -381,7 +381,7 @@ export default function AnalyticsPage() {
                 <div className="flex items-center gap-3 flex-1">
                   <span className="text-lg font-bold text-gray-400 w-8">{index + 1}</span>
                   <Image 
-                    src={product.image || '/placeholder.png'} 
+                    src={product.image || '/placeholder.svg'} 
                     alt={product.name}
                     width={48}
                     height={48}

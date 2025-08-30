@@ -3,16 +3,21 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 const defaultCategories = [
-  // Main Categories Only
-  { name: "Fashion & Clothing", slug: "fashion-clothing" },
-  { name: "Beauty & Personal Care", slug: "beauty-personal-care" },
+  // All Categories as specified by user
+  { name: "All Categories", slug: "all-categories" },
   { name: "Food & Snacks", slug: "food-snacks" },
+  { name: "Beauty & Personal Care", slug: "beauty-personal-care" },
+  { name: "Fashion & Clothing", slug: "fashion-clothing" },
+  { name: "Electronics", slug: "electronics" },
+  { name: "Computers", slug: "computers" },
+  { name: "Mobile Phones", slug: "mobile-phones" },
+  { name: "Audio", slug: "audio" },
   { name: "Handmade & Crafts", slug: "handmade-crafts" }
 ];
 
 async function addCategories() {
   try {
-    console.log('🌱 Starting to add main categories...');
+    console.log('🌱 Starting to add all categories...');
     
     const createdCategories = [];
     

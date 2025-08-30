@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { fetchVendorListings, updateListing, deleteListing } from "@/lib/api/listing";
+import { fetchCategories, Category } from "@/lib/api/categories";
 import { safeLocalStorage } from "@/utils/helpers";
 import { 
   Edit, 
@@ -22,6 +23,7 @@ import {
   Package
 } from "lucide-react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 interface Listing {
   id: string;
@@ -50,9 +52,11 @@ interface FilterState {
 }
 
 export default function VendorListingsPage() {
+  const router = useRouter();
   const [listings, setListings] = useState<Listing[]>([]);
   const [filteredListings, setFilteredListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
+  const [categories, setCategories] = useState<Category[]>([]);
 
   // Promotion plans with per-day pricing
   const promotionPlans = [
@@ -79,14 +83,20 @@ export default function VendorListingsPage() {
   const id: string | undefined = safeLocalStorage.getItem("id") || undefined;
 
   useEffect(() => {
-    async function loadListings() {
+    async function loadData() {
       try {
+        // Load categories
+        const categoriesData = await fetchCategories();
+        const filteredCategories = categoriesData.filter(cat => cat.slug !== "all-categories");
+        setCategories(filteredCategories);
+        
+        // Load listings
         const res = await fetchVendorListings(id);
         // Add mock data for demonstration
         const enhancedListings = res.map((listing: { id: string; title: string; price: number; status: string; createdAt?: string; created_at?: string; image?: string; images?: string[]; category?: string }) => ({
           ...listing,
           status: listing.status || 'active',
-          category: listing.category || 'Fashion & Clothing',
+                     category: listing.category || (categories.length > 0 ? categories[0].name : 'Uncategorized'),
           views: Math.floor(Math.random() * 1000),
           sales: Math.floor(Math.random() * 50),
           revenue: listing.price * Math.floor(Math.random() * 50),
@@ -96,12 +106,12 @@ export default function VendorListingsPage() {
         setListings(enhancedListings);
         setFilteredListings(enhancedListings);
       } catch (error) {
-        console.error('Error loading listings:', error);
+        console.error('Error loading data:', error);
       } finally {
         setLoading(false);
       }
     }
-    loadListings();
+    loadData();
   }, [id]);
 
   // Apply filters whenever filters or listings change
@@ -177,9 +187,11 @@ export default function VendorListingsPage() {
   const handleDelete = async (id: string) => {
     try {
       await deleteListing(id);
+      router.refresh();
       setListings(listings.filter(l => l.id !== id));
       setSelectedListings(selectedListings.filter(selectedId => selectedId !== id));
     } catch (error) {
+      router.refresh();
       console.error('Error deleting listing:', error);
     }
   };
@@ -351,18 +363,19 @@ export default function VendorListingsPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium mb-2">Category</label>
-                <Select value={filters.category} onValueChange={(value) => setFilters(prev => ({ ...prev, category: value }))}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="All Categories" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">All Categories</SelectItem>
-                    <SelectItem value="Fashion & Clothing">Fashion & Clothing</SelectItem>
-                    <SelectItem value="Beauty & Personal Care">Beauty & Personal Care</SelectItem>
-                    <SelectItem value="Food & Snacks">Food & Snacks</SelectItem>
-                    <SelectItem value="Handmade & Crafts">Handmade & Crafts</SelectItem>
-                  </SelectContent>
-                </Select>
+                                 <Select value={filters.category} onValueChange={(value) => setFilters(prev => ({ ...prev, category: value }))}>
+                   <SelectTrigger>
+                     <SelectValue placeholder="All Categories" />
+                   </SelectTrigger>
+                   <SelectContent>
+                     <SelectItem value="">All Categories</SelectItem>
+                     {categories.map((cat) => (
+                       <SelectItem key={cat.id} value={cat.name}>
+                         {cat.name}
+                       </SelectItem>
+                     ))}
+                   </SelectContent>
+                 </Select>
               </div>
               <div>
                 <label className="block text-sm font-medium mb-2">Stock Level</label>
@@ -529,7 +542,7 @@ export default function VendorListingsPage() {
               <Image 
                 width={300}
                 height={300}
-                src={listing.images?.[0] || "/placeholder.png"}
+                src={listing.images?.[0] || "/placeholder.svg"}
                 alt={listing.title}
                 className="w-full h-40 object-cover rounded-lg"
               />
@@ -679,20 +692,21 @@ export default function VendorListingsPage() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">Category</label>
-                  <Select value={editing.category} onValueChange={(value) => setEditing({ ...editing, category: value })}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Fashion & Clothing">Fashion & Clothing</SelectItem>
-                      <SelectItem value="Beauty & Personal Care">Beauty & Personal Care</SelectItem>
-                      <SelectItem value="Food & Snacks">Food & Snacks</SelectItem>
-                      <SelectItem value="Handmade & Crafts">Handmade & Crafts</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                                 <div>
+                   <label className="block text-sm font-medium mb-2">Category</label>
+                   <Select value={editing.category} onValueChange={(value) => setEditing({ ...editing, category: value })}>
+                     <SelectTrigger>
+                       <SelectValue />
+                     </SelectTrigger>
+                     <SelectContent>
+                       {categories.map((cat) => (
+                         <SelectItem key={cat.id} value={cat.name}>
+                           {cat.name}
+                         </SelectItem>
+                       ))}
+                     </SelectContent>
+                   </Select>
+                 </div>
               </div>
               <div className="flex justify-end gap-2">
                 <Button variant="outline" onClick={() => setEditing(null)}>
