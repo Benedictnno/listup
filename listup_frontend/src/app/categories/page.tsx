@@ -53,7 +53,7 @@ export default function CategoriesPage() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6 md:w-[70%] m-auto">
       <div>
         <h1 className="text-3xl font-bold text-gray-900">Product Categories</h1>
         <p className="text-gray-600 mt-2">Browse products by category</p>
