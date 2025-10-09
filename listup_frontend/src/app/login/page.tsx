@@ -5,12 +5,14 @@ import { useRouter } from "next/navigation";
 import { ArrowRight, AlertCircle, CheckCircle, Eye, EyeOff, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { parseApiError, getFieldErrorMessage, isRetryableError, getSuccessMessage } from "@/utils/errorHandler";
+import ErrorNotice from "@/components/ErrorNotice";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [rawError, setRawError] = useState<unknown | null>(null);
   const [success, setSuccess] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
@@ -23,6 +25,7 @@ export default function LoginPage() {
   useEffect(() => {
     if (error && (email || password)) {
       setError("");
+      setRawError(null);
     }
   }, [email, password, error]);
 
@@ -87,6 +90,7 @@ export default function LoginPage() {
     try {
       await login(email.trim(), password);
       setSuccess(getSuccessMessage('login'));
+      setRawError(null);
       
       // Redirect after a short delay to show success message
       setTimeout(() => {
@@ -95,9 +99,9 @@ export default function LoginPage() {
       
     } catch (error: unknown) {
       console.error("Login failed:", error);
-      
       const errorMessage = parseApiError(error);
       setError(errorMessage);
+      setRawError(error);
       
       // Increment retry count for retryable errors
       if (isRetryableError(error)) {
@@ -114,6 +118,7 @@ export default function LoginPage() {
   const handleRetry = () => {
     setError("");
     setRetryCount(0);
+    setRawError(null);
     handleSubmit(new Event('submit') as any);
   };
 
@@ -151,64 +156,7 @@ export default function LoginPage() {
         
         {/* Error Display */}
         {error && (
-          <div className="mb-4 p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm">
-            <div className="flex items-start gap-3">
-              <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0 text-red-500" />
-              <div className="flex-1 space-y-2">
-                <p className="font-medium text-red-800">{error}</p>
-                
-                {/* Helpful suggestions based on error type */}
-                {error.toLowerCase().includes('email') && (
-                  <div className="text-xs text-red-600 bg-red-100 p-2 rounded-lg">
-                    <p className="font-medium mb-1">💡 Helpful tips:</p>
-                    <ul className="space-y-1">
-                      <li>• Check if your email address is spelled correctly</li>
-                      <li>• Make sure you're using the email you registered with</li>
-                      <li>• Try copying and pasting your email address</li>
-                    </ul>
-                  </div>
-                )}
-                
-                {error.toLowerCase().includes('password') && (
-                  <div className="text-xs text-red-600 bg-red-100 p-2 rounded-lg">
-                    <p className="font-medium mb-1">💡 Helpful tips:</p>
-                    <ul className="space-y-1">
-                      <li>• Check if Caps Lock is turned off</li>
-                      <li>• Make sure you're using the correct password</li>
-                      <li>• Try typing your password slowly</li>
-                    </ul>
-                  </div>
-                )}
-                
-                {error.toLowerCase().includes('account not found') && (
-                  <div className="text-xs text-red-600 bg-red-100 p-2 rounded-lg">
-                    <p className="font-medium mb-1">💡 Don't have an account?</p>
-                    <p>You can create a new account by clicking the "Sign up" link below.</p>
-                  </div>
-                )}
-                
-                {/* Retry button for retryable errors */}
-                {isRetryableError(error) && retryCount < 3 && (
-                  <button
-                    type="button"
-                    onClick={handleRetry}
-                    className="mt-2 inline-flex items-center gap-2 text-xs text-red-600 hover:text-red-700 underline bg-red-100 px-3 py-1 rounded-lg hover:bg-red-200 transition-colors"
-                  >
-                    <RefreshCw className="w-3 h-3" />
-                    Try again
-                  </button>
-                )}
-                
-                {/* Contact support for persistent errors */}
-                {retryCount >= 3 && (
-                  <div className="text-xs text-red-600 bg-red-100 p-2 rounded-lg">
-                    <p className="font-medium mb-1">Still having trouble?</p>
-                    <p>Please contact our support team for assistance.</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
+          <ErrorNotice message={error} rawError={rawError} retryCount={retryCount} onRetry={handleRetry} />
         )}
         
         <div className="space-y-4 mb-6">

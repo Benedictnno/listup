@@ -6,6 +6,7 @@ import { tips } from "@/utils/constants";
 import { PrimaryButton, SectionEyebrow } from "@/utils/helpers";
 import AdsPage from "@/components/TrendingAds";
 import Image from "next/image";
+import MiniListings from "@/components/MiniListings";
 
 /**
  * Marketplace Landing Page
@@ -41,6 +42,7 @@ export default function MarketplaceLanding() {
               Browse thousands of verified listings across categories. Buy and sell
               smarter with our community-driven marketplace.
             </p>
+            
             {/* <div className="mt-6 flex flex-wrap items-center gap-3">
               <Link href="/signup">
                 <PrimaryButton>
@@ -100,7 +102,9 @@ export default function MarketplaceLanding() {
         </div>
       </section>
 
-              <AdsPage/>
+              {/* <AdsPage/> */}
+
+              <MiniListings />
 
     {/* <Category /> */}
 

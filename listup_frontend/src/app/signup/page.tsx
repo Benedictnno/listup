@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { ArrowRight, Store, AlertCircle, CheckCircle, Eye, EyeOff, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { parseApiError, parseValidationErrors, getFieldErrorMessage, isRetryableError, getSuccessMessage } from "@/utils/errorHandler";
+import ErrorNotice from "@/components/ErrorNotice";
 
 interface ValidationError {
   field: string;
@@ -20,6 +21,7 @@ export default function SignupPage() {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [rawError, setRawError] = useState<unknown | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [success, setSuccess] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -29,6 +31,7 @@ export default function SignupPage() {
     setError("");
     setFieldErrors({});
     setSuccess("");
+    setRawError(null);
   };
 
   const setFieldError = (field: string, message: string) => {
@@ -176,6 +179,7 @@ export default function SignupPage() {
       // Parse API errors using the new utility
       const errorMessage = parseApiError(err);
       setError(errorMessage);
+      setRawError(err);
       
       // Handle field-specific validation errors
       const validationErrors = parseValidationErrors(err);
@@ -225,6 +229,7 @@ export default function SignupPage() {
   const handleRetry = () => {
     setError("");
     setRetryCount(0);
+    setRawError(null);
     handleSubmit(new Event('submit') as any);
   };
 
@@ -261,86 +266,7 @@ export default function SignupPage() {
 
         {/* Error Display */}
         {error && (
-          <div className="mb-4 p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm">
-            <div className="flex items-start gap-3">
-              <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0 text-red-500" />
-              <div className="flex-1 space-y-2">
-                <p className="font-medium text-red-800">{error}</p>
-                
-                {/* Helpful suggestions based on error type */}
-                {error.toLowerCase().includes('email') && (
-                  <div className="text-xs text-red-600 bg-red-100 p-2 rounded-lg">
-                    <p className="font-medium mb-1">💡 Helpful tips:</p>
-                    <ul className="space-y-1">
-                      <li>• Check if your email address is spelled correctly</li>
-                      <li>• Make sure you're using a valid email format (e.g., yourname@example.com)</li>
-                      <li>• Try using a different email address if this one is already registered</li>
-                    </ul>
-                  </div>
-                )}
-                
-                {error.toLowerCase().includes('password') && (
-                  <div className="text-xs text-red-600 bg-red-100 p-2 rounded-lg">
-                    <p className="font-medium mb-1">💡 Password requirements:</p>
-                    <ul className="space-y-1">
-                      <li>• Must be at least 6 characters long</li>
-                      <li>• Consider using a mix of letters, numbers, and symbols</li>
-                      <li>• Avoid common passwords like "123456" or "password"</li>
-                    </ul>
-                  </div>
-                )}
-                
-                {error.toLowerCase().includes('phone') && (
-                  <div className="text-xs text-red-600 bg-red-100 p-2 rounded-lg">
-                    <p className="font-medium mb-1">💡 Phone number format:</p>
-                    <ul className="space-y-1">
-                      <li>• Use Nigerian format: 08012345678</li>
-                      <li>• Must be at least 10 digits long</li>
-                      <li>• Phone number is optional but recommended for account recovery</li>
-                    </ul>
-                  </div>
-                )}
-                
-                {error.toLowerCase().includes('store') && (
-                  <div className="text-xs text-red-600 bg-red-100 p-2 rounded-lg">
-                    <p className="font-medium mb-1">💡 Store information tips:</p>
-                    <ul className="space-y-1">
-                      <li>• Choose a memorable store name that reflects your business</li>
-                      <li>• Include landmarks or nearby locations in your address</li>
-                      <li>• Be specific about your business category to help customers find you</li>
-                    </ul>
-                  </div>
-                )}
-                
-                {error.toLowerCase().includes('already exists') && (
-                  <div className="text-xs text-red-600 bg-red-100 p-2 rounded-lg">
-                    <p className="font-medium mb-1">💡 Account already exists?</p>
-                    <p>You can log in to your existing account using the "Log in" link below.</p>
-                  </div>
-                )}
-                
-                {/* Retry button for retryable errors */}
-                {isRetryableError(error) && retryCount < 3 && (
-                  <button
-                    type="button"
-                    onClick={handleRetry}
-                    className="mt-2 inline-flex items-center gap-2 text-xs text-red-600 hover:text-red-700 underline bg-red-100 px-3 py-1 rounded-lg hover:bg-red-200 transition-colors"
-                  >
-                    <RefreshCw className="w-3 h-3" />
-                    Try again
-                  </button>
-                )}
-                
-                {/* Contact support for persistent errors */}
-                {retryCount >= 3 && (
-                  <div className="text-xs text-red-600 bg-red-100 p-2 rounded-lg">
-                    <p className="font-medium mb-1">Still having trouble?</p>
-                    <p>Please contact our support team for assistance.</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
+          <ErrorNotice message={error} rawError={rawError} retryCount={retryCount} onRetry={handleRetry} />
         )}
 
         {/* Progress Indicator */}

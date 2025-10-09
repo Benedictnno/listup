@@ -6,7 +6,7 @@ let transporter;
 if (process.env.EMAIL_SERVICE === 'mailtrap') {
   // Mailtrap (Development/Testing)
   transporter = nodemailer.createTransporter({
-    host: process.env.MAILTRAP_HOST || 'smtp.mailtrap.io',
+    host: process.env.MAILTRAP_HOST || 'sandbox.smtp.mailtrap.io',
     port: process.env.MAILTRAP_PORT || 2525,
     auth: {
       user: process.env.MAILTRAP_USER,
