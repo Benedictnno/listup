@@ -34,28 +34,31 @@ export default function ListingDetails({ listing }: { listing: Listing }) {
       {/* Left - Images */}
       <div className="col-span-2">
         {/* Main Image */}
-        <Image
-          src={selectedImage}
-          alt={listing.title}
-          width={100}
-          height={100}
-          className="w-auto h-[400px] object-center rounded-xl shadow"
-        />
+        <div className="relative w-full rounded-xl overflow-hidden shadow">
+          <div className="w-full h-[360px] md:h-[520px] lg:h-[640px] bg-gray-50">
+            <Image
+              src={selectedImage}
+              alt={listing.title}
+              fill
+              style={{ objectFit: 'contain', objectPosition: 'center' }}
+              sizes="(min-width:1024px) 700px, (min-width:768px) 500px, 100vw"
+              className="rounded-xl"
+            />
+          </div>
+        </div>
 
         {/* Thumbnail Gallery */}
         <div className="flex gap-3 mt-4">
           {listing.images.map((img, idx) => (
-            <Image
-              key={idx}
-              src={img}
-              alt={`Thumbnail ${idx + 1}`}
-              width={80}
-              height={80}
-              className={`w-20 h-20 object-cover object-center rounded-lg cursor-pointer border-2 ${
-                selectedImage === img ? "border-green-600" : "border-transparent"
-              }`}
-              onClick={() => setSelectedImage(img)}
-            />
+            <button key={idx} onClick={() => setSelectedImage(img)} className={`rounded-lg overflow-hidden border-2 ${selectedImage === img ? 'border-green-600' : 'border-transparent'}`}>
+              <Image
+                src={img}
+                alt={`Thumbnail ${idx + 1}`}
+                width={80}
+                height={80}
+                className="w-20 h-20 object-cover object-center"
+              />
+            </button>
           ))}
         </div>
 

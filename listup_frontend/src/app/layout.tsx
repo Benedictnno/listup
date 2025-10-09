@@ -4,6 +4,7 @@ import "./globals.css";
 import NavBar from "@/components/NavBar";
 import Footer from "@/components/Footer";
 import AuthProvider from "@/components/AuthProvider";
+import { Analytics } from "@vercel/analytics/next"
 
 export const metadata: Metadata = {
   title: "ListUp - Marketplace",
@@ -35,6 +36,7 @@ export default function RootLayout({
         <AuthProvider>
           <NavBar />
           {children}
+          <Analytics />
           <Footer />
         </AuthProvider>
       </body>

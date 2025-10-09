@@ -21,7 +21,6 @@ export default function SignupPage() {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [rawError, setRawError] = useState<unknown | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [success, setSuccess] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -31,7 +30,6 @@ export default function SignupPage() {
     setError("");
     setFieldErrors({});
     setSuccess("");
-    setRawError(null);
   };
 
   const setFieldError = (field: string, message: string) => {
@@ -179,7 +177,6 @@ export default function SignupPage() {
       // Parse API errors using the new utility
       const errorMessage = parseApiError(err);
       setError(errorMessage);
-      setRawError(err);
       
       // Handle field-specific validation errors
       const validationErrors = parseValidationErrors(err);
@@ -229,7 +226,6 @@ export default function SignupPage() {
   const handleRetry = () => {
     setError("");
     setRetryCount(0);
-    setRawError(null);
     handleSubmit(new Event('submit') as any);
   };
 
@@ -266,7 +262,7 @@ export default function SignupPage() {
 
         {/* Error Display */}
         {error && (
-          <ErrorNotice message={error} rawError={rawError} retryCount={retryCount} onRetry={handleRetry} />
+          <ErrorNotice message={error} rawError={error} retryCount={retryCount} onRetry={handleRetry} />
         )}
 
         {/* Progress Indicator */}
@@ -417,8 +413,8 @@ export default function SignupPage() {
                 onChange={(e) => handleFieldChange("role", e.target.value)}
                 className="w-full border border-slate-300 p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-lime-200 focus:border-lime-400"
               >
-                <option value="USER">👤 User / Student</option>
                 <option value="VENDOR">🏪 Vendor / Seller</option>
+                <option value="USER">👤 User / Student</option>
               </select>
             </div>
 

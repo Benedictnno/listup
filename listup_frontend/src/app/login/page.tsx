@@ -12,7 +12,6 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [rawError, setRawError] = useState<unknown | null>(null);
   const [success, setSuccess] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
@@ -25,7 +24,6 @@ export default function LoginPage() {
   useEffect(() => {
     if (error && (email || password)) {
       setError("");
-      setRawError(null);
     }
   }, [email, password, error]);
 
@@ -90,7 +88,6 @@ export default function LoginPage() {
     try {
       await login(email.trim(), password);
       setSuccess(getSuccessMessage('login'));
-      setRawError(null);
       
       // Redirect after a short delay to show success message
       setTimeout(() => {
@@ -99,9 +96,9 @@ export default function LoginPage() {
       
     } catch (error: unknown) {
       console.error("Login failed:", error);
+      
       const errorMessage = parseApiError(error);
       setError(errorMessage);
-      setRawError(error);
       
       // Increment retry count for retryable errors
       if (isRetryableError(error)) {
@@ -118,7 +115,6 @@ export default function LoginPage() {
   const handleRetry = () => {
     setError("");
     setRetryCount(0);
-    setRawError(null);
     handleSubmit(new Event('submit') as any);
   };
 
@@ -156,7 +152,7 @@ export default function LoginPage() {
         
         {/* Error Display */}
         {error && (
-          <ErrorNotice message={error} rawError={rawError} retryCount={retryCount} onRetry={handleRetry} />
+          <ErrorNotice message={error} rawError={error} retryCount={retryCount} onRetry={handleRetry} />
         )}
         
         <div className="space-y-4 mb-6">
