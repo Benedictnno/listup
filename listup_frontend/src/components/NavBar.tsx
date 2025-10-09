@@ -8,6 +8,7 @@ import Image from 'next/image';
 
 function NavBar() {
   const [open, setOpen] = React.useState(false);
+  const menuRef = React.useRef<HTMLDivElement | null>(null);
   
   // Use the proper auth store instead of local localStorage
   const { user, logout } = useAuthStore();
@@ -24,6 +25,28 @@ function NavBar() {
     // Optionally redirect to home page
     window.location.href = "/";
   };
+
+  // Close menu when clicking outside or pressing Escape
+  React.useEffect(() => {
+    function onDocumentClick(e: MouseEvent) {
+      if (!open) return;
+      const target = e.target as Node | null;
+      if (menuRef.current && target && !menuRef.current.contains(target)) {
+        setOpen(false);
+      }
+    }
+
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') setOpen(false);
+    }
+
+    document.addEventListener('mousedown', onDocumentClick);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', onDocumentClick);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [open]);
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-slate-200/20 bg-slate-900/90 backdrop-blur">
@@ -80,9 +103,9 @@ function NavBar() {
       {/* Mobile menu */}
       {open && (
         <div className="md:hidden">
-          <div className="space-y-1 border-t border-white/10 bg-slate-900 px-4 py-3">
+          <div ref={menuRef} className="space-y-1 border-t border-white/10 bg-slate-900 px-4 py-3">
             {nav.map((n) => (
-              <Link key={n.label} href={n.href} className="block rounded-lg px-3 py-2 text-lg text-white/80 hover:bg-white/5 hover:text-white">
+              <Link key={n.label} href={n.href} onClick={() => setOpen(false)} className="block rounded-lg px-3 py-2 text-lg text-white/80 hover:bg-white/5 hover:text-white">
                 {n.label}
               </Link>
             ))}
@@ -92,7 +115,7 @@ function NavBar() {
               {user ? (
                 // User is logged in - Show Dashboard and Logout
                 <>
-                  <Link href="/dashboard" className="w-full">
+                  <Link href="/dashboard" className="w-full" onClick={() => setOpen(false)}>
                     <PrimaryButton>Dashboard</PrimaryButton>
                   </Link>
                   <button 
@@ -105,10 +128,10 @@ function NavBar() {
               ) : (
                 // User is not logged in - Show Login and Signup
                 <>
-                  <Link href="/login" className="rounded-xl px-3 py-2 text-xs font-semibold text-white/80 transition hover:text-white">
+                  <Link href="/login" className="rounded-xl px-3 py-2 text-xs font-semibold text-white/80 transition hover:text-white" onClick={() => setOpen(false)}>
                     Log in
                   </Link> 
-                  <Link href="/signup" className="w-full">
+                  <Link href="/signup" className="w-full" onClick={() => setOpen(false)}>
                     <PrimaryButton>Sign up</PrimaryButton>
                   </Link>
                 </>
