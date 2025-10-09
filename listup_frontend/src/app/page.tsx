@@ -7,7 +7,7 @@ import { PrimaryButton, SectionEyebrow } from "@/utils/helpers";
 import AdsPage from "@/components/TrendingAds";
 import Image from "next/image";
 import MiniListings from "@/components/MiniListings";
-
+import { Analytics } from "@vercel/analytics/next"
 /**
  * Marketplace Landing Page
  * Framework: Next.js (app router ready) + TailwindCSS
@@ -21,7 +21,7 @@ export default function MarketplaceLanding() {
   return (
     <div className="min-h-screen w-full text-slate-800 font-montserrat">
       {/* NAVBAR */}
-
+ <Analytics/>
       {/* HERO */}
       <section className="relative overflow-hidden bg-slate-900">
         <div className="absolute inset-0 -z-0 bg-[radial-gradient(1200px_600px_at_20%_-10%,rgba(148,163,184,0.18),transparent_70%),radial-gradient(800px_400px_at_100%_10%,rgba(148,163,184,0.12),transparent_60%)]" />
@@ -42,7 +42,7 @@ export default function MarketplaceLanding() {
               Browse thousands of verified listings across categories. Buy and sell
               smarter with our community-driven marketplace.
             </p>
-            
+
             {/* <div className="mt-6 flex flex-wrap items-center gap-3">
               <Link href="/signup">
                 <PrimaryButton>
