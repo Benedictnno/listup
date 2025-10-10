@@ -1,9 +1,9 @@
 "use client";
-
-import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Phone, MessageSquare } from "lucide-react";
+import { useState, useEffect } from "react";
+import { getFavourites, toggleFavourite, removeFavourite } from "../lib/api/favourites";
 
 type Seller = {
   id: string;
@@ -28,6 +28,22 @@ type Listing = {
 export default function ListingDetails({ listing }: { listing: Listing }) {
   const [selectedImage, setSelectedImage] = useState(listing.images[0]);
   const [showPhone , setShowPhone] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const favs = await getFavourites();
+        if (!mounted) return;
+        const found = favs.find((f: any) => f.listing && f.listing.id === listing.id);
+        setIsSaved(Boolean(found));
+      } catch (e) {
+        // ignore - probably unauthenticated
+      }
+    })();
+    return () => { mounted = false; };
+  }, [listing.id]);
 
   return (
       <div className="grid md:grid-cols-4 gap-6 p-6 lg:mx-24">
@@ -97,6 +113,21 @@ export default function ListingDetails({ listing }: { listing: Listing }) {
             </button> : <button className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-xl shadow hover:bg-green-700" onClick={() => setShowPhone(true)}>
               <Phone size={18} /> Show Contact 
             </button>}
+            <button className="flex items-center gap-2 px-4 py-2 border rounded-xl shadow hover:bg-gray-100" onClick={async () => {
+              try {
+                if (isSaved) {
+                  await removeFavourite(listing.id);
+                  setIsSaved(false);
+                } else {
+                  await toggleFavourite(listing.id);
+                  setIsSaved(true);
+                }
+              } catch (e) {
+                console.error('Failed to toggle saved', e);
+              }
+            }}>
+              <MessageSquare size={18} /> {isSaved ? 'Saved' : 'Save'}
+            </button>
             <button className="flex items-center gap-2 px-4 py-2 border rounded-xl shadow hover:bg-gray-100">
               <MessageSquare size={18} /> Start Chat
             </button>

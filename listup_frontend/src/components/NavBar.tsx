@@ -63,15 +63,21 @@ function NavBar() {
               {n.label}
             </Link>
           ))}
+        
         </nav>
 
-        {/* Authentication Buttons - Fixed Logic */}
+        {/* Authentication Buttons - show Dashboard for VENDOR, Saved for USER, or Login/Signup */}
         {user ? (
-          // User is logged in - Show Dashboard button
           <div className="hidden items-center gap-3 md:flex">
-            <Link href="/dashboard">
-              <PrimaryButton>Dashboard</PrimaryButton>
-            </Link>
+            {user.role === 'VENDOR' ? (
+              <Link href="/dashboard">
+                <PrimaryButton>Dashboard</PrimaryButton>
+              </Link>
+            ) : (
+              <Link href="/saved">
+                <button className="rounded-xl px-3 py-2 text-lg font-semibold text-white/80 transition hover:text-white">Saved</button>
+              </Link>
+            )}
             <button 
               onClick={handleLogout}
               className="rounded-xl px-3 py-2 text-lg font-semibold text-white/80 transition hover:text-white"
@@ -80,7 +86,6 @@ function NavBar() {
             </button>
           </div>
         ) : (
-          // User is not logged in - Show Login/Signup buttons
           <div className="hidden items-center gap-3 md:flex">
             <Link href="/login" className="rounded-xl px-3 py-2 text-lg font-semibold text-white/80 transition hover:text-white">
               Log in
@@ -115,9 +120,15 @@ function NavBar() {
               {user ? (
                 // User is logged in - Show Dashboard and Logout
                 <>
-                  <Link href="/dashboard" className="w-full" onClick={() => setOpen(false)}>
-                    <PrimaryButton>Dashboard</PrimaryButton>
-                  </Link>
+                  {user.role === 'VENDOR' ? (
+                    <Link href="/dashboard" className="w-full" onClick={() => setOpen(false)}>
+                      <PrimaryButton>Dashboard</PrimaryButton>
+                    </Link>
+                  ) : (
+                    <Link href="/saved" className="w-full" onClick={() => setOpen(false)}>
+                      <button className="rounded-xl px-3 py-2 text-xs font-semibold text-white/80 w-full text-left">Saved</button>
+                    </Link>
+                  )}
                   <button 
                     onClick={handleLogout}
                     className="rounded-xl px-3 py-2 text-xs font-semibold text-white/80 transition hover:text-white"

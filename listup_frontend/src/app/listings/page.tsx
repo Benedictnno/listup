@@ -171,12 +171,15 @@ function ListingsPageContent() {
     });
     // Clear global filters
     setSearch('');
-    useFilterStore.getState().setMinPrice(10);
+    // Reset min/max to null so inputs clear and filtering resets
+    useFilterStore.getState().setMinPrice(null);
     useFilterStore.getState().setMaxPrice(null);
   };
 
   const hasActiveFilters = () => {
-    return search || (minPrice !== null && minPrice > 10) || maxPrice !== null;
+    // Consider search, minPrice or maxPrice as active filters
+    const hasSearch = typeof search === 'string' && search.trim().length > 0;
+    return hasSearch || minPrice !== null || maxPrice !== null;
   };
 
   if (loading) {

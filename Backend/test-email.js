@@ -1,29 +1,24 @@
-require('dotenv').config();
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 
-const transporter = nodemailer.createTransport({
-  host: process.env.MAILTRAP_HOST,
-  port: process.env.MAILTRAP_PORT,
-  auth: {
-    user: process.env.MAILTRAP_USER,
-    pass: process.env.MAILTRAP_PASS,
-  },
-});
+const resend = new Resend('re_NN3LVXm5_7uMDUdam7UQuJPKFthkAkxip');
 
-async function sendTestMail() {
+async function sendEmail() {
   try {
-    const info = await transporter.sendMail({
-      from: '"ListUp Support" <support@listup.dev>', // sender address
-      to: "benedictnnaoma0@gmail.com", // receiver
-      subject: "Hello from Mailtrap",
-      text: "This is a test email using Mailtrap + Node.js",
-      html: "<b>This is a test email using Mailtrap + Node.js</b>",
+    const { data, error } = await resend.emails.send({
+      from: 'ListUp <noreply@listup.ng>',
+      to: 'benedictnnaoma0@gmail.com',
+      subject: 'Welcome to ListUp!',
+      html: '<p>Thanks for joining us!</p>',
     });
 
-    console.log("Message sent: %s", info.messageId);
-  } catch (error) {
-    console.error("Error sending mail:", error);
+    if (error) {
+      console.error('Resend Error:', error);
+    } else {
+      console.log('Email sent successfully:', data);
+    }
+  } catch (err) {
+    console.error('Unexpected Error:', err);
   }
 }
 
-sendTestMail();
+sendEmail();

@@ -121,6 +121,39 @@ export async function fetchListingById(listingId: string) {
   }
 }
 
+// Fetch listings with optional query parameters (categoryId, q, minPrice, maxPrice, page, limit)
+export async function fetchListingsWithFilters(params: {
+  categoryId?: string;
+  q?: string;
+  minPrice?: number | null;
+  maxPrice?: number | null;
+  page?: number;
+  limit?: number;
+}) {
+  try {
+    const query = new URLSearchParams();
+    if (params.categoryId) query.set('categoryId', params.categoryId);
+    if (params.q) query.set('q', params.q);
+    if (params.minPrice != null) query.set('minPrice', String(params.minPrice));
+    if (params.maxPrice != null) query.set('maxPrice', String(params.maxPrice));
+    if (params.page) query.set('page', String(params.page));
+    if (params.limit) query.set('limit', String(params.limit));
+
+    const url = `${API_BASE_URL}/listings${query.toString() ? `?${query.toString()}` : ''}`;
+    const res = await fetch(url, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    if (!res.ok) throw new Error('Failed to fetch listings');
+    const data = await res.json();
+    // backend returns { items, total, page, pages }
+    return data;
+  } catch (error) {
+    console.error('Error fetching filtered listings:', error);
+    throw error;
+  }
+}
+
 // ✅ Fetch all listings for a vendor (Client-side)
 export async function fetchVendorListings(vendorId: string | undefined) {
   try {

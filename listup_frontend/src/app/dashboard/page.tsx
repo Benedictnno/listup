@@ -17,6 +17,7 @@ import { safeLocalStorage } from "@/utils/helpers";
 import Link from "next/link";
 import { useAuthStore } from "@/store/authStore";
 import { useRouter } from "next/navigation";
+import SavedListings from "@/components/SavedListings";
 
 interface DashboardData {
   totalListings: number;
@@ -105,13 +106,23 @@ export default function DashboardOverview() {
   }, [vendorId]);
 
   // Show loading while checking authentication
-  if (!user || user.role !== "VENDOR") {
+  if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-lime-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Redirecting...</p>
         </div>
+      </div>
+    );
+  }
+
+  // If user is not a vendor, show saved posts UI (users can save listings)
+  if (user.role !== "VENDOR") {
+    return (
+      <div className="p-4">
+        <h2 className="text-2xl font-semibold mb-4">Your saved posts</h2>
+        <SavedListings />
       </div>
     );
   }

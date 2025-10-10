@@ -6,15 +6,16 @@ import { fetchCategories, Category } from "@/lib/api/categories";
 import { Package, ShoppingBag, Heart, Utensils, Palette, Monitor, Smartphone, Headphones } from "lucide-react";
 import Link from "next/link";
 
-const categoryIcons: Record<string, React.ReactNode> = {
-  "Food & Snacks": <Utensils className="w-8 h-8" />,
-  "Beauty & Personal Care": <Heart className="w-8 h-8" />,
-  "Fashion & Clothing": <ShoppingBag className="w-8 h-8" />,
+// Map icons by category slug (more stable than using display name)
+const categoryIconsBySlug: Record<string, React.ReactNode> = {
+  "food-snacks": <Utensils className="w-8 h-8" />,
+  "beauty-personal-care": <Heart className="w-8 h-8" />,
+  "fashion-clothing": <ShoppingBag className="w-8 h-8" />,
   "electronics": <Monitor className="w-8 h-8" />,
   "computers": <Monitor className="w-8 h-8" />,
   "mobile-phones": <Smartphone className="w-8 h-8" />,
   "audio": <Headphones className="w-8 h-8" />,
-  "Handmade & Crafts": <Palette className="w-8 h-8" />,
+  "handmade-crafts": <Palette className="w-8 h-8" />,
 };
 
 export default function CategoriesPage() {
@@ -66,7 +67,7 @@ export default function CategoriesPage() {
               <CardContent className="p-6 text-center">
                 <div className="flex justify-center mb-4">
                   <div className="p-3 bg-blue-100 rounded-full text-blue-600 group-hover:bg-blue-200 transition-colors">
-                    {categoryIcons[category.name] || <Package className="w-8 h-8" />}
+                    {categoryIconsBySlug[category.slug] || <Package className="w-8 h-8" />}
                   </div>
                 </div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">

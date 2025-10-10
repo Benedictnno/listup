@@ -49,48 +49,45 @@ export default function ListingCard({ listing }: ListingCardProps) {
         </div>
 
         {/* Content */}
-        <div className="p-4">
-          <h3 className="font-semibold text-gray-900 text-lg mb-2 line-clamp-2 group-hover:text-lime-600 transition-colors">
+        <div className="p-3 md:p-4">
+          {/* (Save button intentionally removed; saved/unsaved actions are available on the single listing page) */}
+          <h3 className="font-semibold text-gray-900 text-base md:text-lg mb-1 md:mb-2 line-clamp-2 group-hover:text-lime-600 transition-colors">
             {listing.title}
           </h3>
-          
-          <p className="text-3xl font-bold text-lime-600 mb-2">
+
+          <p className="text-xl md:text-3xl font-bold text-lime-600 mb-1 md:mb-2">
             ₦{listing.price.toLocaleString()}
           </p>
-          
-          <p className="text-gray-600 text-sm mb-3 line-clamp-2">
+
+          <p className="text-gray-600 text-sm mb-2 line-clamp-2">
             {listing.description}
           </p>
-          
-          {/* Meta information */}
-          <div className="flex items-center justify-between text-sm text-gray-500">
-            {listing.location && (
-              <div className="flex items-center gap-1">
-                <MapPin className="h-4 w-4" />
-                <span>{listing.location}</span>
+
+          {/* Meta information - stack on mobile */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-sm text-gray-500 gap-2">
+              <div className="flex items-center gap-2 text-sm min-w-0">
+                {listing.location && (
+                  <div className="flex items-center gap-1 min-w-0">
+                    <MapPin className="h-4 w-4 flex-shrink-0" />
+                    <span className="text-sm truncate block min-w-0">{listing.location}</span>
+                  </div>
+                )}
+                {listing.condition && (
+                  <span className="px-2 py-0.5 bg-gray-100 rounded-full text-xs flex-shrink-0">
+                    {listing.condition}
+                  </span>
+                )}
               </div>
-            )}
-            
-            {listing.condition && (
-              <span className="px-2 py-1 bg-gray-100 rounded-full text-xs">
-                {listing.condition}
-              </span>
-            )}
-          </div>
-          
-          {/* Category and Seller */}
-          <div className="mt-3 pt-3 border-t border-gray-100">
-            <div className="flex items-center justify-between text-xs text-gray-500">
+
+            {/* Category and Seller - place below on small screens */}
+            <div className="flex items-center justify-end gap-3 text-xs text-gray-500 flex-wrap">
               {listing.category && (
                 <span className="px-2 py-1 bg-lime-50 text-lime-700 rounded-full">
                   {listing.category.name}
                 </span>
               )}
-              
               {listing.seller && (
-                <span className="truncate">
-                  by {listing.seller.name}
-                </span>
+                <span className="truncate">by {listing.seller.name}</span>
               )}
             </div>
           </div>

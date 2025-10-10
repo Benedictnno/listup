@@ -1,44 +1,11 @@
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 
-// Create transporter based on environment
-let transporter;
+const RESEND_API_KEY = process.env.RESEND_API_KEY
+const resend = new Resend(RESEND_API_KEY);
 
-if (process.env.EMAIL_SERVICE === 'mailtrap') {
-  // Mailtrap (Development/Testing)
-  transporter = nodemailer.createTransporter({
-    host: process.env.MAILTRAP_HOST || 'sandbox.smtp.mailtrap.io',
-    port: process.env.MAILTRAP_PORT || 2525,
-    auth: {
-      user: process.env.MAILTRAP_USER,
-      pass: process.env.MAILTRAP_PASS
-    }
-  });
-} else if (process.env.NODE_ENV === 'production') {
-  // Production: Use custom SMTP
-  transporter = nodemailer.createTransporter({
-    host: process.env.SMTP_HOST || 'mail.listup.ng',
-    port: process.env.SMTP_PORT || 587,
-    secure: process.env.SMTP_SECURE === 'true', // true for 465, false for other ports
-    auth: {
-      user: process.env.SMTP_USER || 'noreply@listup.ng',
-      pass: process.env.SMTP_PASS
-    },
-    tls: {
-      rejectUnauthorized: false // For self-signed certificates
-    }
-  });
-} else {
-  // Development: Use Gmail SMTP
-  transporter = nodemailer.createTransporter({
-    service: 'gmail',
-    auth: {
-      user: process.env.GMAIL_USER,
-      pass: process.env.GMAIL_APP_PASSWORD // Use App Password, not regular password
-    }
-  });
-}
-
-// Email templates
+// ==========================
+// Email Templates
+// ==========================
 const EMAIL_TEMPLATES = {
   PASSWORD_RESET: {
     subject: 'Reset Your ListUp Password',
@@ -50,81 +17,23 @@ const EMAIL_TEMPLATES = {
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Reset Your Password</title>
         <style>
-          body { 
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
-            line-height: 1.6; 
-            color: #333; 
-            max-width: 600px; 
-            margin: 0 auto; 
-            padding: 20px;
-            background-color: #f8f9fa;
-          }
-          .container { 
-            background: white; 
-            padding: 40px; 
-            border-radius: 12px; 
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            text-align: center;
-          }
-          .logo { 
-            font-size: 28px; 
-            font-weight: bold; 
-            color: #84cc16; 
-            margin-bottom: 20px;
-          }
-          .code { 
-            font-size: 32px; 
-            font-weight: bold; 
-            color: #84cc16; 
-            background: #f0f9ff; 
-            padding: 20px; 
-            border-radius: 8px; 
-            margin: 30px 0; 
-            font-family: monospace;
-            letter-spacing: 4px;
-          }
-          .warning { 
-            background: #fef3c7; 
-            border: 1px solid #f59e0b; 
-            border-radius: 8px; 
-            padding: 15px; 
-            margin: 20px 0; 
-            color: #92400e;
-          }
-          .footer { 
-            margin-top: 40px; 
-            padding-top: 20px; 
-            border-top: 1px solid #e5e7eb; 
-            color: #6b7280; 
-            font-size: 14px;
-          }
+          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8f9fa; color: #333; padding: 20px; }
+          .container { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-width: 600px; margin: auto; text-align: center; }
+          .logo { font-size: 28px; font-weight: bold; color: #84cc16; margin-bottom: 20px; }
+          .code { font-size: 32px; font-weight: bold; color: #84cc16; background: #f0f9ff; padding: 20px; border-radius: 8px; margin: 30px 0; letter-spacing: 4px; }
+          .footer { margin-top: 40px; border-top: 1px solid #e5e7eb; color: #6b7280; font-size: 14px; padding-top: 20px; }
         </style>
       </head>
       <body>
         <div class="container">
           <div class="logo">ListUp</div>
-          
           <h1>Reset Your Password</h1>
-          
           <p>Hi ${userName || 'there'},</p>
-          
-          <p>We received a request to reset your password for your ListUp account. Use the verification code below to complete the process:</p>
-          
+          <p>We received a request to reset your password for your ListUp account. Use the verification code below:</p>
           <div class="code">${code}</div>
-          
-          <p><strong>This code will expire in 10 minutes.</strong></p>
-          
-          <div class="warning">
-            <strong>⚠️ Security Notice:</strong><br>
-            If you didn't request this password reset, please ignore this email. Your account is secure.
-          </div>
-          
-          <p>Enter this code in the password reset form to continue.</p>
-          
-          <div class="footer">
-            <p>This is an automated message from ListUp. Please do not reply to this email.</p>
-            <p>Need help? Contact our support team.</p>
-          </div>
+          <p><strong>This code expires in 10 minutes.</strong></p>
+          <p>If you didn’t request this, please ignore this email.</p>
+          <div class="footer">This is an automated message from ListUp. Please do not reply.</div>
         </div>
       </body>
       </html>
@@ -134,68 +43,51 @@ Reset Your ListUp Password
 
 Hi ${userName || 'there'},
 
-We received a request to reset your password for your ListUp account. Use the verification code below to complete the process:
+Use the verification code below to reset your password:
 
 ${code}
 
 This code will expire in 10 minutes.
 
-Security Notice: If you didn't request this password reset, please ignore this email. Your account is secure.
+If you didn’t request this, please ignore this email.
 
-Enter this code in the password reset form to continue.
-
----
-This is an automated message from ListUp. Please do not reply to this email.
-Need help? Contact our support team.
+- ListUp Support
     `
   }
 };
 
-/**
- * Send password reset verification code
- * @param {string} email - Recipient email
- * @param {string} code - 6-digit verification code
- * @param {string} userName - User's name (optional)
- * @returns {Promise<boolean>}
- */
+// ==========================
+// Main Function
+// ==========================
 async function sendPasswordResetCode(email, code, userName = null) {
+  const template = EMAIL_TEMPLATES.PASSWORD_RESET;
+console.log(email,code, userName);
+
   try {
-    const template = EMAIL_TEMPLATES.PASSWORD_RESET;
-    
-    const mailOptions = {
-      from: {
-        name: 'ListUp Support',
-        address: process.env.SMTP_USER || process.env.GMAIL_USER || 'noreply@listup.ng'
-      },
+    const { data, error } = await resend.emails.send({
+      from: 'ListUp <onboarding@resend.dev>', // ✅ use verified domain or sandbox
       to: email,
       subject: template.subject,
       html: template.html(code, userName),
-      text: template.text(code, userName)
-    };
+      text: template.text(code, userName),
+    });
+console.log(email,code, userName);
 
-    const info = await transporter.sendMail(mailOptions);
-    
+    if (error) {
+      console.error('❌ Resend API Error:', error);
+      throw new Error('Failed to send verification email');
+    }
+
     console.log(`✅ Password reset email sent to: ${email}`);
-    console.log(`📧 Message ID: ${info.messageId}`);
-    
-    // Log Mailtrap info if using it
-    if (process.env.EMAIL_SERVICE === 'mailtrap') {
-      console.log(`🔍 Check Mailtrap inbox: ${process.env.MAILTRAP_INBOX_URL || 'https://mailtrap.io'}`);
-    }
-    
+    console.log(`📧 Message ID: ${data?.id}`);
+
     return true;
-    
   } catch (error) {
-    console.error('❌ Failed to send password reset email:', error);
-    
-    // Log specific Nodemailer errors
-    if (error.code) {
-      console.error('Nodemailer error code:', error.code);
-    }
-    
+    console.error('❌ Unexpected Error:', error);
     throw new Error('Failed to send verification email');
   }
 }
+
 
 /**
  * Send welcome email to new users

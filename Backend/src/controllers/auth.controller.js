@@ -116,6 +116,10 @@ exports.register = async (req, res, next) => {
       role: user.role 
     });
 
+
+console.log(name + storeName + email + phone + role);
+
+    await addToGoogleSheet(name, storeName || '', email, phone || '', role);
     // Return success response
     res.status(201).json({
       success: true,
@@ -207,18 +211,9 @@ function generateVerificationCode() {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
-// Send verification code via email (placeholder - implement with your email service)
-async function sendVerificationEmail(email, code) {
-  // TODO: Implement email sending logic
-  // For now, just log the code (in production, use a proper email service)
-  console.log(`📧 Verification code for ${email}: ${code}`);
-  
-  // Example email service integration:
-  // const emailService = require('../lib/email');
-  // await emailService.sendPasswordResetCode(email, code);
-  
-  return true;
-}
+// Use the email service to send verification codes
+const emailService = require('../lib/email');
+const { addToGoogleSheet } = require('../utils/googleSheets');
 
 exports.forgotPassword = async (req, res, next) => {
   try {
@@ -277,8 +272,13 @@ exports.forgotPassword = async (req, res, next) => {
       }
     });
 
-    // Send verification code via email
-    await sendVerificationEmail(normalizedEmail, verificationCode);
+    // Send verification code via email using the email service
+    try {
+      await emailService.sendPasswordResetCode(normalizedEmail, verificationCode, user.name);
+    } catch (emailError) {
+      console.error('Failed to send password reset email:', emailError);
+      // Continue — do not reveal email send failure to the client for security
+    }
 
     console.log('✅ Verification code created and sent for:', normalizedEmail);
 
