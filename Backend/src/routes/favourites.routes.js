@@ -1,8 +1,9 @@
 const router = require('express').Router();
 const { auth } = require('../middleware/auth');
 const prisma = require('../lib/prisma');
+const { generalLimiter } = require('../middleware/rateLimiter');
 
-router.get('/', auth, async (req, res, next) => {
+router.get('/',generalLimiter, auth, async (req, res, next) => {
   try {
     const items = await prisma.favorite.findMany({
       where: { userId: req.user.id },
@@ -16,7 +17,7 @@ router.get('/', auth, async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-router.post('/:listingId', auth, async (req, res, next) => {
+router.post('/:listingId',generalLimiter, auth, async (req, res, next) => {
   try {
     const { listingId } = req.params;
     const fav = await prisma.favorite.upsert({
@@ -28,7 +29,7 @@ router.post('/:listingId', auth, async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-router.delete('/:listingId', auth, async (req, res, next) => {
+router.delete('/:listingId',generalLimiter, auth, async (req, res, next) => {
   try {
     const { listingId } = req.params;
     await prisma.favorite.delete({

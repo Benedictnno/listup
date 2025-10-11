@@ -25,11 +25,10 @@ interface UpdateListingPayload {
 
 
 
-// ✅ Fetch all listings (Server-side)
-export async function fetchListings() {
+// ✅ Fetch all listings (Server-side) with pagination
+export async function fetchListings(page = 1, limit = 20) {
   try {
-   
-    const response = await fetch(`${API_BASE_URL}/listings`, {
+    const response = await fetch(`${API_BASE_URL}/listings?page=${page}&limit=${limit}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',

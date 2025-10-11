@@ -3,8 +3,50 @@ const prisma = require('../lib/prisma');
 
 exports.getAll = async (req, res, next) => {
   try {
-    const items = await prisma.listing.findMany();
-    res.json(items);
+    const { limit = 20, page = 1 } = req.query;
+    const take = Math.min(parseInt(limit), 50);
+    const skip = (Math.max(parseInt(page), 1) - 1) * take;
+
+    const [items, total] = await Promise.all([
+      prisma.listing.findMany({
+        orderBy: [
+          { boostScore: "desc" },
+          { createdAt: "desc" },
+        ],
+        skip, 
+        take,
+        select: {
+          id: true,
+          title: true,
+          price: true,
+          images: true,
+          location: true,
+          createdAt: true,
+          category: {
+            select: { id: true, name: true, slug: true }
+          },
+          seller: {
+            select: {
+              id: true,
+              name: true,
+              vendorProfile: {
+                select: {
+                  coverImage: true
+                }
+              }
+            }
+          }
+        }
+      }),
+      prisma.listing.count()
+    ]);
+
+    res.json({
+      items,
+      total,
+      page: Number(page),
+      pages: Math.ceil(total / take)
+    });
   } catch (err) {
     next(err);
   }

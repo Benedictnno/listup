@@ -2,10 +2,11 @@ const router = require('express').Router();
 const { body } = require('express-validator');
 const passport = require('passport');
 const AuthCtrl = require('../controllers/auth.controller');
+const { loginLimiter } = require('../middleware/rateLimiter');
 
 // USER or VENDOR registration
 router.post(
-  '/register',
+  '/register', loginLimiter,
   [
     // Basic user validation
     body('name')
@@ -72,7 +73,7 @@ router.post(
   AuthCtrl.register
 );
 
-router.post('/login',
+router.post('/login', loginLimiter,
   [
     body('email')
       .isEmail()
@@ -88,7 +89,7 @@ router.post('/login',
 );
 
 // Password reset routes
-router.post('/forgot-password',
+router.post('/forgot-password', loginLimiter,
   [
     body('email')
       .isEmail()
@@ -98,7 +99,7 @@ router.post('/forgot-password',
   AuthCtrl.forgotPassword
 );
 
-router.post('/verify-reset-code',
+router.post('/verify-reset-code', loginLimiter,
   [
     body('email')
       .isEmail()
@@ -111,7 +112,7 @@ router.post('/verify-reset-code',
   AuthCtrl.verifyResetCode
 );
 
-router.post('/reset-password',
+router.post('/reset-password',loginLimiter,
   [
     body('email')
       .isEmail()

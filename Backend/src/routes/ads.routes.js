@@ -1,23 +1,24 @@
 const router = require("express").Router();
 const AdsCtrl = require("../controllers/ads.controller");
 const { auth } = require("../middleware/auth");
+const { generalLimiter } = require("../middleware/rateLimiter");
 
 // create ad (draft)
-router.post("/", auth, AdsCtrl.createAd);
+router.post("/",generalLimiter, auth, AdsCtrl.createAd);
 
 // get active ads (public)
-router.get("/active", AdsCtrl.getActiveAds);
+router.get("/active",generalLimiter, AdsCtrl.getActiveAds);
 
 // get all ads (for debugging - remove in production)
-router.get("/all", AdsCtrl.getAllAds);
+router.get("/all",generalLimiter, AdsCtrl.getAllAds);
 
 // get vendor's ads
-router.get("/vendor/:vendorId", auth, AdsCtrl.getAdsByVendor);
+router.get("/vendor/:vendorId",generalLimiter, auth, AdsCtrl.getAdsByVendor);
 
 // get specific ad by ID
-router.get("/:adId", auth, AdsCtrl.getAdById);
+router.get("/:adId", auth,generalLimiter, AdsCtrl.getAdById);
 
 // update ad status
-router.patch("/:adId/status", auth, AdsCtrl.updateAdStatus);
+router.patch("/:adId/status",generalLimiter, auth, AdsCtrl.updateAdStatus);
 
 module.exports = router;

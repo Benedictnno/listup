@@ -65,7 +65,6 @@ function ListingsPageContent() {
   useEffect(() => {
     const query = searchParams.get('q');
     if (query) {
-      console.log('Setting search from URL:', query);
       setSearch(query);
     }
   }, [searchParams, setSearch]);
@@ -109,7 +108,6 @@ function ListingsPageContent() {
 
     // Search filter (from global store)
     if (search) {
-      console.log('Applying search filter:', search);
       filtered = filtered.filter(listing =>
         listing.title.toLowerCase().includes(search.toLowerCase()) ||
         listing.description.toLowerCase().includes(search.toLowerCase()) ||

@@ -15,11 +15,9 @@ export default async function SingleProductPage({
   }
 
   try {
-    console.log("Fetching listing with ID:", id);
     const listing = await fetchListingById(id);
     
     if (!listing) {
-      console.log("Listing not found, showing 404");
       notFound();
     }
 
@@ -30,7 +28,6 @@ export default async function SingleProductPage({
     
     // If it's a "not found" error, show 404 page
     if (error instanceof Error && error.message === "Listing not found") {
-      console.log("Listing not found, redirecting to 404");
       notFound();
     }
     

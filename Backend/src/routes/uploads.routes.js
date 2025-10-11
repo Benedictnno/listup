@@ -4,9 +4,10 @@ const cloudinary = require('../lib/cloudinary');
 const crypto = require('crypto');
 const multer = require('multer');
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
+const { generalLimiter } = require('../middleware/rateLimiter');
 
 
-router.get('/cloudinary-signature', auth, async (req, res, next) => {
+router.get('/cloudinary-signature',generalLimiter, auth, async (req, res, next) => {
   try {
     // allow folder per user; lock down allowed params you expect on client
     const timestamp = Math.floor(Date.now() / 1000);
@@ -41,7 +42,7 @@ const storage = new CloudinaryStorage({
 });
 const upload = multer({ storage });
 
-router.post('/image', auth, upload.single('image'), (req, res) => {
+router.post('/image',generalLimiter, auth, upload.single('image'), (req, res) => {
   // req.file.path is the secure_url
   res.status(201).json({ url: req.file.path, public_id: req.file.filename });
 })
