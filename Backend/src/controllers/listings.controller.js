@@ -93,6 +93,9 @@ exports.getOne = async (req, res, next) => {
 
 exports.create = async (req, res, next) => {
   try {
+    // Defensive auth checks in case middleware is misconfigured upstream
+    if (!req.user) return res.status(401).json({ message: 'Authentication required' });
+    if (req.user.role !== 'VENDOR') return res.status(403).json({ message: 'Only vendors may create listings' });
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });

@@ -1,6 +1,7 @@
 node_modules
 .env
 npm-debug.log*
-
-./src/app/dashboard/create-list/page.tsx 
+./src/app/dashboard/create-list/page.tsx
 service-account.json
+.env.local
+.env.*.local

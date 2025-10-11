@@ -1,9 +1,11 @@
 "use client";
 import Image from "next/image";
 import Link from "next/link";
-import { Phone, MessageSquare } from "lucide-react";
+import { Phone, MessageSquare, Heart } from "lucide-react";
 import { useState, useEffect } from "react";
 import { getFavourites, toggleFavourite, removeFavourite } from "../lib/api/favourites";
+import { useAuthStore } from "@/store/authStore";
+import LoginPromptDialog from "@/components/LoginPromptDialog";
 
 type Seller = {
   id: string;
@@ -29,6 +31,8 @@ export default function ListingDetails({ listing }: { listing: Listing }) {
   const [selectedImage, setSelectedImage] = useState(listing.images[0]);
   const [showPhone , setShowPhone] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
+  const { user } = useAuthStore();
 
   useEffect(() => {
     let mounted = true;
@@ -46,6 +50,7 @@ export default function ListingDetails({ listing }: { listing: Listing }) {
   }, [listing.id]);
 
   return (
+    <>
       <div className="grid md:grid-cols-4 gap-6 p-6 lg:mx-24">
       {/* Left - Images */}
       <div className="col-span-2">
@@ -87,14 +92,40 @@ export default function ListingDetails({ listing }: { listing: Listing }) {
 
       {/* Right - Info */}
       <div className="col-span-2 flex flex-col gap-4 lg:mx-24">
-        <div>
-          <h1 className="text-2xl font-semibold">
-            {listing.title || "Untitled"}
-          </h1>
-          <p className="text-3xl font-bold text-green-600 mt-2">
-            ₦ {listing.price.toLocaleString()}
-          </p>
-          <span className="text-sm text-gray-500">{listing.condition}</span>
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold">
+              {listing.title || "Untitled"}
+            </h1>
+            <p className="text-3xl font-bold text-green-600 mt-2">
+              ₦ {listing.price.toLocaleString()}
+            </p>
+            <span className="text-sm text-gray-500">{listing.condition}</span>
+          </div>
+          <div className="ml-4">
+            <button
+              className="flex items-center gap-2 px-4 py-2 border rounded-xl shadow hover:bg-gray-100"
+              onClick={async () => {
+                try {
+                  if (!user) {
+                    setShowLoginPrompt(true);
+                    return;
+                  }
+                  if (isSaved) {
+                    await removeFavourite(listing.id);
+                    setIsSaved(false);
+                  } else {
+                    await toggleFavourite(listing.id);
+                    setIsSaved(true);
+                  }
+                } catch (e) {
+                  console.error('Failed to toggle saved', e);
+                }
+              }}
+            >
+              <Heart size={18} className={`${isSaved ? 'text-red-500' : 'text-gray-500'}`} /> <span>Save</span>
+            </button>
+          </div>
         </div>
 
 
@@ -113,21 +144,7 @@ export default function ListingDetails({ listing }: { listing: Listing }) {
             </button> : <button className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-xl shadow hover:bg-green-700" onClick={() => setShowPhone(true)}>
               <Phone size={18} /> Show Contact 
             </button>}
-            <button className="flex items-center gap-2 px-4 py-2 border rounded-xl shadow hover:bg-gray-100" onClick={async () => {
-              try {
-                if (isSaved) {
-                  await removeFavourite(listing.id);
-                  setIsSaved(false);
-                } else {
-                  await toggleFavourite(listing.id);
-                  setIsSaved(true);
-                }
-              } catch (e) {
-                console.error('Failed to toggle saved', e);
-              }
-            }}>
-              <MessageSquare size={18} /> {isSaved ? 'Saved' : 'Save'}
-            </button>
+         
             <button className="flex items-center gap-2 px-4 py-2 border rounded-xl shadow hover:bg-gray-100">
               <MessageSquare size={18} /> Start Chat
             </button>
@@ -145,5 +162,7 @@ export default function ListingDetails({ listing }: { listing: Listing }) {
         </div>
       </div>
     </div>
+    <LoginPromptDialog open={showLoginPrompt} onOpenChange={setShowLoginPrompt} />
+    </>
   );
 }

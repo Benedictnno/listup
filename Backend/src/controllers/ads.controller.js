@@ -3,6 +3,16 @@ const prisma = require("../lib/prisma");
 // Create a new ad
 exports.createAd = async (req, res, next) => {
   try {
+    // Defensive auth checks in case the auth middleware is bypassed
+    if (!req.user) {
+      console.log('Unauthenticated ad creation attempt');
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+    if (req.user.role !== 'VENDOR') {
+      console.log('Non-vendor attempted to create an ad');
+      return res.status(403).json({ message: 'Only vendors may create ads' });
+    }
+
     console.log("=== AD CREATION REQUEST ===");
     console.log("Request body:", req.body);
     console.log("User ID:", req.user.id);

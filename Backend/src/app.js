@@ -1,3 +1,15 @@
+// Load .env in development (optional) so GOOGLE_SERVICE_ACCOUNT_BASE64 etc. are available
+if (process.env.NODE_ENV !== 'production') {
+  require('dotenv').config();
+}
+
+// Ensure GOOGLE_APPLICATION_CREDENTIALS points to a credentials file when using env-based creds
+try {
+  require('./lib/credentials').ensureCredentialsFile();
+} catch (e) {
+  console.error('Error ensuring credentials file:', e.message);
+}
+
 const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
