@@ -7,6 +7,8 @@ import { PrimaryButton, SectionEyebrow } from "@/utils/helpers";
 import AdsPage from "@/components/TrendingAds";
 import Image from "next/image";
 import MiniListings from "@/components/MiniListings";
+import Link from "next/link";
+import { GhostButton } from "@/utils/helpers";
 /**
  * Marketplace Landing Page
  * Framework: Next.js (app router ready) + TailwindCSS
@@ -42,19 +44,7 @@ export default function MarketplaceLanding() {
               smarter with our community-driven marketplace.
             </p>
 
-            {/* <div className="mt-6 flex flex-wrap items-center gap-3">
-              <Link href="/signup">
-                <PrimaryButton>
-                  Get Started
-                </PrimaryButton>
-              </Link>
-              <Link href={"listings"}>
-              <GhostButton>
-                <Search className="h-4 w-4" />
-                Explore Listings
-              </GhostButton>
-              </Link>
-            </div> */}
+     
 
 
             <form onSubmit={(e) => {
@@ -77,7 +67,20 @@ export default function MarketplaceLanding() {
                 </button>
             </form>
             <p className="mt-2 text-xs text-slate-400 font-montserrat">No fees to browse. Secure checkout on eligible items.</p>
+          <div className="mt-6 flex flex-wrap items-center gap-3">
+              <Link href="/signup">
+                <PrimaryButton>
+                  Get Signed Up 
+                </PrimaryButton>
+              </Link>
+              <Link href={"/login"}>
+              <GhostButton>
+                Login
+              </GhostButton>
+              </Link>
+            </div>
           </motion.div>
+
 
           <motion.div
             initial={{ opacity: 0, y: 14 }}

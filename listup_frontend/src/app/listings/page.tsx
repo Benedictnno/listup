@@ -2,15 +2,16 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { fetchListings } from "@/lib/api/listing";
 import ListingCard from "@/components/ListingCard";
 import SearchBar from "@/components/SearchBar";
-import { Filter, SortAsc, SortDesc, X } from "lucide-react";
+import { Filter, SortAsc, SortDesc, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { useFilterStore } from "@/store/useFilterStore";
+import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
+import { useIntersectionObserver } from "@/hooks/useIntersectionObserver";
 
 interface Listing {
   id: string;
@@ -46,10 +47,18 @@ interface FilterState {
 function ListingsPageContent() {
   const searchParams = useSearchParams();
   const { search, minPrice, maxPrice, setSearch } = useFilterStore();
-  const [listings, setListings] = useState<Listing[]>([]);
-  const [filteredListings, setFilteredListings] = useState<Listing[]>([]);
+  
+  // Use infinite scroll hook
+  const { 
+    listings, 
+    loading, 
+    error, 
+    hasMore, 
+    loadMore, 
+    refresh 
+  } = useInfiniteScroll(1, 20);
 
-  const [loading, setLoading] = useState(true);
+  const [filteredListings, setFilteredListings] = useState<Listing[]>([]);
   const [filters, setFilters] = useState<FilterState>({
     search: '',
     category: '',
@@ -61,6 +70,13 @@ function ListingsPageContent() {
     sortOrder: 'desc'
   });
 
+  // Intersection observer for infinite scroll
+  const loadMoreRef = useIntersectionObserver(() => {
+    if (hasMore && !loading) {
+      loadMore();
+    }
+  }, { threshold: 0.1, rootMargin: '100px' });
+
   // Handle URL query parameters for search
   useEffect(() => {
     const query = searchParams.get('q');
@@ -68,22 +84,6 @@ function ListingsPageContent() {
       setSearch(query);
     }
   }, [searchParams, setSearch]);
-
-  // Load listings
-  useEffect(() => {
-    async function loadData() {
-      try {
-        setLoading(true);
-        const listingsData = await fetchListings();
-        setListings(listingsData);
-      } catch (error) {
-        console.error("Error loading data:", error);
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadData();
-  }, []);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -180,7 +180,32 @@ function ListingsPageContent() {
     return hasSearch || minPrice !== null || maxPrice !== null;
   };
 
-  if (loading) {
+  // Show error state
+  if (error && listings.length === 0) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center max-w-md mx-auto p-6">
+          <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <svg className="h-10 w-10 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+          </div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-3">
+            Failed to Load Listings
+          </h1>
+          <p className="text-gray-600 mb-6">
+            {error}
+          </p>
+          <Button onClick={refresh} className="bg-lime-500 hover:bg-lime-600">
+            Try Again
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Show loading state only for initial load
+  if (loading && listings.length === 0) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
@@ -191,7 +216,8 @@ function ListingsPageContent() {
     );
   }
 
-  if (!listings || listings.length === 0) {
+  // Show empty state
+  if (!loading && listings.length === 0) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center max-w-md mx-auto p-6">
@@ -449,6 +475,38 @@ function ListingsPageContent() {
             <ListingCard key={listing.id} listing={listing} />
           ))}
         </div>
+
+        {/* Infinite Scroll Trigger and Loading States */}
+        {hasMore && (
+          <div ref={loadMoreRef} className="flex justify-center py-8">
+            {loading ? (
+              <div className="flex items-center gap-2 text-gray-600">
+                <Loader2 className="h-5 w-5 animate-spin" />
+                <span>Loading more listings...</span>
+              </div>
+            ) : (
+              <Button 
+                onClick={loadMore} 
+                variant="outline"
+                className="bg-white hover:bg-gray-50"
+              >
+                Load More
+              </Button>
+            )}
+          </div>
+        )}
+
+        {/* End of results indicator */}
+        {!hasMore && listings.length > 0 && (
+          <div className="text-center py-8">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-full text-gray-600 text-sm">
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              You've reached the end of the listings
+            </div>
+          </div>
+        )}
 
         {/* No Results */}
         {filteredListings.length === 0 && hasActiveFilters() && (

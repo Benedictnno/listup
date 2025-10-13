@@ -26,11 +26,11 @@ export default function MiniListings() {
     async function load() {
       try {
         setLoading(true);
-        const data = await fetchListings();
+        const data = await fetchListings(1, 12);
         if (!mounted) return;
-        // fetchListings returns parsed JSON (likely an array or {data}) — handle common shapes
-        const items = Array.isArray(data) ? data : data?.data || data?.listings || [];
-        setListings(items.slice(0, 12));
+        // Backend returns paging shape: { items, total, page, pages }
+        const items = Array.isArray(data?.items) ? data.items : Array.isArray(data) ? data : [];
+        setListings(items);
       } catch (err: unknown) {
         setError(err instanceof Error ? err.message : "Failed to load listings");
       } finally {
