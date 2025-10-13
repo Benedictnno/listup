@@ -8,6 +8,7 @@ router.use('/auth',generalLimiter, require('./auth.routes'));
 router.use('/users',generalLimiter, require('./users.routes'));
 router.use('/listings',generalLimiter, require('./listings.routes'));
 router.use('/categories',generalLimiter, require('./categories.routes'));
+router.use('/locations',generalLimiter, require('./locations.routes'));
 router.use('/vendors',generalLimiter, require('./vendors.routes'));
 router.use('/uploads',generalLimiter, require('./uploads.routes'));
 router.use('/phone',generalLimiter, require('./phone.routes'));

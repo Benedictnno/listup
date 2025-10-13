@@ -319,3 +319,12 @@ model PasswordReset {
   @@index([email, code])
   @@index([expiresAt])
 }
+
+// Admin-managed selling locations for vendors
+model SellingLocation {
+  id      String  @id @default(auto()) @map("_id") @db.ObjectId
+  name    String  @unique
+  active  Boolean @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

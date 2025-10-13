@@ -56,6 +56,45 @@ If you didn’t request this, please ignore this email.
   }
 };
 
+// Vendor pending email via Resend
+async function sendVendorPendingEmail(email, userName, storeName) {
+  try {
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+        <div style="max-width:600px;margin:0 auto;padding:24px;border:1px solid #e5e7eb;border-radius:12px;">
+          <h1 style="color:#111827;margin:0 0 12px;">You're almost there, ${userName}!</h1>
+          <p style="color:#374151;margin:0 0 12px;">Thanks for signing up your store${storeName ? ` "${storeName}"` : ''} on ListUp.</p>
+          <p style="color:#374151;margin:0 0 12px;">Your vendor account is <strong>pending verification</strong>. Our team will review your details and reach out shortly.</p>
+          <p style="color:#374151;margin:0 0 16px;">You can read about the process here:</p>
+          <p><a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/welcome/vendor" style="color:#84cc16;font-weight:600;">Vendor Welcome & Next Steps</a></p>
+          <p style="color:#6b7280;margin-top:24px;font-size:12px;">If you didn't request this, please ignore this email.</p>
+        </div>
+      </body>
+      </html>
+    `;
+
+    const { data, error } = await resend.emails.send({
+      from: 'ListUp <onboarding@resend.dev>',
+      to: email,
+      subject: 'Your vendor account is pending verification',
+      html
+    });
+
+    if (error) {
+      console.error('❌ Resend vendor pending email error:', error);
+      return false;
+    }
+
+    console.log(`✅ Vendor pending email sent to: ${email} (${data?.id})`);
+    return true;
+  } catch (err) {
+    console.error('❌ Failed sending vendor pending email:', err);
+    return false;
+  }
+}
+
 // ==========================
 // Main Function
 // ==========================
@@ -203,5 +242,6 @@ module.exports = {
   sendPasswordResetCode,
   sendWelcomeEmail,
   testEmailService,
-  verifyEmailConfig
+  verifyEmailConfig,
+  sendVendorPendingEmail
 };

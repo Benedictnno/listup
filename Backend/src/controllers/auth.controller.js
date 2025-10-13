@@ -94,6 +94,7 @@ exports.register = async (req, res, next) => {
               storeName: storeName.trim(),
               storeAddress: storeAddress.trim(),
               businessCategory: businessCategory.trim(),
+              // ensure pending defaults (schema already defaults)
             },
           },
         },
@@ -101,6 +102,11 @@ exports.register = async (req, res, next) => {
           vendorProfile: true 
         },
       });
+      // Fire-and-forget pending email
+      try {
+        const { sendVendorPendingEmail } = require('../lib/email');
+        sendVendorPendingEmail(email.toLowerCase().trim(), name.trim(), storeName?.trim());
+      } catch (e) { console.warn('Email send failed (vendor pending):', e?.message || e); }
     } else {
       // Create regular user
       user = await prisma.user.create({
