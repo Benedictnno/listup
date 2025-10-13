@@ -443,7 +443,7 @@ function ListingsPageContent() {
         {/* Results Summary */}
         <div className="mb-6 flex items-center justify-between">
           <div className="text-sm text-gray-600">
-            Showing {filteredListings.length} of {listings.length} listings
+            {/* Showing {filteredListings.length} of {listings.length} listings */}
             {hasActiveFilters() && (
               <span className="ml-2 text-lime-600">
                 (filtered results)

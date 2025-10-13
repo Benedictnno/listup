@@ -1,7 +1,7 @@
 "use client";
 import Image from "next/image";
 import Link from "next/link";
-import { Phone, MessageSquare, Heart } from "lucide-react";
+import { Phone, MessageSquare, Heart, Send, ChevronDown } from "lucide-react";
 import { useState, useEffect } from "react";
 import { getFavourites, toggleFavourite, removeFavourite } from "../lib/api/favourites";
 import { useAuthStore } from "@/store/authStore";
@@ -32,6 +32,8 @@ export default function ListingDetails({ listing }: { listing: Listing }) {
   const [showPhone , setShowPhone] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
+  const [selectedQuickMessage, setSelectedQuickMessage] = useState<string>("Is this still available?");
+  const [customMessage, setCustomMessage] = useState<string>("");
   const { user } = useAuthStore();
 
   useEffect(() => {
@@ -144,10 +146,80 @@ export default function ListingDetails({ listing }: { listing: Listing }) {
             </button> : <button className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-xl shadow hover:bg-green-700" onClick={() => setShowPhone(true)}>
               <Phone size={18} /> Show Contact 
             </button>}
-         
-            <button className="flex items-center gap-2 px-4 py-2 border rounded-xl shadow hover:bg-gray-100">
+            <button
+              className="flex items-center gap-2 px-4 py-2 border rounded-xl shadow hover:bg-gray-100"
+              onClick={() => {
+                // Fallback: reveal phone if not shown yet
+                if (!showPhone) setShowPhone(true);
+                // Focus quick message selector area (no-op visually)
+              }}
+            >
               <MessageSquare size={18} /> Start Chat
             </button>
+          </div>
+
+          {/* Quick WhatsApp message composer */}
+          <div className="mt-4 space-y-2">
+            <label className="text-sm text-gray-600">Quick message</label>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <div className="relative flex-1">
+                <select
+                  value={selectedQuickMessage}
+                  onChange={(e) => setSelectedQuickMessage(e.target.value)}
+                  className="w-full appearance-none rounded-xl border px-3 py-2 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-green-600"
+                >
+                  <option>Is this still available?</option>
+                  <option>Is the price negotiable?</option>
+                  <option>Can you share more photos or details?</option>
+                  <option>What is the condition and warranty?</option>
+                  <option>Where can we meet for inspection?</option>
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+              </div>
+              <button
+                onClick={() => {
+                  const raw = (listing.seller.phone || "").replace(/[^0-9]/g, "");
+                  if (!raw) {
+                    alert("Seller has no WhatsApp number available.");
+                    return;
+                  }
+                  // Try to normalize Nigerian numbers (11 digits starting with 0)
+                  let phone = raw;
+                  if (phone.length === 11 && phone.startsWith("0")) {
+                    phone = `234${phone.slice(1)}`;
+                  }
+
+                  const origin = typeof window !== 'undefined' ? window.location.origin : '';
+                  const listingUrl = `${origin}/listings/${listing.id}`;
+                  const productImage = listing.images?.[0] || '';
+
+                  const parts = [
+                    `Hi ${listing.seller.name},`,
+                    selectedQuickMessage,
+                    `\n\nProduct: ${listing.title}`,
+                    `Price: ₦${listing.price.toLocaleString()}`,
+                    productImage ? `Image: ${productImage}` : undefined,
+                    `Link: ${listingUrl}`,
+                    customMessage ? `\n${customMessage}` : undefined,
+                  ].filter(Boolean);
+
+                  const text = encodeURIComponent(parts.join("\n"));
+                  const url = `https://wa.me/${phone}?text=${text}`;
+                  window.open(url, '_blank');
+                }}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-green-600 px-4 py-2 text-white shadow hover:bg-green-700"
+              >
+                <Send size={16} /> Send on WhatsApp
+              </button>
+            </div>
+            <textarea
+              value={customMessage}
+              onChange={(e) => setCustomMessage(e.target.value)}
+              placeholder="Add an optional message..."
+              className="mt-2 w-full rounded-xl border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-600"
+              rows={2}
+            />
+            <p className="text-xs text-gray-500">Note: WhatsApp deep links cannot attach files. We include the product image URL and page link in the message.</p>
           </div>
         </div>
 
