@@ -34,7 +34,10 @@ const corsOptions = {
     'http://localhost:3001', // Admin frontend
     'http://localhost:3000', // Main frontend
     'https://listup-admin.vercel.app', // Admin production
-    'https://listup.ng', // Main production
+    'http://listup.ng',
+    'https://listup.ng',
+    'http://www.listup.ng',
+    'https://www.listup.ng',  
   ],
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],

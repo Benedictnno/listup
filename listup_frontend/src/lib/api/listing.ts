@@ -1,9 +1,6 @@
 // Server-side API functions for Next.js App Router
 // Use environment variable with proper fallback for production
-const API_BASE_URL = typeof window !== 'undefined' 
-  ? (process.env.NEXT_PUBLIC_API_URL || "https://listup-api.onrender.com/api") 
-  : "https://listup-api.onrender.com/api";
-
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://listup-api.onrender.com/api"
 // Define proper types for the API
 interface CreateListingPayload {
   title: string;
