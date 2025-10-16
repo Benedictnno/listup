@@ -29,6 +29,17 @@ interface ValidationError {
   value?: string;
 }
 
+type payloadType = {
+  name: string;
+  email: string;
+  password: string;
+  phone?: string;
+  role?: string;
+  storeName?: string;
+  storeAddress?: string;
+  businessCategory?: string;
+}
+
 export default function SignupPage() {
   const { form, setField, reset } = useSignupStore();
   const signup = useAuthStore((state) => state.signup);
@@ -219,7 +230,7 @@ export default function SignupPage() {
     clearErrors();
 
     try {
-      const payload: Record<string, any> = {
+      const payload: payloadType = {
         name: String(form.name || "").trim(),
         email: String(form.email || "").trim(),
         password: form.password,

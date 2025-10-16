@@ -32,7 +32,7 @@ export function useInfiniteScroll(
       setLoading(true);
       setError(null);
 
-      const data = await fetchListings(page, limit);
+      const data = await fetchListings();
       
       if (append) {
         setListings(prev => [...prev, ...data.items]);

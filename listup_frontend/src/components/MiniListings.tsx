@@ -26,7 +26,7 @@ export default function MiniListings() {
     async function load() {
       try {
         setLoading(true);
-        const data = await fetchListings(1, 12);
+        const data = await fetchListings();
         if (!mounted) return;
         // Backend returns paging shape: { items, total, page, pages }
         const items = Array.isArray(data?.items) ? data.items : Array.isArray(data) ? data : [];

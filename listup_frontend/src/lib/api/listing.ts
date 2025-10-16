@@ -23,8 +23,6 @@ interface UpdateListingPayload {
   status?: string;
 }
 
-
-
 // ✅ Fetch all listings (Server-side)
 export async function fetchListings() {
   try {
