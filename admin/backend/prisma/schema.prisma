@@ -72,7 +72,6 @@ model VendorProfile {
   id               String   @id @default(auto()) @map("_id") @db.ObjectId
   storeName        String
   storeDescription String?
-  storeAddress     String
   businessCategory String
   coverImage       String?
   logo             String?
@@ -86,6 +85,10 @@ model VendorProfile {
   rejectionReason  String?
   verifiedAt       DateTime?
   verifiedBy       String?  @db.ObjectId // Admin user ID who verified
+
+  // Address relation
+  addressId String? @db.ObjectId
+  address   Address? @relation(fields: [addressId], references: [id])
 
   userId String @unique @db.ObjectId
   user   User   @relation(fields: [userId], references: [id])
@@ -105,6 +108,18 @@ model Category {
   updatedAt DateTime @updatedAt
 
   listings Listing[]
+}
+
+model Address {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  name      String   @unique
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  createdBy String   @db.ObjectId
+
+  // Relations
+  vendors   VendorProfile[]
 }
 
 model Listing {

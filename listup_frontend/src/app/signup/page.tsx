@@ -1,11 +1,26 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSignupStore } from "@/store/signupStore";
 import { useAuthStore } from "@/store/authStore";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Store, AlertCircle, CheckCircle, Eye, EyeOff, RefreshCw } from "lucide-react";
+import axios from "axios";
+import {
+  ArrowRight,
+  Store,
+  AlertCircle,
+  CheckCircle,
+  Eye,
+  EyeOff,
+  RefreshCw,
+} from "lucide-react";
 import Link from "next/link";
-import { parseApiError, parseValidationErrors, getFieldErrorMessage, isRetryableError, getSuccessMessage } from "@/utils/errorHandler";
+import {
+  parseApiError,
+  parseValidationErrors,
+  getFieldErrorMessage,
+  isRetryableError,
+  getSuccessMessage,
+} from "@/utils/errorHandler";
 import ErrorNotice from "@/components/ErrorNotice";
 
 interface ValidationError {
@@ -18,13 +33,24 @@ export default function SignupPage() {
   const { form, setField, reset } = useSignupStore();
   const signup = useAuthStore((state) => state.signup);
   const router = useRouter();
-  const [step, setStep] = useState(1);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  const [success, setSuccess] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [retryCount, setRetryCount] = useState(0);
+
+  // UI & flow state
+  const [step, setStep] = useState<number>(1);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string>("");
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>(
+    {}
+  );
+  const [success, setSuccess] = useState<string>("");
+  const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [retryCount, setRetryCount] = useState<number>(0);
+
+  // Addresses (admin-managed) for vendor signup
+  const [addresses, setAddresses] = useState<{ id: string; name: string }[]>(
+    []
+  );
+  const [addressesLoading, setAddressesLoading] = useState<boolean>(false);
+  const [addressesError, setAddressesError] = useState<string>("");
 
   const clearErrors = () => {
     setError("");
@@ -32,169 +58,202 @@ export default function SignupPage() {
     setSuccess("");
   };
 
+  // Fetch admin-defined active addresses when vendor reaches step 2
+  const fetchAddresses = async () => {
+    try {
+      setAddressesLoading(true);
+      setAddressesError("");
+      const API_BASE_URL =
+        process.env.NEXT_PUBLIC_ADDRESS_API || "http://localhost:4001/api";
+      const res = await axios.get(`${API_BASE_URL}/addresses`);
+      const data = Array.isArray(res.data) ? res.data : [];
+      const active = data.filter((a: any) => a.isActive);
+      const mapped = active.map((a: any) => ({
+        id: a.id ?? a._id ?? a.addressId ?? String(a.name),
+        name: a.name ?? a.address ?? a.label ?? String(a.id ?? a._id),
+      }));
+      setAddresses(mapped);
+
+      // Default selection: if vendor has no storeAddress yet, set the first active address name
+      if (mapped.length > 0 && !form.storeAddress) {
+        setField("storeAddress", mapped[0].name);
+      }
+    } catch (err: any) {
+      console.error("Error fetching addresses:", err);
+      setAddressesError(
+        err?.response?.data?.message || "Failed to load addresses"
+      );
+    } finally {
+      setAddressesLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    // Only fetch when vendor is on step 2
+    if (form.role === "VENDOR" && step === 2) {
+      fetchAddresses();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.role, step]);
+
+  /* -------------------------
+     Validation helpers
+     ------------------------- */
   const setFieldError = (field: string, message: string) => {
-    setFieldErrors(prev => ({ ...prev, [field]: message }));
+    setFieldErrors((prev) => ({ ...prev, [field]: message }));
   };
 
   const clearFieldError = (field: string) => {
-    setFieldErrors(prev => {
-      const newErrors = { ...prev };
-      delete newErrors[field];
-      return newErrors;
+    setFieldErrors((prev) => {
+      const next = { ...prev };
+      delete next[field];
+      return next;
     });
+  };
+
+  const getFieldError = (field: string) => fieldErrors[field];
+  const isFieldValid = (field: string) => {
+    const value = (form as any)[field] || "";
+    return !getFieldError(field) && Boolean(String(value).trim());
   };
 
   const validateStep1 = (): boolean => {
     clearErrors();
-    let isValid = true;
+    let valid = true;
 
-    // Name validation
-    const nameError = getFieldErrorMessage('name', form.name);
-    if (nameError) {
-      setFieldError("name", nameError);
-      isValid = false;
+    const nameErr = getFieldErrorMessage("name", form.name);
+    if (nameErr) {
+      setFieldError("name", nameErr);
+      valid = false;
     }
 
-    // Email validation
-    const emailError = getFieldErrorMessage('email', form.email);
-    if (emailError) {
-      setFieldError("email", emailError);
-      isValid = false;
+    const emailErr = getFieldErrorMessage("email", form.email);
+    if (emailErr) {
+      setFieldError("email", emailErr);
+      valid = false;
     }
 
-    // Password validation
-    const passwordError = getFieldErrorMessage('password', form.password);
-    if (passwordError) {
-      setFieldError("password", passwordError);
-      isValid = false;
+    const passwordErr = getFieldErrorMessage("password", form.password);
+    if (passwordErr) {
+      setFieldError("password", passwordErr);
+      valid = false;
     }
 
-    // Phone validation (optional but if provided, must be valid)
-    if (form.phone.trim()) {
-      const phoneError = getFieldErrorMessage('phone', form.phone);
-      if (phoneError) {
-        setFieldError("phone", phoneError);
-        isValid = false;
+    if (String(form.phone || "").trim()) {
+      const phoneErr = getFieldErrorMessage("phone", form.phone);
+      if (phoneErr) {
+        setFieldError("phone", phoneErr);
+        valid = false;
       }
     }
 
-    if (!isValid) {
-      setError("Please fix the errors below to continue");
-    }
-
-    return isValid;
+    if (!valid) setError("Please fix the errors below to continue");
+    return valid;
   };
 
   const validateStep2 = (): boolean => {
     clearErrors();
-    let isValid = true;
+    let valid = true;
 
-    const storeNameError = getFieldErrorMessage('storeName', form.storeName || '');
-    if (storeNameError) {
-      setFieldError("storeName", storeNameError);
-      isValid = false;
+    const storeNameErr = getFieldErrorMessage(
+      "storeName",
+      form.storeName || ""
+    );
+    if (storeNameErr) {
+      setFieldError("storeName", storeNameErr);
+      valid = false;
     }
 
-    const storeAddressError = getFieldErrorMessage('storeAddress', form.storeAddress || '');
-    if (storeAddressError) {
-      setFieldError("storeAddress", storeAddressError);
-      isValid = false;
+    const storeAddressErr = getFieldErrorMessage(
+      "storeAddress",
+      form.storeAddress || ""
+    );
+    if (storeAddressErr) {
+      setFieldError("storeAddress", storeAddressErr);
+      valid = false;
     }
 
-    const businessCategoryError = getFieldErrorMessage('businessCategory', form.businessCategory || '');
-    if (businessCategoryError) {
-      setFieldError("businessCategory", businessCategoryError);
-      isValid = false;
+    const businessCategoryErr = getFieldErrorMessage(
+      "businessCategory",
+      form.businessCategory || ""
+    );
+    if (businessCategoryErr) {
+      setFieldError("businessCategory", businessCategoryErr);
+      valid = false;
     }
 
-    if (!isValid) {
-      setError("Please complete all vendor information to continue");
-    }
+    if (!valid) setError("Please complete all vendor information to continue");
+    return valid;
+  };
 
-    return isValid;
+  /* -------------------------
+     Handlers
+     ------------------------- */
+  const handleFieldChange = (field: string, value: string) => {
+    setField(field, value);
+    if (fieldErrors[field]) clearFieldError(field);
   };
 
   const handleNext = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!validateStep1()) {
-      return;
-    }
+    if (!validateStep1()) return;
 
-    // If role is VENDOR, move to step 2
+    // If vendor, move to step 2
     if (form.role === "VENDOR") {
       setStep(2);
       setSuccess("Basic information completed! Now add your store details.");
+      // fetchAddresses will run via useEffect when step becomes 2
     } else {
-      // Otherwise, submit immediately (users don't need vendor fields)
+      // Non-vendor: final submit
       handleSubmit(e);
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Validate current step
-    if (form.role === "VENDOR" && step === 2) {
-      if (!validateStep2()) {
-        return;
-      }
-    }
+
+    // If vendor on step 2, validate step 2 fields
+    if (form.role === "VENDOR" && step === 2 && !validateStep2()) return;
 
     setLoading(true);
     clearErrors();
-    
+
     try {
-      // Prepare signup data based on role
-      const signupData = {
-        name: form.name.trim(),
-        email: form.email.trim(),
+      const payload: Record<string, any> = {
+        name: String(form.name || "").trim(),
+        email: String(form.email || "").trim(),
         password: form.password,
         role: form.role,
-        // Only include phone if it has a value
-        ...(form.phone.trim() && { phone: form.phone.trim() }),
-        // Only include vendor fields if role is VENDOR
-        ...(form.role === "VENDOR" && {
-          storeName: form.storeName?.trim(),
-          storeAddress: form.storeAddress?.trim(),
-          businessCategory: form.businessCategory?.trim(),
-        }),
       };
+      if (String(form.phone || "").trim()) payload.phone = String(form.phone).trim();
+      if (form.role === "VENDOR") {
+        payload.storeName = String(form.storeName || "").trim();
+        payload.storeAddress = String(form.storeAddress || "").trim();
+        payload.businessCategory = String(form.businessCategory || "").trim();
+      }
 
-      // Create account
-      await signup(signupData);
-      
-      // Success - redirect to dashboard
-      setSuccess(getSuccessMessage('signup'));
+      await signup(payload);
+
+      setSuccess(getSuccessMessage("signup"));
       reset();
-      setTimeout(() => {
-        router.push("/dashboard");
-      }, 2500);
-      
+
+      // redirect after tiny delay to allow success UI
+      setTimeout(() => router.push("/dashboard"), 1500);
     } catch (err: unknown) {
       console.error("Signup error:", err);
-      
-      // Parse API errors using the new utility
-      const errorMessage = parseApiError(err);
-      setError(errorMessage);
-      
-      // Handle field-specific validation errors
-      const validationErrors = parseValidationErrors(err);
-      if (validationErrors.length > 0) {
-        validationErrors.forEach((error: ValidationError) => {
-          if (error.field) {
-            setFieldError(error.field, error.message);
-          }
+      const message = parseApiError(err);
+      setError(message);
+
+      const valErrors: ValidationError[] = parseValidationErrors(err);
+      if (valErrors.length > 0) {
+        valErrors.forEach((ve) => {
+          if (ve.field) setFieldError(ve.field, ve.message);
         });
-        
-        if (validationErrors.length > 0) {
-          setError("Please fix the errors below to continue");
-        }
+        setError("Please fix the errors below to continue");
       }
-      
-      // Increment retry count for retryable errors
+
       if (isRetryableError(err)) {
-        setRetryCount(prev => prev + 1);
+        setRetryCount((p) => p + 1);
       }
     } finally {
       setLoading(false);
@@ -206,99 +265,89 @@ export default function SignupPage() {
     clearErrors();
   };
 
-  const handleFieldChange = (field: string, value: string) => {
-    setField(field, value);
-    // Clear field error when user starts typing
-    if (fieldErrors[field]) {
-      clearFieldError(field);
-    }
-  };
-
-  const getFieldError = (field: string): string | undefined => {
-    return fieldErrors[field];
-  };
-
-  const isFieldValid = (field: string): boolean => {
-    const value = form[field as keyof typeof form] || '';
-    return !getFieldError(field) && Boolean(value.toString().trim());
-  };
-
   const handleRetry = () => {
     setError("");
     setRetryCount(0);
-    handleSubmit(new Event('submit') as any);
+    // attempt submit again
+    handleSubmit(new Event("submit") as any);
   };
 
+  /* -------------------------
+     Render
+     ------------------------- */
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-900">
+    <div className="min-h-screen flex items-center justify-center bg-slate-900 p-4">
       <div className="absolute inset-0 -z-0 bg-[radial-gradient(1200px_600px_at_20%_-10%,rgba(148,163,184,0.18),transparent_70%),radial-gradient(800px_400px_at_100%_10%,rgba(148,163,184,0.12),transparent_60%)]" />
-      
-      <div className="relative z-10 bg-white p-8 rounded-2xl shadow-lg w-full max-w-md border border-slate-200/20">
+
+      <div className="relative z-10 bg-white p-6 md:p-8 rounded-2xl shadow-lg w-full max-w-xl border border-slate-200/20">
         {/* Header */}
-        <div className="flex items-center gap-2 mb-6">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-lime-400 text-slate-900 font-black">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-lime-400 text-slate-900 font-black">
             LU
           </div>
-          <span className="text-lg font-semibold tracking-wide">ListUp</span>
+          <div>
+            <div className="text-lg font-semibold tracking-wide">ListUp</div>
+            <div className="text-sm text-slate-500">Create your account</div>
+          </div>
         </div>
-        
-        <h2 className="text-2xl font-bold mb-6 text-slate-800">Create your account</h2>
-        
-        {/* Success Message */}
+
+        {/* Success */}
         {success && (
           <div className="mb-4 p-4 rounded-xl bg-green-50 border border-green-200 text-green-700 text-sm">
             <div className="flex items-start gap-3">
-              <CheckCircle className="w-5 h-5 mt-0.5 flex-shrink-0 text-green-500" />
-              <div className="flex-1">
+              <CheckCircle className="w-5 h-5 mt-0.5 text-green-500" />
+              <div>
                 <p className="font-medium text-green-800">{success}</p>
-                <div className="mt-2 text-xs text-green-600 bg-green-100 p-2 rounded-lg">
-                  <p className="font-medium mb-1">🎉 Welcome to ListUp!</p>
-                  <p>Your account has been created successfully. You'll be redirected to your dashboard in a few seconds...</p>
-                </div>
+                <p className="text-xs text-green-600 mt-1">
+                  Redirecting to dashboard...
+                </p>
               </div>
             </div>
           </div>
         )}
 
-        {/* Error Display */}
+        {/* Error */}
         {error && (
-          <ErrorNotice message={error} rawError={error} retryCount={retryCount} onRetry={handleRetry} />
+          <ErrorNotice
+            message={error}
+            rawError={error}
+            retryCount={retryCount}
+            onRetry={handleRetry}
+          />
         )}
 
-        {/* Progress Indicator */}
+        {/* Progress indicator for vendor */}
         {form.role === "VENDOR" && (
           <div className="mb-6">
             <div className="flex items-center justify-center space-x-2">
-              <div className={`w-3 h-3 rounded-full ${step >= 1 ? 'bg-lime-400' : 'bg-slate-300'}`} />
-              <div className={`w-3 h-3 rounded-full ${step >= 2 ? 'bg-lime-400' : 'bg-slate-300'}`} />
+              <div className={`w-3 h-3 rounded-full ${step >= 1 ? "bg-lime-400" : "bg-slate-300"}`} />
+              <div className={`w-3 h-3 rounded-full ${step >= 2 ? "bg-lime-400" : "bg-slate-300"}`} />
             </div>
-            <p className="text-center text-sm text-slate-500 mt-2">
-              Step {step} of 2
-            </p>
+            <p className="text-center text-sm text-slate-500 mt-2">Step {step} of 2</p>
           </div>
         )}
 
-        {/* STEP 1 FORM - Basic Information */}
+        {/* ------------------
+            STEP 1 - BASIC INFO
+            ------------------ */}
         {step === 1 && (
-          <form className="space-y-4 mb-6" onSubmit={handleNext}>
-            {/* Name */}
+          <form onSubmit={handleNext} className="space-y-4 mb-4">
+            {/* Full Name */}
             <div>
-              <label className="block text-sm font-medium mb-1 text-slate-700">
-                Full Name *
-              </label>
+              <label className="block text-sm font-medium mb-1 text-slate-700">Full Name *</label>
               <input
                 type="text"
                 value={form.name}
                 onChange={(e) => handleFieldChange("name", e.target.value)}
                 placeholder="John Doe"
-                className={`w-full border p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-lime-200 focus:border-lime-400 transition-colors ${
-                  getFieldError("name") 
-                    ? "border-red-300 bg-red-50" 
-                    : isFieldValid("name") 
-                    ? "border-green-300 bg-green-50" 
-                    : "border-slate-300"
-                }`}
                 required
+                className={`w-full p-3 rounded-xl transition-colors border ${
+                  getFieldError("name")
+                    ? "border-red-300 bg-red-50"
+                    : isFieldValid("name")
+                    ? "border-green-300 bg-green-50"
+                    : "border-slate-300"
+                } focus:outline-none focus:ring-2 focus:ring-lime-200`}
               />
               {getFieldError("name") && (
                 <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
@@ -310,22 +359,20 @@ export default function SignupPage() {
 
             {/* Email */}
             <div>
-              <label className="block text-sm font-medium mb-1 text-slate-700">
-                Email Address *
-              </label>
+              <label className="block text-sm font-medium mb-1 text-slate-700">Email Address *</label>
               <input
                 type="email"
                 value={form.email}
                 onChange={(e) => handleFieldChange("email", e.target.value)}
-                placeholder="your@email.com"
-                className={`w-full border p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-lime-200 focus:border-lime-400 transition-colors ${
-                  getFieldError("email") 
-                    ? "border-red-300 bg-red-50" 
-                    : isFieldValid("email") 
-                    ? "border-green-300 bg-green-50" 
-                    : "border-slate-300"
-                }`}
+                placeholder="you@example.com"
                 required
+                className={`w-full p-3 rounded-xl transition-colors border ${
+                  getFieldError("email")
+                    ? "border-red-300 bg-red-50"
+                    : isFieldValid("email")
+                    ? "border-green-300 bg-green-50"
+                    : "border-slate-300"
+                } focus:outline-none focus:ring-2 focus:ring-lime-200`}
               />
               {getFieldError("email") && (
                 <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
@@ -337,21 +384,19 @@ export default function SignupPage() {
 
             {/* Phone */}
             <div>
-              <label className="block text-sm font-medium mb-1 text-slate-700">
-                Phone Number
-              </label>
+              <label className="block text-sm font-medium mb-1 text-slate-700">Phone Number</label>
               <input
                 type="tel"
                 value={form.phone}
                 onChange={(e) => handleFieldChange("phone", e.target.value)}
                 placeholder="08012345678"
-                className={`w-full border p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-lime-200 focus:border-lime-400 transition-colors ${
-                  getFieldError("phone") 
-                    ? "border-red-300 bg-red-50" 
-                    : form.phone.trim() && !getFieldError("phone")
-                    ? "border-green-300 bg-green-50" 
+                className={`w-full p-3 rounded-xl transition-colors border ${
+                  getFieldError("phone")
+                    ? "border-red-300 bg-red-50"
+                    : form.phone?.trim() && !getFieldError("phone")
+                    ? "border-green-300 bg-green-50"
                     : "border-slate-300"
-                }`}
+                } focus:outline-none focus:ring-2 focus:ring-lime-200`}
               />
               {getFieldError("phone") && (
                 <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
@@ -359,34 +404,30 @@ export default function SignupPage() {
                   {getFieldError("phone")}
                 </p>
               )}
-              <p className="mt-1 text-xs text-slate-500">
-                Optional - for account recovery and notifications
-              </p>
+              <p className="mt-1 text-xs text-slate-500">Optional - for account recovery and notifications</p>
             </div>
 
             {/* Password */}
             <div>
-              <label className="block text-sm font-medium mb-1 text-slate-700">
-                Password *
-              </label>
+              <label className="block text-sm font-medium mb-1 text-slate-700">Password *</label>
               <div className="relative">
                 <input
                   type={showPassword ? "text" : "password"}
                   value={form.password}
                   onChange={(e) => handleFieldChange("password", e.target.value)}
                   placeholder="••••••••"
-                  className={`w-full border p-3 pr-12 rounded-xl focus:outline-none focus:ring-2 focus:ring-lime-200 focus:border-lime-400 transition-colors ${
-                    getFieldError("password") 
-                      ? "border-red-300 bg-red-50" 
-                      : isFieldValid("password") 
-                      ? "border-green-300 bg-green-50" 
-                      : "border-slate-300"
-                  }`}
                   required
+                  className={`w-full p-3 pr-12 rounded-xl transition-colors border ${
+                    getFieldError("password")
+                      ? "border-red-300 bg-red-50"
+                      : isFieldValid("password")
+                      ? "border-green-300 bg-green-50"
+                      : "border-slate-300"
+                  } focus:outline-none focus:ring-2 focus:ring-lime-200`}
                 />
                 <button
                   type="button"
-                  onClick={() => setShowPassword(!showPassword)}
+                  onClick={() => setShowPassword((s) => !s)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -398,90 +439,85 @@ export default function SignupPage() {
                   {getFieldError("password")}
                 </p>
               )}
-              <p className="mt-1 text-xs text-slate-500">
-                Minimum 6 characters
-              </p>
+              <p className="mt-1 text-xs text-slate-500">Minimum 6 characters</p>
             </div>
 
-            {/* Role Selector */}
+            {/* Role */}
             <div>
-              <label className="block text-sm font-medium mb-1 text-slate-700">
-                Account Type *
-              </label>
+              <label className="block text-sm font-medium mb-1 text-slate-700">Account Type *</label>
               <select
                 value={form.role}
                 onChange={(e) => handleFieldChange("role", e.target.value)}
-                className="w-full border border-slate-300 p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-lime-200 focus:border-lime-400"
+                className="w-full p-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-lime-200"
               >
                 <option value="VENDOR">🏪 Vendor / Seller</option>
                 <option value="USER">👤 User / Student</option>
               </select>
             </div>
 
-            {/* Helpful Tips */}
-            <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-              <div className="text-xs text-blue-700">
-                <p className="font-medium mb-1">💡 Account creation tips:</p>
-                <ul className="space-y-1">
-                  <li>• Use your real name as it appears on official documents</li>
-                  <li>• Choose a strong password with at least 6 characters</li>
-                  <li>• Phone number is optional but recommended for account recovery</li>
-                  <li>• Vendor accounts require additional store information</li>
-                </ul>
-              </div>
+            {/* Tips */}
+            <div className="p-3 bg-blue-50 rounded-lg border border-blue-200 text-xs text-blue-700">
+              <p className="font-medium mb-1">💡 Account creation tips:</p>
+              <ul className="space-y-1">
+                <li>• Use your real name as it appears on official documents</li>
+                <li>• Choose a strong password with at least 6 characters</li>
+                <li>• Phone number is optional but recommended for account recovery</li>
+                <li>• Vendor accounts require additional store information</li>
+              </ul>
             </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-lime-400 px-4 py-3 text-sm font-semibold text-slate-900 shadow-[inset_0_-2px_0_rgba(0,0,0,0.15)] transition hover:-translate-y-0.5 hover:bg-lime-300 focus:outline-none focus:ring-4 focus:ring-lime-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
-            >
-              {loading ? (
-                <>
-                  <RefreshCw className="h-4 w-4 animate-spin" />
-                  Processing...
-                </>
-              ) : (
-                <>
-                  {form.role === "VENDOR" ? "Next Step" : "Create Account"}
-                  <ArrowRight className="h-4 w-4" />
-                </>
-              )}
-            </button>
+            {/* Next / Submit */}
+            <div>
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-lime-400 px-4 py-3 text-sm font-semibold text-slate-900 shadow-[inset_0_-2px_0_rgba(0,0,0,0.15)] transition hover:-translate-y-0.5 hover:bg-lime-300 disabled:opacity-50"
+              >
+                {loading ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    {form.role === "VENDOR" ? "Next Step" : "Create Account"}
+                    <ArrowRight className="h-4 w-4" />
+                  </>
+                )}
+              </button>
+            </div>
           </form>
         )}
 
-        {/* STEP 2 FORM - Vendor Information */}
+        {/* ------------------
+            STEP 2 - VENDOR INFO
+            ------------------ */}
         {step === 2 && (
-          <form className="space-y-4 mb-6" onSubmit={handleSubmit}>
-            <div className="mb-4 p-3 bg-lime-50 rounded-lg border border-lime-200">
-              <div className="flex items-center gap-2 text-lime-700">
+          <form onSubmit={handleSubmit} className="space-y-4 mb-4">
+            <div className="mb-2 p-3 bg-lime-50 rounded-lg border border-lime-200 text-lime-700">
+              <div className="flex items-center gap-2">
                 <Store className="w-5 h-5" />
                 <span className="font-medium">Vendor Account Setup</span>
               </div>
-              <p className="text-sm text-lime-600 mt-1">
-                Complete your store information to start selling
-              </p>
+              <p className="text-sm text-lime-600 mt-1">Complete your store information to start selling</p>
             </div>
 
             {/* Store Name */}
             <div>
-              <label className="block text-sm font-medium mb-1 text-slate-700">
-                Store Name *
-              </label>
+              <label className="block text-sm font-medium mb-1 text-slate-700">Store Name *</label>
               <input
                 type="text"
                 value={form.storeName}
                 onChange={(e) => handleFieldChange("storeName", e.target.value)}
                 placeholder="Bob's Fashion Hub"
-                className={`w-full border p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-lime-200 focus:border-lime-400 transition-colors ${
-                  getFieldError("storeName") 
-                    ? "border-red-300 bg-red-50" 
-                    : isFieldValid("storeName") 
-                    ? "border-green-300 bg-green-50" 
-                    : "border-slate-300"
-                }`}
                 required
+                className={`w-full p-3 rounded-xl transition-colors border ${
+                  getFieldError("storeName")
+                    ? "border-red-300 bg-red-50"
+                    : isFieldValid("storeName")
+                    ? "border-green-300 bg-green-50"
+                    : "border-slate-300"
+                } focus:outline-none focus:ring-2 focus:ring-lime-200`}
               />
               {getFieldError("storeName") && (
                 <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
@@ -491,51 +527,64 @@ export default function SignupPage() {
               )}
             </div>
 
-            {/* Store Address */}
+            {/* Store Address - admin-managed */}
             <div>
-              <label className="block text-sm font-medium mb-1 text-slate-700">
-                Store Address *
-              </label>
-              <input
-                type="text"
-                value={form.storeAddress}
-                onChange={(e) => handleFieldChange("storeAddress", e.target.value)}
-                placeholder="Opposite Faculty of Science, EKSU"
-                className={`w-full border p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-lime-200 focus:border-lime-400 transition-colors ${
-                  getFieldError("storeAddress") 
-                    ? "border-red-300 bg-red-50" 
-                    : isFieldValid("storeAddress") 
-                    ? "border-green-300 bg-green-50" 
-                    : "border-slate-300"
-                }`}
-                required
-              />
+              <label className="block text-sm font-medium mb-1 text-slate-700">Store Address *</label>
+              {addressesLoading ? (
+                <div className="text-sm text-slate-600 p-2 bg-slate-50 rounded">Loading addresses...</div>
+              ) : addressesError ? (
+                <div className="text-sm text-red-600 p-2 bg-red-50 rounded">{addressesError}</div>
+              ) : addresses.length === 0 ? (
+                <div className="text-sm text-amber-700 p-2 bg-amber-50 rounded">
+                  No active selling addresses available. Please contact admin.
+                </div>
+              ) : (
+                <select
+                  value={form.storeAddress}
+                  onChange={(e) => handleFieldChange("storeAddress", e.target.value)}
+                  required
+                  className={`w-full p-3 rounded-xl transition-colors border ${
+                    getFieldError("storeAddress")
+                      ? "border-red-300 bg-red-50"
+                      : isFieldValid("storeAddress")
+                      ? "border-green-300 bg-green-50"
+                      : "border-slate-300"
+                  } focus:outline-none focus:ring-2 focus:ring-lime-200`}
+                >
+                  {addresses.map((a) => (
+                    <option key={a.id} value={a.name}>
+                      {a.name}
+                    </option>
+                  ))}
+                </select>
+              )}
+
               {getFieldError("storeAddress") && (
                 <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
                   <AlertCircle className="w-3 h-3" />
                   {getFieldError("storeAddress")}
                 </p>
               )}
+
+              <p className="mt-1 text-xs text-slate-500">Selected from admin-approved selling locations.</p>
             </div>
 
             {/* Business Category */}
             <div>
-              <label className="block text-sm font-medium mb-1 text-slate-700">
-                Business Category *
-              </label>
+              <label className="block text-sm font-medium mb-1 text-slate-700">Business Category *</label>
               <input
                 type="text"
                 value={form.businessCategory}
                 onChange={(e) => handleFieldChange("businessCategory", e.target.value)}
                 placeholder="Food / Electronics / Fashion"
-                className={`w-full border p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-lime-200 focus:border-lime-400 transition-colors ${
-                  getFieldError("businessCategory") 
-                    ? "border-red-300 bg-red-50" 
-                    : isFieldValid("businessCategory") 
-                    ? "border-green-300 bg-green-50" 
-                    : "border-slate-300"
-                }`}
                 required
+                className={`w-full p-3 rounded-xl transition-colors border ${
+                  getFieldError("businessCategory")
+                    ? "border-red-300 bg-red-50"
+                    : isFieldValid("businessCategory")
+                    ? "border-green-300 bg-green-50"
+                    : "border-slate-300"
+                } focus:outline-none focus:ring-2 focus:ring-lime-200`}
               />
               {getFieldError("businessCategory") && (
                 <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
@@ -545,39 +594,35 @@ export default function SignupPage() {
               )}
             </div>
 
-            {/* Vendor Tips */}
-            <div className="p-3 bg-lime-50 rounded-lg border border-lime-200">
-              <div className="text-xs text-lime-700">
-                <p className="font-medium mb-1">💡 Store setup tips:</p>
-                <ul className="space-y-1">
-                  <li>• Choose a memorable store name that reflects your business</li>
-                  <li>• Include landmarks or nearby locations in your address</li>
-                  <li>• Be specific about your business category to help customers find you</li>
-                  <li>• You can update store details later from your profile settings</li>
-                </ul>
-              </div>
+            {/* Tips & info */}
+            <div className="p-3 bg-lime-50 rounded-lg border border-lime-200 text-lime-700 text-xs">
+              <p className="font-medium mb-1">💡 Store setup tips:</p>
+              <ul className="space-y-1">
+                <li>• Choose a memorable store name that reflects your business</li>
+                <li>• Include landmarks or nearby locations in your address</li>
+                <li>• Be specific about your business category to help customers find you</li>
+                <li>• You can update store details later from your profile settings</li>
+              </ul>
             </div>
 
-            {/* Info Message */}
-            <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-              <p className="text-sm text-blue-700">
-                💡 You can add your store logo and cover image later from your profile settings
-              </p>
+            <div className="p-3 bg-blue-50 rounded-lg border border-blue-200 text-blue-700 text-sm">
+              💡 You can add your store logo and cover image later from your profile settings
             </div>
 
-            {/* Action Buttons */}
+            {/* Buttons */}
             <div className="flex items-center gap-3">
               <button
                 type="button"
                 onClick={goBack}
-                className="w-1/2 inline-flex items-center justify-center gap-2 rounded-xl bg-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-300 focus:outline-none focus:ring-4 focus:ring-slate-200"
+                className="w-1/2 inline-flex items-center justify-center gap-2 rounded-xl bg-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-300"
               >
                 ← Back
               </button>
+
               <button
                 type="submit"
                 disabled={loading}
-                className="w-1/2 inline-flex items-center justify-center gap-2 rounded-xl bg-lime-400 px-4 py-3 text-sm font-semibold text-slate-900 shadow-[inset_0_-2px_0_rgba(0,0,0,0.15)] transition hover:-translate-y-0.5 hover:bg-lime-300 focus:outline-none focus:ring-4 focus:ring-lime-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-1/2 inline-flex items-center justify-center gap-2 rounded-xl bg-lime-400 px-4 py-3 text-sm font-semibold text-slate-900 hover:-translate-y-0.5 hover:bg-lime-300 disabled:opacity-50"
               >
                 {loading ? (
                   <>
@@ -596,7 +641,7 @@ export default function SignupPage() {
         )}
 
         {/* Footer */}
-        <div className="mt-6 text-center text-sm text-slate-600">
+        <div className="mt-4 text-center text-sm text-slate-600">
           Already have an account?{" "}
           <Link href="/login" className="font-semibold text-lime-600 hover:text-lime-700">
             Log in

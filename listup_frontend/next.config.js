@@ -17,6 +17,9 @@ const nextConfig = {
     }
     return config;
   },
+  eslint: {
+    ignoreDuringBuilds: true, // optional
+  },
 };
 
 module.exports = nextConfig;

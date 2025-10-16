@@ -321,7 +321,7 @@ model PasswordReset {
 }
 
 // Admin-managed selling locations for vendors
-model SellingLocation {
+model Address {
   id      String  @id @default(auto()) @map("_id") @db.ObjectId
   name    String  @unique
   active  Boolean @default(true)

@@ -11,9 +11,11 @@ const vendorRoutes = require('./routes/vendors');
 const listingRoutes = require('./routes/listings');
 const dashboardRoutes = require('./routes/dashboard');
 const usersRoutes = require('./routes/users');
+const addressesRoutes = require('./routes/addresses');
+const categoriesRoutes = require('./routes/categories');
 
 const app = express();
-const PORT = process.env.ADMIN_PORT || 4001;
+const PORT = process.env.ADMIN_PORT || 4001; // Changed port to avoid conflict
 
 // Security middleware
 app.use(helmet());
@@ -64,6 +66,9 @@ app.use('/api/vendors', vendorRoutes);
 app.use('/api/listings', listingRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/users', usersRoutes);
+app.use('/api/addresses', addressesRoutes);
+// app.use('/api/categories', categoriesRoutes);
+
 
 // Error handling middleware
 app.use((err, req, res, next) => {

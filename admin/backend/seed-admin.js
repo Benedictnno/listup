@@ -7,8 +7,8 @@ async function seedAdmin() {
   try {
     console.log('🌱 Seeding admin user...');
 
-    const adminEmail = 'benedictnnaoma0@gmail.com';
-    const adminPassword = 'Chigozie0@';
+    const adminEmail = ''; //enter admin emails
+    const adminPassword = ''; // enter admin password
 
     // Check if admin already exists
     const existingAdmin = await prisma.user.findUnique({

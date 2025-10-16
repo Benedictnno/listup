@@ -25,14 +25,18 @@ interface UpdateListingPayload {
 
 
 
-// ✅ Fetch all listings (Client-side) with pagination for infinite scroll
-export async function fetchListings(page = 1, limit = 20) {
+// ✅ Fetch all listings (Server-side)
+export async function fetchListings() {
   try {
-    const response = await fetch(`${API_BASE_URL}/listings?page=${page}&limit=${limit}`, {
+   
+    const response = await fetch(`${API_BASE_URL}/listings`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
       },
+      // Add cache options for better performance
+      next: { revalidate: 60 } // Revalidate every 60 seconds
     });
 
     console.log("Response status:", response.status);
