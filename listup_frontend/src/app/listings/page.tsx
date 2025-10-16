@@ -181,7 +181,7 @@ function ListingsPageContent() {
   };
 
   // Show error state
-  if (error && listings.length === 0) {
+  if (error && listings?.length === 0) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center max-w-md mx-auto p-6">
@@ -205,7 +205,7 @@ function ListingsPageContent() {
   }
 
   // Show loading state only for initial load
-  if (loading && listings.length === 0) {
+  if (loading && listings?.length === 0) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
@@ -217,7 +217,7 @@ function ListingsPageContent() {
   }
 
   // Show empty state
-  if (!loading && listings.length === 0) {
+  if (!loading && listings?.length === 0) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center max-w-md mx-auto p-6">
@@ -497,7 +497,7 @@ function ListingsPageContent() {
         )}
 
         {/* End of results indicator */}
-        {!hasMore && listings.length > 0 && (
+        {!hasMore && listings?.length > 0 && (
           <div className="text-center py-8">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-full text-gray-600 text-sm">
               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -509,7 +509,7 @@ function ListingsPageContent() {
         )}
 
         {/* No Results */}
-        {filteredListings.length === 0 && hasActiveFilters() && (
+        {filteredListings?.length === 0 && hasActiveFilters() && (
           <div className="text-center py-12">
             <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
               <svg className="h-10 w-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
