@@ -34,15 +34,30 @@ export function useInfiniteScroll(
 
       const data = await fetchListings();
       
+      // Defensive programming: ensure data and data.items exist and are arrays
+      if (!data) {
+        console.error('No data returned from API');
+        setError('No data returned from API');
+        return;
+      }
+      
+      // Handle different API response formats
+      const items = Array.isArray(data) ? data : 
+                   (data.items && Array.isArray(data.items)) ? data.items : 
+                   [];
+      
+      console.log('API response structure:', JSON.stringify(data).substring(0, 200) + '...');
+      
       if (append) {
-        setListings(prev => [...prev, ...data.items]);
+        setListings(prev => [...prev, ...items]);
       } else {
-        setListings(data.items);
+        setListings(items);
       }
 
-      // Check if there are more pages
-      setHasMore(data.page < data.pages);
-      setCurrentPage(data.page);
+      // Check if there are more pages - handle both pagination formats
+      const hasMorePages = data.page && data.pages ? (data.page < data.pages) : false;
+      setHasMore(hasMorePages);
+      setCurrentPage(data.page || page);
 
     } catch (err) {
       console.error('Error loading listings:', err);

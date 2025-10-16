@@ -48,9 +48,9 @@ function ListingsPageContent() {
   const searchParams = useSearchParams();
   const { search, minPrice, maxPrice, setSearch } = useFilterStore();
   
-  // Use infinite scroll hook
+  // Use infinite scroll hook with proper error handling
   const { 
-    listings, 
+    listings = [], // Default to empty array if undefined
     loading, 
     error, 
     hasMore, 
@@ -58,6 +58,7 @@ function ListingsPageContent() {
     refresh 
   } = useInfiniteScroll(1, 20);
 
+  // Initialize with empty array and proper typing
   const [filteredListings, setFilteredListings] = useState<Listing[]>([]);
   const [filters, setFilters] = useState<FilterState>({
     search: '',
@@ -104,14 +105,23 @@ function ListingsPageContent() {
 
   // Apply filters whenever filters or listings change
   useEffect(() => {
+    // Defensive check to ensure listings is an array before spreading
+    if (!Array.isArray(listings)) {
+      console.error('Listings is not an array:', listings);
+      setFilteredListings([]);
+      return;
+    }
+    
     let filtered = [...listings];
 
     // Search filter (from global store)
     if (search) {
       filtered = filtered.filter(listing =>
-        listing.title.toLowerCase().includes(search.toLowerCase()) ||
-        listing.description.toLowerCase().includes(search.toLowerCase()) ||
-        listing.location.toLowerCase().includes(search.toLowerCase())
+        listing && typeof listing === 'object' && (
+          (listing.title && listing.title.toLowerCase().includes(search.toLowerCase())) ||
+          (listing.description && listing.description.toLowerCase().includes(search.toLowerCase())) ||
+          (listing.location && listing.location.toLowerCase().includes(search.toLowerCase()))
+        )
       );
     }
 

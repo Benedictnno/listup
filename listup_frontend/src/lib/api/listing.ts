@@ -1,5 +1,8 @@
 // Server-side API functions for Next.js App Router
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api";
+// Use environment variable with proper fallback for production
+const API_BASE_URL = typeof window !== 'undefined' 
+  ? (process.env.NEXT_PUBLIC_API_URL || "https://listup-api.onrender.com/api") 
+  : "https://listup-api.onrender.com/api";
 
 // Define proper types for the API
 interface CreateListingPayload {
@@ -23,18 +26,20 @@ interface UpdateListingPayload {
   status?: string;
 }
 
-// ✅ Fetch all listings (Server-side)
+// ✅ Fetch all listings (Client-side)
 export async function fetchListings() {
   try {
-   
+    // Use the API_BASE_URL constant that handles both client and server environments
+    console.log("Using API URL:", API_BASE_URL);
+    
+    // Remove next.revalidate as it's not supported in client components
     const response = await fetch(`${API_BASE_URL}/listings`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${localStorage.getItem('token')}`,
       },
-      // Add cache options for better performance
-      next: { revalidate: 60 } // Revalidate every 60 seconds
+      cache: 'no-store' // Don't cache in production
     });
 
     console.log("Response status:", response.status);
@@ -46,6 +51,12 @@ export async function fetchListings() {
 
     const data = await response.json();
     console.log("Listings data received:", data);
+    
+    // Handle different API response formats
+    if (!data) {
+      throw new Error('No data received from API');
+    }
+    
     return data;
   } catch (error: unknown) {
     console.error("Error fetching listings:", error);
