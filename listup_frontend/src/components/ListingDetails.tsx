@@ -57,7 +57,7 @@ export default function ListingDetails({ listing }: { listing: Listing }) {
   "use client";
 
 
-  const handleCopy = async (text:string) => {
+  const handleCopy = async (text) => {
     const success = await copyToClipboard(text);
     if (success) {
       alert("Copied to clipboard ✅");
