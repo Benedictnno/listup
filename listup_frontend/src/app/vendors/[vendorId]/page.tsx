@@ -29,6 +29,8 @@ export default function VendorProfilePage() {
     fetchVendorListings();
   }, [vendorId, pagination.page]);
 
+  console.log(vendor);
+  
   const fetchVendorListings = async () => {
     try {
       setLoading(true);

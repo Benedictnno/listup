@@ -17,6 +17,7 @@ import {
   Eye
 } from "lucide-react";
 import { useAdminAuth } from "@/store/authStore";
+import DashboardLayout from "@/components/layout/DashboardLayout";
 
 interface Vendor {
   id: string;
@@ -151,185 +152,300 @@ export default function VendorsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-lime-500 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading vendors...</p>
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-[calc(100vh-10rem)]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+            <p className="mt-4 text-muted-foreground">Loading vendors...</p>
+          </div>
         </div>
-      </div>
+      </DashboardLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-4 h-16">
-            <button
-              onClick={() => router.push("/dashboard")}
-              className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
-            >
-              <ArrowLeft className="w-5 h-5" />
-              Back to Dashboard
-            </button>
-            <div className="flex-1">
-              <h1 className="text-xl font-semibold text-gray-900">Vendor Management</h1>
-              <p className="text-sm text-gray-500">Manage vendor registrations and approvals</p>
+    <DashboardLayout>
+      <div className="p-4 md:p-6 space-y-6">
+        {/* Page Header */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Vendor Management</h1>
+            <p className="text-muted-foreground">Manage vendor registrations and approvals</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="px-3 py-1 bg-primary/10 text-primary rounded-md">
+              <span className="font-semibold">{filteredVendors.length}</span> vendors
             </div>
           </div>
         </div>
-      </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Filters */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+        <div className="bg-card rounded-lg border shadow-sm">
+          <div className="p-4 md:p-6">
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
                 <input
                   type="text"
                   placeholder="Search vendors by name, email, or store name..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-lime-500 focus:border-transparent"
+                  className="w-full pl-10 pr-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                 />
               </div>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+              >
+                <option value="ALL">All Status</option>
+                <option value="PENDING">Pending</option>
+                <option value="APPROVED">Approved</option>
+                <option value="REJECTED">Rejected</option>
+              </select>
             </div>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-lime-500 focus:border-transparent"
-            >
-              <option value="ALL">All Status</option>
-              <option value="PENDING">Pending</option>
-              <option value="APPROVED">Approved</option>
-              <option value="REJECTED">Rejected</option>
-            </select>
           </div>
         </div>
 
         {/* Error Message */}
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-            <p className="text-red-800">{error}</p>
+          <div className="bg-destructive/10 text-destructive rounded-lg p-4">
+            <p>{error}</p>
           </div>
         )}
 
         {/* Vendors List */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-          <div className="p-6 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">
-              Vendors ({filteredVendors.length})
-            </h2>
+        <div className="bg-card rounded-lg border shadow-sm">
+          <div className="p-4 md:p-6 border-b">
+            <h2 className="text-xl font-semibold">Vendors</h2>
+            <p className="text-muted-foreground text-sm">
+              Manage vendor accounts and approval status
+            </p>
           </div>
           
-          <div className="divide-y divide-gray-200">
-            {filteredVendors.map((vendor) => (
-              <div key={vendor.id} className="p-6 hover:bg-gray-50">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                      {vendor.vendorProfile.logo ? (
-                        <img 
-                          src={vendor.vendorProfile.logo} 
-                          alt={vendor.vendorProfile.storeName}
-                          className="w-full h-full object-cover rounded-lg"
-                        />
-                      ) : (
-                        <Store className="w-6 h-6 text-blue-600" />
-                      )}
-                    </div>
-                    
-                    <div>
-                      <h3 className="font-semibold text-gray-900">{vendor.name}</h3>
-                      <p className="text-sm text-gray-500">{vendor.vendorProfile.storeName}</p>
-                      <div className="flex items-center gap-4 mt-1 text-xs text-gray-400">
-                        <span className="flex items-center gap-1">
-                          <Mail className="w-3 h-3" />
-                          {vendor.email}
-                        </span>
-                        {vendor.phone && (
+          <div className="divide-y">
+            {filteredVendors.length === 0 ? (
+              <div className="p-6 text-center">
+                <p className="text-muted-foreground">No vendors found matching your criteria</p>
+              </div>
+            ) : (
+              filteredVendors.map((vendor) => (
+                <div key={vendor.id} className="p-4 md:p-6 hover:bg-muted/50 transition-colors">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="flex items-center gap-4">
+                      <div className="h-12 w-12 rounded-md bg-primary/10 flex items-center justify-center">
+                        {vendor.vendorProfile.logo ? (
+                          <img src={vendor.vendorProfile.logo} alt={vendor.vendorProfile.storeName} className="w-full h-full object-cover rounded-md" />
+                        ) : (
+                          <Store className="w-6 h-6 text-primary" />
+                        )}
+                      </div>
+                      
+                      <div>
+                        <h3 className="font-medium">{vendor.name}</h3>
+                        <p className="text-sm text-muted-foreground">{vendor.vendorProfile.storeName}</p>
+                        <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
                           <span className="flex items-center gap-1">
-                            <Phone className="w-3 h-3" />
-                            {vendor.phone}
+                            <Mail className="w-3 h-3" />
+                            {vendor.email}
                           </span>
+                          {vendor.phone && (
+                            <span className="flex items-center gap-1">
+                              <Phone className="w-3 h-3" />
+                              {vendor.phone}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                      <StatusBadge status={vendor.vendorProfile.verificationStatus} />
+                      
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => {
+                            setSelectedVendor(vendor);
+                            setShowDetails(true);
+                          }}
+                          className="flex items-center gap-1 px-3 py-1 text-sm rounded-md hover:bg-muted transition-colors"
+                        >
+                          <Eye className="w-4 h-4" />
+                          <span className="hidden sm:inline">View</span>
+                        </button>
+                        
+                        {vendor.vendorProfile.verificationStatus === "PENDING" && (
+                          <>
+                            <button
+                              onClick={() => handleApprove(vendor.id)}
+                              disabled={actionLoading === vendor.id}
+                              className="flex items-center gap-1 px-3 py-1 text-sm rounded-md text-green-600 hover:bg-green-50 transition-colors disabled:opacity-50"
+                            >
+                              {actionLoading === vendor.id ? (
+                                <div className="w-4 h-4 border-2 border-green-300 border-t-green-600 rounded-full animate-spin" />
+                              ) : (
+                                <CheckCircle className="w-4 h-4" />
+                              )}
+                              <span className="hidden sm:inline">Approve</span>
+                            </button>
+                            
+                            <button
+                              onClick={() => {
+                                const reason = prompt("Please provide a reason for rejection:");
+                                if (reason) {
+                                  handleReject(vendor.id, reason);
+                                }
+                              }}
+                              disabled={actionLoading === vendor.id}
+                              className="flex items-center gap-1 px-3 py-1 text-sm rounded-md text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
+                            >
+                              <XCircle className="w-4 h-4" />
+                              <span className="hidden sm:inline">Reject</span>
+                            </button>
+                          </>
                         )}
                       </div>
                     </div>
                   </div>
-
-                  <div className="flex items-center gap-4">
-                    <div className="text-right">
-                      <StatusBadge status={vendor.vendorProfile.verificationStatus} />
-                      <p className="text-xs text-gray-400 mt-1">
-                        Joined {new Date(vendor.createdAt).toLocaleDateString()}
-                      </p>
-                    </div>
-                    
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => {
-                          setSelectedVendor(vendor);
-                          setShowDetails(true);
-                        }}
-                        className="flex items-center gap-1 px-3 py-1 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-                      >
-                        <Eye className="w-4 h-4" />
-                        View
-                      </button>
-                      
-                      {vendor.vendorProfile.verificationStatus === "PENDING" && (
-                        <>
-                          <button
-                            onClick={() => handleApprove(vendor.id)}
-                            disabled={actionLoading === vendor.id}
-                            className="flex items-center gap-1 px-3 py-1 text-sm text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors disabled:opacity-50"
-                          >
-                            {actionLoading === vendor.id ? (
-                              <div className="w-4 h-4 border-2 border-green-300 border-t-green-600 rounded-full animate-spin" />
-                            ) : (
-                              <CheckCircle className="w-4 h-4" />
-                            )}
-                            Approve
-                          </button>
-                          
-                          <button
-                            onClick={() => {
-                              const reason = prompt("Please provide a reason for rejection:");
-                              if (reason) {
-                                handleReject(vendor.id, reason);
-                              }
-                            }}
-                            disabled={actionLoading === vendor.id}
-                            className="flex items-center gap-1 px-3 py-1 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
-                          >
-                            <XCircle className="w-4 h-4" />
-                            Reject
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
 
         {/* Vendor Details Modal */}
         {showDetails && selectedVendor && (
-          <VendorDetailsModal
-            vendor={selectedVendor}
-            onClose={() => setShowDetails(false)}
-            onApprove={() => handleApprove(selectedVendor.id)}
-            onReject={(reason) => handleReject(selectedVendor.id, reason)}
-            loading={actionLoading === selectedVendor.id}
-          />
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+            <div className="bg-background rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="p-6 border-b">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xl font-semibold">Vendor Details</h2>
+                  <button
+                    onClick={() => setShowDetails(false)}
+                    className="text-muted-foreground hover:text-foreground"
+                  >
+                    <XCircle className="w-6 h-6" />
+                  </button>
+                </div>
+              </div>
+              
+              <div className="p-6 space-y-6">
+                {/* Basic Info */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <h3 className="font-medium mb-3">Personal Information</h3>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <User className="w-4 h-4 text-muted-foreground" />
+                        <span className="text-sm">{selectedVendor.name}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Mail className="w-4 h-4 text-muted-foreground" />
+                        <span className="text-sm">{selectedVendor.email}</span>
+                      </div>
+                      {selectedVendor.phone && (
+                        <div className="flex items-center gap-2">
+                          <Phone className="w-4 h-4 text-muted-foreground" />
+                          <span className="text-sm">{selectedVendor.phone}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h3 className="font-medium mb-3">Store Information</h3>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Store className="w-4 h-4 text-muted-foreground" />
+                        <span className="text-sm">{selectedVendor.vendorProfile.storeName}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <MapPin className="w-4 h-4 text-muted-foreground" />
+                        <span className="text-sm">{selectedVendor.vendorProfile.storeAddress}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Calendar className="w-4 h-4 text-muted-foreground" />
+                        <span className="text-sm">
+                          Joined {new Date(selectedVendor.createdAt).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Business Category */}
+                <div>
+                  <h3 className="font-medium mb-2">Business Category</h3>
+                  <span className="inline-block px-3 py-1 bg-secondary text-secondary-foreground rounded-full text-sm">
+                    {selectedVendor.vendorProfile.businessCategory}
+                  </span>
+                </div>
+
+                {/* Verification Status */}
+                <div>
+                  <h3 className="font-medium mb-2">Verification Status</h3>
+                  <StatusBadge status={selectedVendor.vendorProfile.verificationStatus} />
+                  {selectedVendor.vendorProfile.rejectionReason && (
+                    <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                      <p className="text-sm text-red-800">
+                        <strong>Rejection Reason:</strong> {selectedVendor.vendorProfile.rejectionReason}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Actions */}
+                {selectedVendor.vendorProfile.verificationStatus === "PENDING" && (
+                  <div className="flex gap-4 pt-4 border-t">
+                    <button
+                      onClick={() => handleApprove(selectedVendor.id)}
+                      disabled={actionLoading === selectedVendor.id}
+                      className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+                    >
+                      <CheckCircle className="w-4 h-4" />
+                      Approve Vendor
+                    </button>
+                    
+                    <div className="flex-1">
+                      <input
+                        type="text"
+                        placeholder="Rejection reason..."
+                        value={rejectReason}
+                        onChange={(e) => setRejectReason(e.target.value)}
+                        className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                      />
+                    </div>
+                    
+                    <button
+                      onClick={() => {
+                        if (rejectReason.trim()) {
+                          handleReject(selectedVendor.id, rejectReason);
+                          setRejectReason("");
+                        }
+                      }}
+                      disabled={actionLoading === selectedVendor.id || !rejectReason.trim()}
+                      className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
+                    >
+                      <XCircle className="w-4 h-4" />
+                      Reject
+                    </button>
+                  </div>
+                )}
+              </div>
+              
+              <div className="p-6 border-t flex justify-end">
+                <button
+                  onClick={() => setShowDetails(false)}
+                  className="px-4 py-2 border rounded-lg hover:bg-muted transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
         )}
       </div>
-    </div>
+    </DashboardLayout>
   );
 }
 
@@ -353,137 +469,5 @@ function StatusBadge({ status }: { status: string }) {
       <Icon className="w-3 h-3" />
       {status}
     </span>
-  );
-}
-
-function VendorDetailsModal({ vendor, onClose, onApprove, onReject, loading }: {
-  vendor: Vendor;
-  onClose: () => void;
-  onApprove: () => void;
-  onReject: (reason: string) => void;
-  loading: boolean;
-}) {
-  const [rejectReason, setRejectReason] = useState("");
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-6 border-b border-gray-200">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-gray-900">Vendor Details</h2>
-            <button
-              onClick={onClose}
-              className="text-gray-400 hover:text-gray-600"
-            >
-              <XCircle className="w-6 h-6" />
-            </button>
-          </div>
-        </div>
-        
-        <div className="p-6 space-y-6">
-          {/* Basic Info */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <h3 className="font-semibold text-gray-900 mb-3">Personal Information</h3>
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <User className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm text-gray-600">{vendor.name}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Mail className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm text-gray-600">{vendor.email}</span>
-                </div>
-                {vendor.phone && (
-                  <div className="flex items-center gap-2">
-                    <Phone className="w-4 h-4 text-gray-400" />
-                    <span className="text-sm text-gray-600">{vendor.phone}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-            
-            <div>
-              <h3 className="font-semibold text-gray-900 mb-3">Store Information</h3>
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Store className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm text-gray-600">{vendor.vendorProfile.storeName}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm text-gray-600">{vendor.vendorProfile.storeAddress}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm text-gray-600">
-                    Joined {new Date(vendor.createdAt).toLocaleDateString()}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Business Category */}
-          <div>
-            <h3 className="font-semibold text-gray-900 mb-2">Business Category</h3>
-            <span className="inline-block px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
-              {vendor.vendorProfile.businessCategory}
-            </span>
-          </div>
-
-          {/* Verification Status */}
-          <div>
-            <h3 className="font-semibold text-gray-900 mb-2">Verification Status</h3>
-            <StatusBadge status={vendor.vendorProfile.verificationStatus} />
-            {vendor.vendorProfile.rejectionReason && (
-              <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-sm text-red-800">
-                  <strong>Rejection Reason:</strong> {vendor.vendorProfile.rejectionReason}
-                </p>
-              </div>
-            )}
-          </div>
-
-          {/* Actions */}
-          {vendor.vendorProfile.verificationStatus === "PENDING" && (
-            <div className="flex gap-4 pt-4 border-t border-gray-200">
-              <button
-                onClick={onApprove}
-                disabled={loading}
-                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
-              >
-                <CheckCircle className="w-4 h-4" />
-                Approve Vendor
-              </button>
-              
-              <div className="flex-1">
-                <input
-                  type="text"
-                  placeholder="Rejection reason..."
-                  value={rejectReason}
-                  onChange={(e) => setRejectReason(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                />
-              </div>
-              
-              <button
-                onClick={() => {
-                  if (rejectReason.trim()) {
-                    onReject(rejectReason);
-                    setRejectReason("");
-                  }
-                }}
-                disabled={loading || !rejectReason.trim()}
-                className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
-              >
-                <XCircle className="w-4 h-4" />
-                Reject
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
   );
 }

@@ -1,11 +1,12 @@
 "use client";
 import Image from "next/image";
 import Link from "next/link";
-import { Phone, MessageSquare, Heart, Send, ChevronDown } from "lucide-react";
+import { Phone, ClipboardCopy, Heart, Send, ChevronDown } from "lucide-react";
 import { useState, useEffect } from "react";
 import { getFavourites, toggleFavourite, removeFavourite } from "../lib/api/favourites";
 import { useAuthStore } from "@/store/authStore";
 import LoginPromptDialog from "@/components/LoginPromptDialog";
+import { copyToClipboard } from "@/utils/copyText";
 
 type Seller = {
   id: string;
@@ -36,6 +37,8 @@ export default function ListingDetails({ listing }: { listing: Listing }) {
   const [customMessage, setCustomMessage] = useState<string>("");
   const { user } = useAuthStore();
 
+  console.log(listing);
+  
   useEffect(() => {
     let mounted = true;
     (async () => {
@@ -50,6 +53,16 @@ export default function ListingDetails({ listing }: { listing: Listing }) {
     })();
     return () => { mounted = false; };
   }, [listing.id]);
+
+  "use client";
+
+
+  const handleCopy = async (text:string) => {
+    const success = await copyToClipboard(text);
+    if (success) {
+      alert("Copied to clipboard ✅");
+    }
+  }
 
   return (
     <>
@@ -85,6 +98,9 @@ export default function ListingDetails({ listing }: { listing: Listing }) {
           ))}
         </div>
 
+          <div className="my-2">
+            {listing.location}
+          </div>
         <div>
           <h2 className="text-3xl font-bold mt-4">Product description</h2>
         <p className="text-gray-700">{listing.description}</p>
@@ -147,15 +163,14 @@ export default function ListingDetails({ listing }: { listing: Listing }) {
               <Phone size={18} /> Show Contact 
             </button>}
             <button
-              className="flex items-center gap-2 px-4 py-2 border rounded-xl shadow hover:bg-gray-100"
+              className="flex items-center gap-2 px-2 py-1 border rounded-xl shadow hover:bg-gray-100"
               onClick={() => {
-                // Fallback: reveal phone if not shown yet
-                if (!showPhone) setShowPhone(true);
-                // Focus quick message selector area (no-op visually)
+              handleCopy(listing.seller.phone)
               }}
             >
-              <MessageSquare size={18} /> Start Chat
+              <ClipboardCopy size={24}  /> copy number
             </button>
+            
           </div>
 
           {/* Quick WhatsApp message composer */}
@@ -191,16 +206,16 @@ export default function ListingDetails({ listing }: { listing: Listing }) {
 
                   const origin = typeof window !== 'undefined' ? window.location.origin : '';
                   const listingUrl = `${origin}/listings/${listing.id}`;
-                  const productImage = listing.images?.[0] || '';
+                  // const productImage = listing.images?.[0] || '';
 
                   const parts = [
-                    `Hi ${listing.seller.name},`,
-                    selectedQuickMessage,
+                    `Hi ${listing.seller.name}.I got your number from Listup.ng`,
                     `\n\nProduct: ${listing.title}`,
+                    '\n\n', customMessage ? customMessage : selectedQuickMessage,
                     `Price: ₦${listing.price.toLocaleString()}`,
-                    productImage ? `Image: ${productImage}` : undefined,
+                    // productImage ? `Image: ${productImage}` : undefined,
                     `Link: ${listingUrl}`,
-                    customMessage ? `\n${customMessage}` : undefined,
+                    // customMessage ? `\n${customMessage}` : undefined,
                   ].filter(Boolean);
 
                   const text = encodeURIComponent(parts.join("\n"));
