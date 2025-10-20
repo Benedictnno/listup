@@ -2,9 +2,9 @@
 import { useState, useEffect } from "react";
 import { useAuthStore } from "@/store/authStore";
 import { useRouter } from "next/navigation";
-import { ArrowRight, AlertCircle, CheckCircle, Eye, EyeOff, RefreshCw } from "lucide-react";
+import { ArrowRight, AlertCircle, CheckCircle, Eye, EyeOff, RefreshCw, AlertCircleIcon } from "lucide-react";
 import Link from "next/link";
-import { parseApiError, getFieldErrorMessage, isRetryableError, getSuccessMessage } from "@/utils/errorHandler";
+import { parseApiError, getFieldErrorMessage, getSuccessMessage } from "@/utils/errorHandler";
 import ErrorNotice from "@/components/ErrorNotice";
 
 export default function LoginPage() {
@@ -17,7 +17,7 @@ export default function LoginPage() {
   const [retryCount, setRetryCount] = useState(0);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   
-  const login = useAuthStore((state) => state.login);
+  const login = useAuthStore((state) => state.login);  
   const router = useRouter();
 
   // Clear errors when user starts typing
@@ -63,54 +63,96 @@ export default function LoginPage() {
     return !getFieldError(field) && Boolean(value.trim());
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Clear previous messages
-    setError("");
-    setSuccess("");
-    
-    // Validate fields
-    const emailError = validateField('email', email);
-    const passwordError = validateField('password', password);
-    
-    if (emailError || passwordError) {
-      setFieldErrors({
-        email: emailError || "",
-        password: passwordError || ""
-      });
-      setError("Please fix the errors below to continue");
-      return;
-    }
+  const attemptLogin = async () => {
+  setLoading(true);
+  setError("");
+  setSuccess("");
 
-    setLoading(true);
+  try {
+    await login(email.trim(), password);
+    setSuccess(getSuccessMessage('login'));
+    setTimeout(() => router.push("/dashboard"), 2000);
+  } catch (error: any) {
+    console.error("Login failed:", error);
+
+    let message = "Unable to login. Please try again.";
+    if (error?.response?.data?.message) message = error.response.data.message;
+    else if (error?.message) message = error.message;
+
+    setError(message);
+    setFieldErrors({});
+  } finally {
+    setLoading(false);
+  }
+};
+
+const handleSubmit = (e: React.FormEvent) => {
+  e.preventDefault();
+  attemptLogin();
+};
+
+  // const handleSubmit = async (e: React.FormEvent) => {
+  //   e.preventDefault();
     
-    try {
-      await login(email.trim(), password);
-      setSuccess(getSuccessMessage('login'));
+  //   // Clear previous messages
+  //   setError("");
+  //   setSuccess("");
+    
+  //   // Validate fields
+  //   const emailError = validateField('email', email);
+  //   const passwordError = validateField('password', password);
+    
+  //   if (emailError || passwordError) {
+  //     setFieldErrors({
+  //       email: emailError || "",
+  //       password: passwordError || ""
+  //     });
+  //     setError("Please fix the errors below to continue");
+  //     return;
+  //   }
+
+  //   setLoading(true);
+    
+  //   try {
+  //     await login(email.trim(), password);
+  //     setSuccess(getSuccessMessage('login'));
       
-      // Redirect after a short delay to show success message
-      setTimeout(() => {
-        router.push("/dashboard");
-      }, 2000);
+  //     // Redirect after a short delay to show success message
+  //     setTimeout(() => {
+  //       router.push("/dashboard");
+  //     }, 2000);
+ 
+  //     } catch (error: any) {
+  // console.error("Login failed:", error);
+
+  // let message = "An unexpected error occurred. Please try again.";
+
+  // // If backend sends structured errors
+  // if (error?.response?.data?.message) {
+  //   message = error.response.data.message;
+  // }
+  // else if (error?.response?.data?.error) {
+  //   message = error.response.data.error;
+  // }
+  // else if (error?.message) {
+  //   message = error.message;
+  // }
+
+  // setError(message);
+
       
-    } catch (error: unknown) {
-      console.error("Login failed:", error);
+  //     // Increment retry count for retryable errors
+  //     // if (isRetryableError(error)) {
+  //     //   setRetryCount(prev => prev + 1);
+  //     // }
+
       
-      const errorMessage = parseApiError(error);
-      setError(errorMessage);
-      
-      // Increment retry count for retryable errors
-      if (isRetryableError(error)) {
-        setRetryCount(prev => prev + 1);
-      }
-      
-      // Clear field errors to avoid confusion
-      setFieldErrors({});
-    } finally {
-      setLoading(false);
-    }
-  };
+  //     // Clear field errors to avoid confusion
+  //     setFieldErrors({});
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
   const handleRetry = () => {
     setError("");
@@ -151,8 +193,39 @@ export default function LoginPage() {
         )}
         
         {/* Error Display */}
-        {error && (
-          <ErrorNotice message={error} rawError={error} retryCount={retryCount} onRetry={handleRetry} />
+  { error &&   (
+        // <ErrorNotice message={error} rawError={error} retryCount={retryCount} onRetry={handleRetry} /> 
+             <div className="mb-4 p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm">
+                <div className="flex items-start gap-3">
+                  <AlertCircleIcon className="w-5 h-5 mt-0.5 flex-shrink-0 text-red-500" />
+                  <div className="flex-1 space-y-2">
+                    <p className="font-medium text-red-800">{error}</p>
+          
+                  
+                      <div className="text-xs text-red-600 bg-red-100 p-2 rounded-lg">
+                        <p className="font-medium mb-1">💡 Helpful tips:</p>
+                        <ul className="space-y-1">
+                          <li>• Check if your email address is spelled correctly</li>
+                          <li>• Make sure you're using the email you registered with</li>
+                        <ul className="space-y-1">
+                          <li>• Check if Caps Lock is turned off</li>
+                          <li>• Make sure you're using the correct password</li>
+                        </ul>
+                        </ul>
+                      </div>
+          
+                
+                      <div className="text-xs text-red-600 bg-red-100 p-2 rounded-lg">
+                        <p className="font-medium mb-1">💡 Helpful tips:</p>
+                      </div>         
+                 
+                      <div className="text-xs text-red-600 bg-red-100 p-2 rounded-lg">
+                        <p className="font-medium mb-1">💡 Don't have an account?</p>
+                        <p>You can create a new account by clicking the "Sign up" link.</p>
+                      </div>
+                  </div>
+                </div>
+              </div>
         )}
         
         <div className="space-y-4 mb-6">

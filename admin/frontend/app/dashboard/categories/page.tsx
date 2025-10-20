@@ -2,17 +2,32 @@
 
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import Button from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+// Using simple modal components instead of dialog
+const Modal = ({ isOpen, onClose, children }: { isOpen: boolean; onClose: () => void; children: React.ReactNode }) => {
+  if (!isOpen) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="fixed inset-0 bg-black/50" onClick={onClose} />
+      <div className="z-50 bg-white rounded-lg shadow-lg overflow-hidden p-6 max-w-md w-full">
+        {children}
+      </div>
+    </div>
+  );
+};
+
+const ModalHeader = ({ children }: { children: React.ReactNode }) => <div className="mb-4">{children}</div>;
+const ModalTitle = ({ children }: { children: React.ReactNode }) => <h2 className="text-lg font-semibold">{children}</h2>;
+const ModalFooter = ({ children }: { children: React.ReactNode }) => <div className="mt-6 flex justify-end space-x-2">{children}</div>;
 import { Label } from '@/components/ui/label';
 import { toast } from 'react-hot-toast';
 import { Loader2, Plus } from 'lucide-react';
 import axios from 'axios';
 
 // Backend API URL from environment variable
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001/api';
 
 interface Category {
   id: string;
@@ -222,82 +237,78 @@ export default function CategoriesPage() {
       </Card>
 
       {/* Add Category Dialog */}
-      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Add New Category</DialogTitle>
-          </DialogHeader>
+      <Modal isOpen={isAddDialogOpen} onClose={() => setIsAddDialogOpen(false)}>
+        <ModalHeader>
+          <ModalTitle>Add New Category</ModalTitle>
+        </ModalHeader>
+        <div className="grid gap-4 py-4">
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="name" className="text-right">Name</Label>
+            <Input
+              id="name"
+              value={newCategory.name}
+              onChange={(e) => handleNameChange(e.target.value)}
+              className="col-span-3"
+            />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="slug" className="text-right">Slug</Label>
+            <Input
+              id="slug"
+              value={newCategory.slug}
+              onChange={(e) => setNewCategory({ ...newCategory, slug: e.target.value })}
+              className="col-span-3"
+            />
+          </div>
+        </div>
+        <ModalFooter>
+          <Button variant="outline" onClick={() => setIsAddDialogOpen(false)} disabled={isSubmitting}>
+            Cancel
+          </Button>
+          <Button onClick={handleAddCategory} disabled={isSubmitting}>
+            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Add Category
+          </Button>
+        </ModalFooter>
+      </Modal>
+
+      {/* Edit Category Dialog */}
+      <Modal isOpen={isEditDialogOpen} onClose={() => setIsEditDialogOpen(false)}>
+        <ModalHeader>
+          <ModalTitle>Edit Category</ModalTitle>
+        </ModalHeader>
+        {editCategory && (
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="name" className="text-right">Name</Label>
+              <Label htmlFor="edit-name" className="text-right">Name</Label>
               <Input
-                id="name"
-                value={newCategory.name}
-                onChange={(e) => handleNameChange(e.target.value)}
+                id="edit-name"
+                value={editCategory.name}
+                onChange={(e) => handleNameChange(e.target.value, false)}
                 className="col-span-3"
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="slug" className="text-right">Slug</Label>
+              <Label htmlFor="edit-slug" className="text-right">Slug</Label>
               <Input
-                id="slug"
-                value={newCategory.slug}
-                onChange={(e) => setNewCategory({ ...newCategory, slug: e.target.value })}
+                id="edit-slug"
+                value={editCategory.slug}
+                onChange={(e) => setEditCategory({ ...editCategory, slug: e.target.value })}
                 className="col-span-3"
               />
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAddDialogOpen(false)} disabled={isSubmitting}>
-              Cancel
-            </Button>
-            <Button onClick={handleAddCategory} disabled={isSubmitting}>
-              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Add Category
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit Category Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Category</DialogTitle>
-          </DialogHeader>
-          {editCategory && (
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-name" className="text-right">Name</Label>
-                <Input
-                  id="edit-name"
-                  value={editCategory.name}
-                  onChange={(e) => handleNameChange(e.target.value, false)}
-                  className="col-span-3"
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-slug" className="text-right">Slug</Label>
-                <Input
-                  id="edit-slug"
-                  value={editCategory.slug}
-                  onChange={(e) => setEditCategory({ ...editCategory, slug: e.target.value })}
-                  className="col-span-3"
-                />
-              </div>
-            </div>
-          )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)} disabled={isSubmitting}>
-              Cancel
-            </Button>
-            <Button onClick={handleEditCategory} disabled={isSubmitting}>
-              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Save Changes
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        )}
+        <ModalFooter>
+          <Button variant="outline" onClick={() => setIsEditDialogOpen(false)} disabled={isSubmitting}>
+            Cancel
+          </Button>
+          <Button onClick={handleEditCategory} disabled={isSubmitting}>
+            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Save Changes
+          </Button>
+        </ModalFooter>
+      </Modal>
     </div>
   );
 }

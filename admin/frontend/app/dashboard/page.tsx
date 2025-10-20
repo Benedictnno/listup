@@ -14,7 +14,7 @@ import {
   LogOut,
   Shield
 } from "lucide-react";
-import { useAdminAuth } from "@/store/authStore";
+import { useAdminAuth } from "@/src/store/authStore";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 
 interface DashboardStats {

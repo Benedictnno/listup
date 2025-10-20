@@ -18,7 +18,7 @@ import {
   parseApiError,
   parseValidationErrors,
   getFieldErrorMessage,
-  isRetryableError,
+  // isRetryableError,
   getSuccessMessage,
 } from "@/utils/errorHandler";
 import ErrorNotice from "@/components/ErrorNotice";
@@ -263,9 +263,9 @@ export default function SignupPage() {
         setError("Please fix the errors below to continue");
       }
 
-      if (isRetryableError(err)) {
-        setRetryCount((p) => p + 1);
-      }
+      // if (isRetryableError(err)) {
+      //   setRetryCount((p) => p + 1);
+      // }
     } finally {
       setLoading(false);
     }
@@ -276,12 +276,12 @@ export default function SignupPage() {
     clearErrors();
   };
 
-  const handleRetry = () => {
-    setError("");
-    setRetryCount(0);
-    // attempt submit again
-    handleSubmit(new Event("submit") as any);
-  };
+  // const handleRetry = () => {
+  //   setError("");
+  //   setRetryCount(0);
+  //   // attempt submit again
+  //   handleSubmit(new Event("submit") as any);
+  // };
 
   /* -------------------------
      Render
@@ -323,7 +323,7 @@ export default function SignupPage() {
             message={error}
             rawError={error}
             retryCount={retryCount}
-            onRetry={handleRetry}
+            // onRetry={handleRetry}
           />
         )}
 

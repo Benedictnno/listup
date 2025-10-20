@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Lock, Mail, Eye, EyeOff, Shield } from "lucide-react";
-import { useAdminAuth } from "@/store/authStore";
+import { useAdminAuth } from "@/src/store/authStore";
 
 export default function AdminLogin() {
   const [email, setEmail] = useState("");

@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import Button  from "@/components/ui/button";
 import { Users, Search } from "lucide-react";
 
 interface UserRow {

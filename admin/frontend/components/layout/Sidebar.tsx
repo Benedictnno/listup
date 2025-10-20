@@ -16,7 +16,7 @@ import {
   X 
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
+import Button  from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface SidebarProps {
@@ -48,7 +48,17 @@ export default function Sidebar({ open, setOpen }: SidebarProps) {
     },
     {
       title: 'Listings',
-      href: '/listings',
+      href: '/dashboard/listings',
+      icon: <ShoppingBag className="h-5 w-5" />,
+    },
+    {
+      title: 'Addresses',
+      href: '/dashboard/addresses',
+      icon: <ShoppingBag className="h-5 w-5" />,
+    },
+    {
+      title: 'Categories',
+      href: '/dashboard/categories',
       icon: <ShoppingBag className="h-5 w-5" />,
     },
     {

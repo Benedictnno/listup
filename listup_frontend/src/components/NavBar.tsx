@@ -126,12 +126,12 @@ function NavBar() {
                     </Link>
                   ) : (
                     <Link href="/saved" className="w-full" onClick={() => setOpen(false)}>
-                      <button className="rounded-xl px-3 py-2 text-xs font-semibold text-white/80 w-full text-left">Saved</button>
+                      <button className="rounded-xl px-3 py-2 text-lg font-semibold text-white/80 w-full text-left">Saved</button>
                     </Link>
                   )}
                   <button 
                     onClick={handleLogout}
-                    className="rounded-xl px-3 py-2 text-xs font-semibold text-white/80 transition hover:text-white"
+                    className="rounded-xl px-3 py-2 text-lg font-semibold text-white/80 transition hover:text-white"
                   >
                     Logout
                   </button>
@@ -139,7 +139,7 @@ function NavBar() {
               ) : (
                 // User is not logged in - Show Login and Signup
                 <>
-                  <Link href="/login" className="rounded-xl px-3 py-2 text-xs font-semibold text-white/80 transition hover:text-white" onClick={() => setOpen(false)}>
+                  <Link href="/login" className="rounded-xl px-3 py-2 text-lg font-semibold text-white/80 transition hover:text-white" onClick={() => setOpen(false)}>
                     Log in
                   </Link> 
                   <Link href="/signup" className="w-full" onClick={() => setOpen(false)}>

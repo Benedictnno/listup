@@ -122,9 +122,6 @@ exports.register = async (req, res, next) => {
       role: user.role 
     });
 
-
-console.log(name + storeName + email + phone + role);
-
     await addToGoogleSheet(name, storeName || '', email, phone || '', role);
     // Return success response
     res.status(201).json({
@@ -175,7 +172,7 @@ exports.login = async (req, res, next) => {
     if (!user) {
       return res.status(401).json({
         success: false,
-        message: 'Invalid credentials'
+        message: 'Invalid email or password'
       });
     }
 

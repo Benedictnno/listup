@@ -29,8 +29,12 @@ export default function MiniListings() {
         const data = await fetchListings();
         if (!mounted) return;
         // Backend returns paging shape: { items, total, page, pages }
-        const items = Array.isArray(data?.items) ? data.items : Array.isArray(data) ? data : [];
-        setListings(items);
+        let items = Array.isArray(data?.items) ? data.items : Array.isArray(data) ? data : [];
+        // take first 12 listings
+        // fetchListings returns parsed JSON (likely an array or {data}) — handle common shapes
+        // const items = Array.isArray(data) ? data : data?.data || data?.listings || [];
+
+        setListings( items.slice(0, 12));
       } catch (err: unknown) {
         setError(err instanceof Error ? err.message : "Failed to load listings");
       } finally {

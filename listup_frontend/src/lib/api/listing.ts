@@ -27,7 +27,6 @@ interface UpdateListingPayload {
 export async function fetchListings() {
   try {
     // Use the API_BASE_URL constant that handles both client and server environments
-    console.log("Using API URL:", API_BASE_URL);
     
     // Remove next.revalidate as it's not supported in client components
     const response = await fetch(`${API_BASE_URL}/listings`, {
@@ -39,15 +38,11 @@ export async function fetchListings() {
       cache: 'no-store' // Don't cache in production
     });
 
-    console.log("Response status:", response.status);
-    console.log("Response ok:", response.ok);
-
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
     const data = await response.json();
-    console.log("Listings data received:", data);
     
     // Handle different API response formats
     if (!data) {
@@ -73,8 +68,6 @@ export async function fetchListings() {
 // ✅ Fetch a single listing by ID (Server-side)
 export async function fetchListingById(listingId: string) {
   try {
-    console.log("Fetching listing with ID:", listingId);
-    console.log("API Base URL:", API_BASE_URL);
     
     const response = await fetch(`${API_BASE_URL}/listings/${listingId}`, {
       method: 'GET',
@@ -84,9 +77,6 @@ export async function fetchListingById(listingId: string) {
       // Add cache options for better performance
       next: { revalidate: 60 } // Revalidate every 60 seconds
     });
-
-    console.log("Response status:", response.status);
-    console.log("Response ok:", response.ok);
 
     if (!response.ok) {
       if (response.status === 404) {
@@ -107,7 +97,7 @@ export async function fetchListingById(listingId: string) {
     }
 
     const data = await response.json();
-    console.log("Listing data received:", data);
+
     return data;
   } catch (error: unknown) {
     console.error("Error fetching listing:", error);
@@ -207,7 +197,6 @@ export async function createListing(listingData: FormData | CreateListingPayload
         const imageData = await res.json();
         uploadedImages.push(imageData.url);
       }
-      console.log("Uploaded Images:", uploadedImages);
 
       // build final payload
       const newListingData: CreateListingPayload = {

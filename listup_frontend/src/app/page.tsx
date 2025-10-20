@@ -9,6 +9,7 @@ import Image from "next/image";
 import MiniListings from "@/components/MiniListings";
 import Link from "next/link";
 import { GhostButton } from "@/utils/helpers";
+import { useAuthStore } from "@/store/authStore";
 /**
  * Marketplace Landing Page
  * Framework: Next.js (app router ready) + TailwindCSS
@@ -18,6 +19,7 @@ import { GhostButton } from "@/utils/helpers";
  */
 
 export default function MarketplaceLanding() {
+  const user = useAuthStore((state) => state.user);  
 
   return (
     <div className="min-h-screen w-full text-slate-800 font-montserrat">
@@ -67,18 +69,18 @@ export default function MarketplaceLanding() {
                 </button>
             </form>
             <p className="mt-2 text-xs text-slate-400 font-montserrat">No fees to browse. Secure checkout on eligible items.</p>
-          <div className="mt-6 flex flex-wrap items-center gap-3">
-              <Link href="/signup">
-                <PrimaryButton>
-                  Get Signed Up 
-                </PrimaryButton>
-              </Link>
-              <Link href={"/login"}>
-              <GhostButton>
-                Login
-              </GhostButton>
-              </Link>
-            </div>
+        {user ? null :<div className="mt-6 flex flex-wrap items-center gap-3">
+            <Link href="/signup">
+              <PrimaryButton>
+                Get Signed Up 
+              </PrimaryButton>
+            </Link>
+            <Link href={"/login"}>
+            <GhostButton>
+              Login
+            </GhostButton>
+            </Link>
+          </div>}
           </motion.div>
 
 
@@ -106,7 +108,7 @@ export default function MarketplaceLanding() {
 
               {/* <AdsPage/> */}
 
-              <MiniListings />
+              <MiniListings/>
 
     {/* <Category /> */}
 

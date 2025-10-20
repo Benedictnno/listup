@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import Button from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Grid3X3, List, Search, Tag } from "lucide-react";
 
