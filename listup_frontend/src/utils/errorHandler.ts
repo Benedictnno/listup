@@ -280,23 +280,23 @@ export function getFieldErrorMessage(field: string, value: string): string | nul
 }
 
 // Check if error is retryable
-// export function isRetryableError(error: unknown): boolean {
-//   if (error instanceof Error) {
-//     const message = error.message.toLowerCase();
-//     return message.includes('network') || 
-//            message.includes('timeout') || 
-//            message.includes('server') ||
-//            message.includes('maintenance');
-//   }
+export function isRetryableError(error: unknown): boolean {
+  if (error instanceof Error) {
+    const message = error.message.toLowerCase();
+    return message.includes('network') || 
+           message.includes('timeout') || 
+           message.includes('server') ||
+           message.includes('maintenance');
+  }
   
-//   if (typeof error === 'object' && error !== null && 'response' in error) {
-//     const response = (error as any).response;
-//     return response?.status >= 500 || response?.status === 429;
-//   }
-//   console.log(true);
+  if (typeof error === 'object' && error !== null && 'response' in error) {
+    const response = (error as any).response;
+    return response?.status >= 500 || response?.status === 429;
+  }
+  console.log(true);
   
-//   return false;
-// }
+  return false;
+}
 
 // Get success message for different actions
 export function getSuccessMessage(action: 'login' | 'signup' | 'password-reset'): string {
