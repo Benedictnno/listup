@@ -34,7 +34,7 @@ export default function MiniListings() {
         // fetchListings returns parsed JSON (likely an array or {data}) — handle common shapes
         // const items = Array.isArray(data) ? data : data?.data || data?.listings || [];
 
-        setListings( items.slice(0, 12));
+        setListings( items.slice(-12));
       } catch (err: unknown) {
         setError(err instanceof Error ? err.message : "Failed to load listings");
       } finally {
