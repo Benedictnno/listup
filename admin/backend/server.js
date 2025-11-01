@@ -32,6 +32,7 @@ app.use('/api/', limiter);
 const corsOptions = {
   origin: [
     'http://localhost:3001', // Admin frontend
+    'http://localhost:3002', // Main frontend
     'http://localhost:3000', // Main frontend
     'https://listup-admin.vercel.app', // Admin production
     'http://listup.ng',
@@ -70,7 +71,7 @@ app.use('/api/listings', listingRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/addresses', addressesRoutes);
-// app.use('/api/categories', categoriesRoutes);
+app.use('/api/categories', categoriesRoutes);
 
 
 // Error handling middleware

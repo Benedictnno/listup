@@ -8,6 +8,9 @@ import { Vendor } from "@/components/vendors/types";
 import VendorFilters from "@/components/vendors/VendorFilters";
 import VendorItem from "@/components/vendors/VendorItem";
 import VendorDetailsModal from "@/components/vendors/VendorDetailsModal";
+import { StatusBadge } from "@/components/vendors/StatusBadge";
+import useAuth from "@/hooks/useAuth";
+import { XCircle, User, Mail, Phone, Store, MapPin, Calendar, CheckCircle, Clock } from "lucide-react";
 
 export default function VendorsPage() {
   // State variables
@@ -21,21 +24,21 @@ export default function VendorsPage() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState("");
   
-  const { user } = useAdminAuth();
+  const { user } = useAuth();
   const router = useRouter();
 
   // Force authentication for testing
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('admin_token', 'mock-token-for-testing');
-      localStorage.setItem('admin_user', JSON.stringify({
-        id: 'admin-1',
-        name: 'Admin User',
-        email: 'admin@example.com',
-        role: 'admin'
-      }));
-    }
-  }, []);
+  // useEffect(() => {
+  //   if (typeof window !== 'undefined') {
+  //     localStorage.setItem('admin_token', 'mock-token-for-testing');
+  //     localStorage.setItem('admin_user', JSON.stringify({
+  //       id: 'admin-1',
+  //       name: 'Admin User',
+  //       email: 'admin@example.com',
+  //       role: 'admin'
+  //     }));
+  //   }
+  // }, []);
 
   useEffect(() => {
     fetchVendors();
@@ -44,7 +47,7 @@ export default function VendorsPage() {
   const fetchVendors = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem("admin_token");
+      const token = localStorage.getItem("token");
       
       const response = await fetch(`${process.env.NEXT_PUBLIC_ADMIN_API_URL || 'http://localhost:4001'}/api/vendors`, {
         headers: {
@@ -56,6 +59,8 @@ export default function VendorsPage() {
       if (response.ok) {
         const data = await response.json();
         setVendors(data.data.vendors);
+        console.log(data.data.vendors);
+        
       } else {
         setError("Failed to load vendors");
       }
@@ -70,7 +75,7 @@ export default function VendorsPage() {
   const handleApprove = async (vendorId: string) => {
     try {
       setActionLoading(vendorId);
-      const token = localStorage.getItem("admin_token");
+      const token = localStorage.getItem("token");
       
       const response = await fetch(`${process.env.NEXT_PUBLIC_ADMIN_API_URL || 'http://localhost:4001'}/api/vendors/${vendorId}/approve`, {
         method: 'PATCH',
@@ -340,25 +345,4 @@ export default function VendorsPage() {
   );
 }
 
-function StatusBadge({ status }: { status: string }) {
-  const statusClasses = {
-    PENDING: "bg-yellow-100 text-yellow-800",
-    APPROVED: "bg-green-100 text-green-800",
-    REJECTED: "bg-red-100 text-red-800"
-  };
 
-  const statusIcons = {
-    PENDING: Clock,
-    APPROVED: CheckCircle,
-    REJECTED: XCircle
-  };
-
-  const Icon = statusIcons[status as keyof typeof statusIcons] || Clock;
-
-  return (
-    <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${statusClasses[status as keyof typeof statusClasses] || 'bg-gray-100 text-gray-800'}`}>
-      <Icon className="w-3 h-3" />
-      {status}
-    </span>
-  );
-}

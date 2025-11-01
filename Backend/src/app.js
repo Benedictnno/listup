@@ -31,6 +31,7 @@ const corsOptions = {
         'https://www.listup.ng',
         
         'http://localhost:3000', // Local development
+        'http://localhost:3001', // Local development
         'https://listup-three.vercel.app', // Old Vercel project
         // Add your new Vercel project domain here
         // You can also use a wildcard for all Vercel subdomains (less secure but more flexible)

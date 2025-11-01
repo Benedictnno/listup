@@ -13,6 +13,9 @@ import {
   LogOut, 
   ChevronRight, 
   Menu, 
+  MapPinHouse,
+  CircleFadingPlus,
+  TicketSlash,
   X 
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -47,29 +50,29 @@ export default function Sidebar({ open, setOpen }: SidebarProps) {
       icon: <Users className="h-5 w-5" />,
     },
     {
-      title: 'Listings',
-      href: '/dashboard/listings',
-      icon: <ShoppingBag className="h-5 w-5" />,
-    },
-    {
-      title: 'Addresses',
-      href: '/dashboard/addresses',
-      icon: <ShoppingBag className="h-5 w-5" />,
-    },
-    {
-      title: 'Categories',
-      href: '/dashboard/categories',
-      icon: <ShoppingBag className="h-5 w-5" />,
-    },
-    {
       title: 'Vendors',
       href: '/dashboard/vendors',
       icon: <Tag className="h-5 w-5" />,
     },
     {
+      title: 'Listings',
+      href: '/dashboard/listings',
+      icon: <ShoppingBag className="h-5 w-5" />,
+    },
+    {
       title: 'Analytics',
-      href: '/analytics',
+      href: '/dashboard/analytics',
       icon: <BarChart3 className="h-5 w-5" />,
+    },
+    {
+      title: 'Addresses',
+      href: '/dashboard/addresses',
+      icon: <MapPinHouse className="h-5 w-5" />,
+    },
+    {
+      title: 'Categories',
+      href: '/dashboard/categories',
+      icon: <CircleFadingPlus className="h-5 w-5" />,
     },
     {
       title: 'Settings',
@@ -100,28 +103,31 @@ export default function Sidebar({ open, setOpen }: SidebarProps) {
       <aside
         className={cn(
           "fixed inset-y-0 left-0 z-50 flex flex-col bg-white border-r border-gray-200 transition-all duration-300 ease-in-out",
-          open ? "w-64" : "w-20",
-          !open && "items-center",
-          "lg:relative lg:z-auto"
+          // Mobile: slide in/out from left
+          open ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
+          // Desktop: expand/collapse width
+          "lg:relative lg:z-auto",
+          open ? "w-64" : "lg:w-20 w-64",
+          !open && "lg:items-center"
         )}
       >
         {/* Logo and toggle */}
         <div className={cn(
           "flex items-center h-16 px-4 border-b border-gray-200",
-          !open && "justify-center"
+          !open && "lg:justify-center"
         )}>
           {open ? (
-            <div className="flex items-center">
+            <div className="flex items-center w-full">
               <div className="flex items-center gap-2">
                 <div className="h-8 w-8 rounded-md bg-lime-500 flex items-center justify-center">
-                  <span className="text-white font-bold">L</span>
+                  <span className="text-white font-bold text-lg">L</span>
                 </div>
-                <span className="text-xl font-semibold">ListUp</span>
+                <span className="text-xl font-semibold text-gray-800">ListUp Admin</span>
               </div>
               <Button 
                 variant="ghost" 
-                size="icon" 
-                className="ml-auto lg:hidden"
+                size="sm" 
+                className="ml-auto lg:hidden hover:bg-gray-100"
                 onClick={() => setOpen(false)}
               >
                 <X className="h-5 w-5" />
@@ -129,7 +135,7 @@ export default function Sidebar({ open, setOpen }: SidebarProps) {
             </div>
           ) : (
             <div className="h-8 w-8 rounded-md bg-lime-500 flex items-center justify-center">
-              <span className="text-white font-bold">L</span>
+              <span className="text-white font-bold text-lg">L</span>
             </div>
           )}
         </div>
@@ -139,7 +145,7 @@ export default function Sidebar({ open, setOpen }: SidebarProps) {
           <ul className="space-y-1 px-2">
             {navItems.map((item) => (
               <li key={item.title}>
-                <TooltipProvider delayDuration={300}>
+                <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <div>
@@ -150,12 +156,17 @@ export default function Sidebar({ open, setOpen }: SidebarProps) {
                             isActive(item.href) 
                               ? "bg-gray-100 text-lime-600" 
                               : "text-gray-700 hover:bg-gray-100 hover:text-lime-600",
-                            !open && "justify-center"
+                            !open && "lg:justify-center"
                           )}
                           onClick={(e) => {
                             if (item.submenu && item.submenu.length > 0) {
                               e.preventDefault();
                               toggleSubmenu(item.title);
+                            } else {
+                              // Close sidebar on mobile when clicking a link
+                              if (window.innerWidth < 1024) {
+                                setOpen(false);
+                              }
                             }
                           }}
                         >
@@ -214,7 +225,7 @@ export default function Sidebar({ open, setOpen }: SidebarProps) {
         )}>
           <Button 
             variant="ghost" 
-            size={open ? "default" : "icon"} 
+            size={open ? "md" : "sm"} 
             className={cn(
               "w-full text-red-500 hover:text-red-600 hover:bg-red-50",
               !open && "w-auto"
