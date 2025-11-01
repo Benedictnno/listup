@@ -1,7 +1,7 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
 const prisma = require('../lib/prisma');
-const { auth } = require('../middleware/auth');
+const { auth, isAuthenticated } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -52,7 +52,7 @@ router.get('/', auth, async (req, res) => {
             select: {
               id: true,
               storeName: true,
-              storeAddress: true,
+              address: true,
               businessCategory: true,
               coverImage: true,
               logo: true,
@@ -184,7 +184,7 @@ router.get('/:vendorId', auth, async (req, res) => {
 });
 
 // Approve vendor
-router.patch('/:vendorId/approve', auth, async (req, res) => {
+router.patch('/:vendorId/approve', isAuthenticated, async (req, res) => {
   try {
     const { vendorId } = req.params;
 

@@ -53,7 +53,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         <main 
           className={cn(
             "flex-1 overflow-y-auto overflow-x-hidden bg-gray-50 dark:bg-gray-900 transition-all duration-300",
-            sidebarOpen ? "lg:ml-64" : "lg:ml-20"
+            sidebarOpen ? "lg:ml" : "lg:"
           )}
         >
           <div className="container mx-auto px-4 py-6 max-w-7xl">

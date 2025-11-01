@@ -10,6 +10,7 @@ import MiniListings from "@/components/MiniListings";
 import Link from "next/link";
 import { GhostButton } from "@/utils/helpers";
 import { useAuthStore } from "@/store/authStore";
+import OutsideAd from "@/components/OutsideAd";
 /**
  * Marketplace Landing Page
  * Framework: Next.js (app router ready) + TailwindCSS
@@ -22,7 +23,7 @@ export default function MarketplaceLanding() {
   const user = useAuthStore((state) => state.user);  
 
   return (
-    <div className="min-h-screen w-full text-slate-800 font-montserrat">
+    <div className="min-h-screen w-full text-slate-800 font-montserrat realative">
       {/* NAVBAR */}
 
       {/* HERO */}
@@ -205,6 +206,8 @@ export default function MarketplaceLanding() {
           </div>
         </div>
       </section>
+<OutsideAd/>
+
     </div>
   );
 }

@@ -15,7 +15,10 @@ import {
   Shield
 } from "lucide-react";
 import { useAdminAuth } from "@/src/store/authStore";
-import DashboardLayout from "@/components/layout/DashboardLayout";
+import PerformanceChart from "@/components/dashboard/PerformanceChart";
+import TrendingSummary from "@/components/dashboard/TrendingSummary";
+import ActivityFeed from "@/components/dashboard/ActivityFeed";
+import useAuth from "@/hooks/useAuth";
 
 interface DashboardStats {
   totalUsers: number;
@@ -41,27 +44,23 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   
-  const { user, logout, isInitialized } = useAdminAuth();
+  const { logout } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (!isInitialized) return; // wait for bootstrap
-    if (!user) {
-      router.push("/");
-      return;
-    }
+    // Fetch dashboard data on mount
     fetchDashboardData();
-  }, [user, router, isInitialized]);
+  }, []);
 
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem("admin_token");
+      const token = localStorage.getItem("token");
       
       const [statsRes, activityRes] = await Promise.all([
         fetch(`${process.env.NEXT_PUBLIC_ADMIN_API_URL || 'http://localhost:4001'}/api/dashboard/overview`, {
           headers: {
-            'Authorization': `Bearer ${token}`,
+            'Authorization': `Bearer ${token}`, 
             'Content-Type': 'application/json'
           }
         }),
@@ -80,14 +79,18 @@ export default function AdminDashboard() {
 
       if (activityRes.ok) {
         const activityData = await activityRes.json();
+      console.log(activityData.data);
+
         setRecentActivity(activityData.data);
       }
+      
 
     } catch (err) {
       setError("Failed to load dashboard data");
       console.error("Dashboard error:", err);
     } finally {
       setLoading(false);
+
     }
   };
 
@@ -96,7 +99,7 @@ export default function AdminDashboard() {
     router.push("/");
   };
 
-  if (!isInitialized || loading) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -108,7 +111,6 @@ export default function AdminDashboard() {
   }
 
   return (
-    <DashboardLayout>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -140,6 +142,11 @@ export default function AdminDashboard() {
             color="orange"
             change={`${stats?.totalAds || 0} total ads`}
           />
+        </div>
+
+        {/* Performance Chart */}
+        <div className="mb-8">
+          <PerformanceChart />
         </div>
 
         {/* Quick Actions */}
@@ -181,7 +188,13 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* Recent Activity */}
+        {/* Trending Summary and Activity Feed */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          <TrendingSummary />
+          <ActivityFeed />
+        </div>
+
+        {/* Recent Activity from API */}
         {recentActivity && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
@@ -239,7 +252,6 @@ export default function AdminDashboard() {
           </div>
         )}
       </div>
-    </DashboardLayout>
   );
 }
 

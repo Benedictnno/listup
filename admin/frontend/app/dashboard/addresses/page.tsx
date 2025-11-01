@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 
 export default function AddressesPage() {
-  const [addresses, setAddresses] = useState([]);
+  const [addresses, setAddresses] = useState<string[]>([]);
   const [newAddress, setNewAddress] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [editingId, setEditingId] = useState(null);
@@ -40,7 +40,7 @@ const fetchAddresses = async () => {
 };
 
 
-const handleAddAddress = async (e) => {
+const handleAddAddress = async (e : any) => {
   e.preventDefault();
   if (!newAddress.trim()) return;
   try {
@@ -49,45 +49,45 @@ const handleAddAddress = async (e) => {
     setAddresses([...addresses, res.data]);
     setNewAddress('');
     alert("Address added successfully");
-  } catch (err) {
+  } catch (err : any) {
     alert(err.response?.data?.message || "Error adding address");
   } finally {
     setIsMutating(false);
   }
 };
 
-  const handleEditAddress = async (id) => {
+  const handleEditAddress = async (id : any) => {
     if (!editName.trim()) return;
     
     try {
       setIsLoading(true);
       const response = await axios.patch(`/api/addresses/${id}`, { name: editName });
-      setAddresses(addresses.map(addr => addr.id === id ? response.data : addr));
+      setAddresses(addresses.map((addr : any) => addr.id === id ? response.data : addr));
       setEditingId(null);
       alert('Address updated successfully');
-    } catch (error) {
+    } catch (error : any) {
       alert(error.response?.data?.message || 'Error updating address');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleDeleteAddress = async (id) => {
+  const handleDeleteAddress = async (id : any) => {
     if (!confirm('Are you sure you want to delete this address?')) return;
     
     try {
       setIsLoading(true);
       await axios.delete(`/api/addresses/${id}`);
-      setAddresses(addresses.filter(addr => addr.id !== id));
+      setAddresses(addresses.filter((addr:any) => addr.id !== id));
       alert('Address deleted successfully');
-    } catch (error) {
+    } catch (error : any) {
       alert(error.response?.data?.message || 'Error deleting address');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const startEditing = (address) => {
+  const startEditing = (address: any) => {
     setEditingId(address.id);
     setEditName(address.name);
   };
@@ -137,7 +137,7 @@ const handleAddAddress = async (e) => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {addresses.map((address) => (
+                {addresses.map((address :any) => (
                   <tr key={address.id}>
                     <td className="px-4 py-3 whitespace-nowrap">
                       {editingId === address.id ? (

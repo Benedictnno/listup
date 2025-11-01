@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Lock, Mail, Eye, EyeOff, Shield } from "lucide-react";
 import { useAdminAuth } from "@/src/store/authStore";
+import useAuth from "@/hooks/useAuth";
 
 export default function AdminLogin() {
   const [email, setEmail] = useState("");
@@ -12,20 +13,18 @@ export default function AdminLogin() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   
-  const { user, login, initializeAuth, isInitialized } = useAdminAuth();
+  const { login } = useAuth();
   const router = useRouter();
 
   // Run once to bootstrap auth from localStorage
-  useEffect(() => {
-    initializeAuth();
-  }, [initializeAuth]);
 
   // Redirect when user becomes available
   useEffect(() => {
-    if (user) {
+    const token =  localStorage.getItem("token") ;
+    if (token) {
       router.push("/dashboard");
     }
-  }, [user, router]);
+  }, [login, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,16 +41,16 @@ export default function AdminLogin() {
     }
   };
 
-  if (!isInitialized) {
-    return (
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center text-white">
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-          Initializing...
-        </div>
-      </div>
-    );
-  }
+  // if (!isInitialized) {
+  //   return (
+  //     <div className="min-h-screen bg-slate-900 flex items-center justify-center text-white">
+  //       <div className="flex items-center gap-2">
+  //         <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+  //         Initializing...
+  //       </div>
+  //     </div>
+  //   );
+  // }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
