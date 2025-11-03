@@ -7,12 +7,18 @@ async function seedAdmin() {
   try {
     console.log('🌱 Seeding admin user...');
 
-    const adminEmail = ''; //enter admin emails
-    const adminPassword = ''; // enter admin password
+    const adminEmail = 'benchbox001@gmail.com'; //enter admin emails
+    const adminPassword = 'benchbox001'; // enter admin password
+    const adminPhone = '08159360009'; // admin phone number
 
-    // Check if admin already exists
-    const existingAdmin = await prisma.user.findUnique({
-      where: { email: adminEmail }
+    // Check if admin already exists by email or phone
+    const existingAdmin = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { email: adminEmail },
+          { phone: adminPhone }
+        ]
+      }
     });
 
     if (existingAdmin) {
@@ -20,15 +26,18 @@ async function seedAdmin() {
       
       // Update existing user to admin
       const updatedAdmin = await prisma.user.update({
-        where: { email: adminEmail },
+        where: { id: existingAdmin.id },
         data: { 
           role: 'ADMIN',
+          email: adminEmail,
+          phone: adminPhone,
           password: await bcrypt.hash(adminPassword, 12)
         }
       });
       
       console.log('✅ Admin user updated successfully!');
       console.log('📧 Email:', updatedAdmin.email);
+      console.log('📱 Phone:', updatedAdmin.phone);
       console.log('🔑 Role:', updatedAdmin.role);
       
     } else {
@@ -37,27 +46,28 @@ async function seedAdmin() {
       // Hash the password
       const hashedPassword = await bcrypt.hash(adminPassword, 12);
       
-      // Create new admin user
+      // Create new admin user with a unique phone number
       const adminUser = await prisma.user.create({
         data: {
           name: 'Admin User',
           email: adminEmail,
           password: hashedPassword,
           role: 'ADMIN',
-          phone: null
+          phone: adminPhone
         }
       });
       
       console.log('✅ Admin user created successfully!');
       console.log('📧 Email:', adminUser.email);
+      console.log('📱 Phone:', adminUser.phone);
       console.log('🔑 Role:', adminUser.role);
       console.log('🆔 ID:', adminUser.id);
     }
 
     console.log('\n🎉 Admin seeding completed!');
     console.log('📝 You can now login to the admin panel with:');
-    console.log('   Email: benedictnnaoma0@gmail.com');
-    console.log('   Password: Chigozie0@');
+    console.log(`   Email: ${adminEmail}`);
+    console.log(`   Password: ${adminPassword}`);
     console.log('   URL: http://localhost:3001');
 
   } catch (error) {
