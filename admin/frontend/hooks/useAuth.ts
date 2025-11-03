@@ -39,7 +39,7 @@ export const useAuth = () => {
 
   const logoutUser = async () => {
     await dispatch(logout() as any);
-    router.push('/login');
+    router.push('/');
   };
 
   const checkIsAdmin = () => {
