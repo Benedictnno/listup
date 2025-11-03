@@ -30,6 +30,7 @@ export default function AdvertisementsPage() {
   const [filter, setFilter] = useState<'all' | 'active' | 'expired'>('all');
   const router = useRouter();
   const toast = useToast();
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001/api';
 
   const fetchAdvertisements = async () => {
     try {
@@ -38,7 +39,7 @@ export default function AdvertisementsPage() {
       const statusParam = filter !== 'all' ? `?status=${filter}` : '';
       
       const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001/api'}/advertisements${statusParam}`,
+        `${API_URL}/advertisements${statusParam}`,
         {
           headers: { Authorization: `Bearer ${token}` }
         }
@@ -65,7 +66,7 @@ export default function AdvertisementsPage() {
     try {
       const token = localStorage.getItem('token');
       await axios.delete(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001/api'}/advertisements/${id}`,
+        `${API_URL}/advertisements/${id}`,
         {
           headers: { Authorization: `Bearer ${token}` }
         }
@@ -83,7 +84,7 @@ export default function AdvertisementsPage() {
     try {
       const token = localStorage.getItem('token');
       await axios.put(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001/api'}/advertisements/${id}`,
+        `${API_URL}/advertisements/${id}`,
         { isActive: !currentStatus },
         {
           headers: { Authorization: `Bearer ${token}` }

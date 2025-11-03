@@ -13,7 +13,7 @@ export default function AddressesPage() {
   const [IsMutating , setIsMutating]= useState(false)
 
 
-  const BASE_URL = "http://localhost:4001/api";
+  const BASE_URL = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001'}/api`;
   const getAuthConfig = () => ({
   withCredentials: true,
   headers: {
@@ -61,7 +61,8 @@ const handleAddAddress = async (e : any) => {
     
     try {
       setIsLoading(true);
-      const response = await axios.patch(`/api/addresses/${id}`, { name: editName });
+      const response = await axios.patch(`${BASE_URL}/addresses/${id}`, { name: editName }, getAuthConfig());
+
       setAddresses(addresses.map((addr : any) => addr.id === id ? response.data : addr));
       setEditingId(null);
       alert('Address updated successfully');
@@ -77,7 +78,8 @@ const handleAddAddress = async (e : any) => {
     
     try {
       setIsLoading(true);
-      await axios.delete(`/api/addresses/${id}`);
+      await axios.delete(`${BASE_URL}/addresses/${id}`, getAuthConfig());
+
       setAddresses(addresses.filter((addr:any) => addr.id !== id));
       alert('Address deleted successfully');
     } catch (error : any) {
