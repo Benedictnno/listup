@@ -41,6 +41,7 @@ const corsOptions = {
     'https://listup.ng',
     'http://www.listup.ng',
     'https://www.listup.ng',  
+    'listup-admin.vercel.app'
   ],
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
