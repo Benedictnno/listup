@@ -24,6 +24,7 @@ const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#FF6B9D'
 export default function TrendingSummary() {
   const [categoryData, setCategoryData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001/api';
 
   useEffect(() => {
     fetchCategoryData();
@@ -35,7 +36,7 @@ export default function TrendingSummary() {
       const token = localStorage.getItem("token");
       
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_ADMIN_API_URL || 'http://localhost:4001'}/api/dashboard/analytics?period=30`,
+        `${API_URL}/dashboard/analytics?period=30`,
         {
           headers: {
             'Authorization': `Bearer ${token}`,

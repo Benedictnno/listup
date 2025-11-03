@@ -43,6 +43,7 @@ export default function AdminDashboard() {
   const [recentActivity, setRecentActivity] = useState<RecentActivity | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001/api';
   
   const { logout } = useAuth();
   const router = useRouter();
@@ -58,13 +59,13 @@ export default function AdminDashboard() {
       const token = localStorage.getItem("token");
       
       const [statsRes, activityRes] = await Promise.all([
-        fetch(`${process.env.NEXT_PUBLIC_ADMIN_API_URL || 'http://localhost:4001'}/api/dashboard/overview`, {
+        fetch(`${API_URL}/dashboard/overview`, {
           headers: {
             'Authorization': `Bearer ${token}`, 
             'Content-Type': 'application/json'
           }
         }),
-        fetch(`${process.env.NEXT_PUBLIC_ADMIN_API_URL || 'http://localhost:4001'}/api/dashboard/recent-activity`, {
+        fetch(`${API_URL}/dashboard/recent-activity`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'

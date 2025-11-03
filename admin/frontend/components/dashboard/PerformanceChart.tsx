@@ -32,6 +32,7 @@ export default function PerformanceChart() {
   const [chartType, setChartType] = useState('line');
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001/api';
   
   useEffect(() => {
     fetchAnalyticsData();
@@ -43,7 +44,7 @@ export default function PerformanceChart() {
       const token = localStorage.getItem("token");
       
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_ADMIN_API_URL || 'http://localhost:4001'}/api/dashboard/analytics?period=${period}`,
+        `${API_URL}/dashboard/analytics?period=${period}`,
         {
           headers: {
             'Authorization': `Bearer ${token}`,

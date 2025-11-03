@@ -18,6 +18,7 @@ export default function VendorDetailsPage() {
   const [error, setError] = useState<string>("");
   const [actionLoading, setActionLoading] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001/api';
 
   useEffect(() => {
     if (!vendorId) return;
@@ -25,10 +26,10 @@ export default function VendorDetailsPage() {
       try {
         setLoading(true);
         const token = localStorage.getItem("admin_token") || localStorage.getItem("token") || "";
-        const base = process.env.NEXT_PUBLIC_ADMIN_API_URL || "http://localhost:4001";
-        const res = await fetch(`${base}/api/vendors/${vendorId}`, {
+        const res = await fetch(`${API_URL}/vendors/${vendorId}`, {
           headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
         });
+
         if (!res.ok) throw new Error("Failed to load vendor");
         const data = await res.json();
         setVendor(data.data.vendor || data.vendor || data);
@@ -48,13 +49,13 @@ export default function VendorDetailsPage() {
     try {
       setActionLoading(true);
       const token = localStorage.getItem("admin_token") || localStorage.getItem("token") || "";
-      const base = process.env.NEXT_PUBLIC_ADMIN_API_URL || "http://localhost:4001";
-      const res = await fetch(`${base}/api/vendors/${vendorId}/approve`, {
+      const res = await fetch(`${API_URL}/vendors/${vendorId}/approve`, {
         method: "PATCH",
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       });
       if (!res.ok) throw new Error("Failed to approve vendor");
-      const refetch = await fetch(`${base}/api/vendors/${vendorId}`, { headers: { Authorization: `Bearer ${token}` } });
+      const refetch = await fetch(`${API_URL}/vendors/${vendorId}`, { headers: { Authorization: `Bearer ${token}` } });
+
       if (refetch.ok) {
         const data = await refetch.json();
         setVendor(data.data.vendor || data.vendor || data);
@@ -73,14 +74,14 @@ export default function VendorDetailsPage() {
     try {
       setActionLoading(true);
       const token = localStorage.getItem("admin_token") || localStorage.getItem("token") || "";
-      const base = process.env.NEXT_PUBLIC_ADMIN_API_URL || "http://localhost:4001";
-      const res = await fetch(`${base}/api/vendors/${vendorId}/reject`, {
+      const res = await fetch(`${API_URL}/vendors/${vendorId}/reject`, {
         method: "PATCH",
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
         body: JSON.stringify({ reason: rejectReason }),
       });
       if (!res.ok) throw new Error("Failed to reject vendor");
-      const refetch = await fetch(`${base}/api/vendors/${vendorId}`, { headers: { Authorization: `Bearer ${token}` } });
+      const refetch = await fetch(`${API_URL}/vendors/${vendorId}`, { headers: { Authorization: `Bearer ${token}` } });
+
       if (refetch.ok) {
         const data = await refetch.json();
         setVendor(data.data.vendor || data.vendor || data);

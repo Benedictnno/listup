@@ -30,6 +30,7 @@ export default function VendorsPage() {
   
   const { user } = useAuth();
   const router = useRouter();
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001/api';
 
   // Force authentication for testing
   // useEffect(() => {
@@ -56,7 +57,7 @@ export default function VendorsPage() {
       
       const statusParam = statusFilter !== "ALL" ? `&status=${statusFilter}` : "";
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_ADMIN_API_URL || 'http://localhost:4001'}/api/vendors?page=${page}&limit=${limit}${statusParam}`,
+        `${API_URL}/vendors?page=${page}&limit=${limit}${statusParam}`,
         {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -89,7 +90,7 @@ export default function VendorsPage() {
       setActionLoading(vendorId);
       const token = localStorage.getItem("token");
       
-      const response = await fetch(`${process.env.NEXT_PUBLIC_ADMIN_API_URL || 'http://localhost:4001'}/api/vendors/${vendorId}/approve`, {
+      const response = await fetch(`${API_URL}/vendors/${vendorId}/approve`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -114,7 +115,7 @@ export default function VendorsPage() {
       setActionLoading(vendorId);
       const token = localStorage.getItem("admin_token");
       
-      const response = await fetch(`${process.env.NEXT_PUBLIC_ADMIN_API_URL || 'http://localhost:4001'}/api/vendors/${vendorId}/reject`, {
+      const response = await fetch(`${API_URL}/vendors/${vendorId}/reject`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,
