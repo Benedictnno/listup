@@ -80,7 +80,10 @@ export const useAuthStore = create<AuthState>((set) => ({
       const response = await api.post("/auth/login", { email, password });
       
       if (!response.data.success) {
-        throw new Error(response.data.message || "Login failed");
+        const errorMessage = response.data.message || "Login failed";
+        const error: any = new Error(errorMessage);
+        error.response = { data: { message: errorMessage } };
+        throw error;
       }
 
       const { token, user: userData } = response.data.data;
@@ -111,8 +114,20 @@ export const useAuthStore = create<AuthState>((set) => ({
       }
 
       set({ user });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Login error:", error);
+      
+      // Ensure error has proper structure for the UI to display
+      if (!error.response) {
+        const enhancedError: any = new Error(error.message || "Login failed");
+        enhancedError.response = {
+          data: {
+            message: error.message || "Invalid email or password. Please try again."
+          }
+        };
+        throw enhancedError;
+      }
+      
       throw error;
     }
   },

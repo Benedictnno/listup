@@ -22,10 +22,16 @@ export const useAuth = () => {
 
   const loginUser = async (email: string, password: string) => {
     try {
-    await dispatch(login({ email, password }) as any);
+      const result = await dispatch(login({ email, password }) as any);
       
-      router.push('/dashboard');
-      return true;
+      // Check if login was successful
+      if (login.fulfilled.match(result)) {
+        router.push('/dashboard');
+        return true;
+      } else {
+        // Login failed
+        return false;
+      }
     } catch (error) {
       return false;
     }

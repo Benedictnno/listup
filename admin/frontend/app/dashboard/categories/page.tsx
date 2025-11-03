@@ -54,10 +54,12 @@ export default function CategoriesPage() {
     try {
       setLoading(true);
       const response = await axios.get(`${API_URL}/categories`);
-      setCategories(response.data);
+      const categoriesData = response.data.data?.categories || response.data.data || response.data || [];
+      setCategories(Array.isArray(categoriesData) ? categoriesData : []);
     } catch (error) {
       console.error('Error fetching categories:', error);
       toast.error('Failed to load categories');
+      setCategories([]); // Set empty array on error
     } finally {
       setLoading(false);
     }

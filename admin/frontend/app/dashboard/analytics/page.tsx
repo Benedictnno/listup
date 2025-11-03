@@ -3,10 +3,31 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { StatsService, VendorStats, ListingStats } from "@/services/statsService";
 import { Loader2 } from "lucide-react";
-import { VendorStatsOverview } from "@/components/analytics/VendorStatsOverview";
-import { ListingStatsOverview } from "@/components/analytics/ListingStatsOverview";
+import axios from "axios";
+import { toast } from "react-hot-toast";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001/api';
+
+interface VendorStats {
+  totalVendors: number;
+  activeVendors: number;
+  newVendors: number;
+  totalListings: number;
+  topVendorsByListings?: any[];
+  vendorsByCategory?: any[];
+  vendorGrowth?: any[];
+}
+
+interface ListingStats {
+  totalListings: number;
+  activeListings: number;
+  newListings: number;
+  averagePrice: number;
+  topCategories?: any[];
+  listingsByStatus?: any[];
+  listingGrowth?: any[];
+}
 
 export default function AnalyticsPage() {
   const [activeTab, setActiveTab] = useState("vendors");
@@ -20,72 +41,44 @@ export default function AnalyticsPage() {
       try {
         setLoading(true);
         setError(null);
+        const token = localStorage.getItem('token');
 
-        // In a real app, we would fetch from the API
-        // const vendorData = await StatsService.getVendorStats();
-        // const listingData = await StatsService.getListingStats();
+        // Fetch real analytics data from API
+        const [vendorsResponse, listingsResponse] = await Promise.all([
+          axios.get(`${API_URL}/vendors/stats`, {
+            headers: { Authorization: `Bearer ${token}` }
+          }).catch(() => ({ data: null })),
+          axios.get(`${API_URL}/listings/stats`, {
+            headers: { Authorization: `Bearer ${token}` }
+          }).catch(() => ({ data: null }))
+        ]);
 
-        // Mock data for development
-        const vendorData: VendorStats = {
-          totalVendors: 156,
-          activeVendors: 98,
-          newVendors: 24,
-          totalListings: 1245,
-          topVendorsByListings: [
-            { name: "Tech Store", listings: 45 },
-            { name: "Fashion Hub", listings: 32 },
-            { name: "Home Decor", listings: 28 },
-            { name: "Sports World", listings: 15 },
-            { name: "Book Haven", listings: 12 }
-          ],
-          vendorsByCategory: [
-            { category: "Electronics", count: 45 },
-            { category: "Clothing", count: 32 },
-            { category: "Home & Garden", count: 28 },
-            { category: "Sports", count: 15 }
-          ],
-          vendorGrowth: [
-            { month: "Jan", count: 85 },
-            { month: "Feb", count: 110 },
-            { month: "Mar", count: 95 },
-            { month: "Apr", count: 145 },
-            { month: "May", count: 120 },
-            { month: "Jun", count: 130 }
-          ]
-        };
+        // Process vendor stats
+        const vendorData = vendorsResponse.data?.data || vendorsResponse.data || {};
+        setVendorStats({
+          totalVendors: vendorData.totalVendors || 0,
+          activeVendors: vendorData.activeVendors || 0,
+          newVendors: vendorData.newVendors || 0,
+          totalListings: vendorData.totalListings || 0,
+          topVendorsByListings: vendorData.topVendorsByListings || [],
+          vendorsByCategory: vendorData.vendorsByCategory || [],
+          vendorGrowth: vendorData.vendorGrowth || []
+        });
 
-        const listingData: ListingStats = {
-          totalListings: 1245,
-          activeListings: 876,
-          newListings: 130,
-          averagePrice: 89.99,
-          topCategories: [
-            { name: "Electronics", count: 320 },
-            { name: "Clothing", count: 280 },
-            { name: "Home & Garden", count: 210 },
-            { name: "Sports", count: 175 },
-            { name: "Books", count: 150 }
-          ],
-          listingsByStatus: [
-            { status: "Active", count: 876 },
-            { status: "Pending", count: 189 },
-            { status: "Sold", count: 120 },
-            { status: "Inactive", count: 60 }
-          ],
-          listingGrowth: [
-            { month: "Jan", count: 85 },
-            { month: "Feb", count: 110 },
-            { month: "Mar", count: 95 },
-            { month: "Apr", count: 145 },
-            { month: "May", count: 120 },
-            { month: "Jun", count: 130 }
-          ]
-        };
-
-        setVendorStats(vendorData);
-        setListingStats(listingData);
+        // Process listing stats
+        const listingData = listingsResponse.data?.data || listingsResponse.data || {};
+        setListingStats({
+          totalListings: listingData.totalListings || 0,
+          activeListings: listingData.activeListings || 0,
+          newListings: listingData.newListings || 0,
+          averagePrice: listingData.averagePrice || 0,
+          topCategories: listingData.topCategories || [],
+          listingsByStatus: listingData.listingsByStatus || [],
+          listingGrowth: listingData.listingGrowth || []
+        });
       } catch (err) {
         console.error("Failed to fetch stats:", err);
+        toast.error("Failed to load analytics data");
         setError("Failed to load analytics data. Please try again later.");
       } finally {
         setLoading(false);
@@ -120,11 +113,81 @@ export default function AnalyticsPage() {
         ) : (
           <>
             <TabsContent value="vendors" className="mt-6 space-y-6">
-              {vendorStats && <VendorStatsOverview stats={vendorStats} />}
+              {vendorStats && (
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium text-muted-foreground">Total Vendors</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{vendorStats.totalVendors}</div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium text-muted-foreground">Active Vendors</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{vendorStats.activeVendors}</div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium text-muted-foreground">New Vendors</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{vendorStats.newVendors}</div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium text-muted-foreground">Total Listings</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{vendorStats.totalListings}</div>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
             </TabsContent>
 
             <TabsContent value="listings" className="mt-6 space-y-6">
-              {listingStats && <ListingStatsOverview stats={listingStats} />}
+              {listingStats && (
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium text-muted-foreground">Total Listings</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{listingStats.totalListings}</div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium text-muted-foreground">Active Listings</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{listingStats.activeListings}</div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium text-muted-foreground">New Listings</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{listingStats.newListings}</div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium text-muted-foreground">Average Price</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">${listingStats.averagePrice.toFixed(2)}</div>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
             </TabsContent>
           </>
         )}

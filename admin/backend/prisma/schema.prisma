@@ -66,6 +66,7 @@ model User {
   PhoneVerification    PhoneVerification[]
   userPreferences      UserPreferences?
   NotificationSettings NotificationSettings?
+  advertisements       Advertisement[]
 }
 
 model VendorProfile {
@@ -333,4 +334,27 @@ model PasswordReset {
   // Index for quick lookups
   @@index([email, code])
   @@index([expiresAt])
+}
+
+// Advertisement management system
+model Advertisement {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  title       String
+  imageUrl    String   // URL to the advertisement image
+  targetUrl   String?  // Optional URL to redirect when ad is clicked
+  duration    Int      // Duration in days (3, 7, 15, or 31)
+  startDate   DateTime @default(now())
+  expiryDate  DateTime // Calculated from startDate + duration
+  isActive    Boolean  @default(true)
+  impressions Int      @default(0) // Track how many times ad was shown
+  clicks      Int      @default(0) // Track how many times ad was clicked
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Admin who created the ad
+  createdById String   @db.ObjectId
+  createdBy   User     @relation(fields: [createdById], references: [id])
+  
+  @@index([isActive, expiryDate])
+  @@index([startDate])
 }

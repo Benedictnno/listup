@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import Button  from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import Image from 'next/image';
 
 interface TopNavProps {
   onMenuToggle: () => void;
@@ -45,10 +46,11 @@ export function TopNav({ onMenuToggle }: TopNavProps) {
         
         {/* Logo - Visible on mobile */}
         <div className="flex lg:hidden items-center">
-          <div className="h-8 w-8 rounded-md bg-lime-500 flex items-center justify-center mr-2">
+          {/* <div className="h-8 w-8 rounded-md bg-lime-500 flex items-center justify-center mr-2">
             <span className="text-white font-bold">L</span>
           </div>
-          <span className="font-bold text-lg">ListUp</span>
+          <span className="font-bold text-lg">ListUp</span> */}
+          <Image src="/Listup.webp" alt="Logo" width={32} height={32} />
         </div>
         
         {/* Title - Hidden on mobile, visible on desktop */}

@@ -30,4 +30,25 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
+// Add response interceptor to handle errors properly
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    // Ensure error has proper structure
+    if (error.response) {
+      // Server responded with error status
+      const message = error.response.data?.message || error.response.data?.error || "An error occurred";
+      error.message = message;
+    } else if (error.request) {
+      // Request was made but no response received
+      error.message = "Network error. Please check your connection and try again.";
+    } else {
+      // Something else happened
+      error.message = error.message || "An unexpected error occurred";
+    }
+    
+    return Promise.reject(error);
+  }
+);
+
 export default api;
