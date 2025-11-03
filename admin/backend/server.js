@@ -13,6 +13,8 @@ const dashboardRoutes = require('./routes/dashboard');
 const usersRoutes = require('./routes/users');
 const addressesRoutes = require('./routes/addresses');
 const categoriesRoutes = require('./routes/categories');
+const advertisementsRoutes = require('./routes/advertisements');
+const uploadsRoutes = require('./routes/uploads');
 
 const app = express();
 const PORT = process.env.ADMIN_PORT || 4001; // Changed port to avoid conflict
@@ -72,6 +74,8 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/addresses', addressesRoutes);
 app.use('/api/categories', categoriesRoutes);
+app.use('/api/advertisements', advertisementsRoutes);
+app.use('/api/uploads', uploadsRoutes);
 
 
 // Error handling middleware

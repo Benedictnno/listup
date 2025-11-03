@@ -1,6 +1,10 @@
 require('dotenv').config();
 require("./jobs/ad-expiry.job");
 
+// Initialize advertisement expiry cron job
+const { scheduleAdvertisementExpiry } = require('./jobs/advertisement-expiry.job');
+scheduleAdvertisementExpiry();
+
 const app = require('./app');
 
 const PORT = process.env.PORT || 4000;

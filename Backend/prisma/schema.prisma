@@ -56,6 +56,10 @@ model User {
   resetPasswordToken    String?
   resetPasswordExpires  DateTime?
 
+  // Email verification fields
+  isEmailVerified       Boolean   @default(false)
+  emailVerifiedAt       DateTime?
+
   // Relations
   listings             Listing[]
   ads                  Ad[]
@@ -66,6 +70,8 @@ model User {
   PhoneVerification    PhoneVerification[]
   userPreferences      UserPreferences?
   NotificationSettings NotificationSettings?
+  advertisements       Advertisement[]
+  emailVerifications   EmailVerification[]
 }
 
 model VendorProfile {
@@ -320,6 +326,20 @@ model PasswordReset {
   @@index([expiresAt])
 }
 
+// Email verification tokens
+model EmailVerification {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @db.ObjectId
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique // Unique verification token
+  expiresAt DateTime // Token expiration (24 hours)
+  verified  Boolean  @default(false) // Whether token has been used
+  createdAt DateTime @default(now())
+  
+  @@index([userId])
+  @@index([expiresAt])
+}
+
 // Admin-managed selling locations for vendors
 model Address {
   id      String  @id @default(auto()) @map("_id") @db.ObjectId
@@ -327,4 +347,27 @@ model Address {
   active  Boolean @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+// Advertisement management system
+model Advertisement {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  title       String
+  imageUrl    String   // URL to the advertisement image
+  targetUrl   String?  // Optional URL to redirect when ad is clicked
+  duration    Int      // Duration in days (3, 7, 15, or 31)
+  startDate   DateTime @default(now())
+  expiryDate  DateTime // Calculated from startDate + duration
+  isActive    Boolean  @default(true)
+  impressions Int      @default(0) // Track how many times ad was shown
+  clicks      Int      @default(0) // Track how many times ad was clicked
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Admin who created the ad
+  createdById String   @db.ObjectId
+  createdBy   User     @relation(fields: [createdById], references: [id])
+  
+  @@index([isActive, expiryDate])
+  @@index([startDate])
 }

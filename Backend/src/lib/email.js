@@ -32,7 +32,7 @@ const EMAIL_TEMPLATES = {
           <p>We received a request to reset your password for your ListUp account. Use the verification code below:</p>
           <div class="code">${code}</div>
           <p><strong>This code expires in 10 minutes.</strong></p>
-          <p>If you didn’t request this, please ignore this email.</p>
+          <p>If you didn't request this, please ignore this email.</p>
           <div class="footer">This is an automated message from ListUp. Please do not reply.</div>
         </div>
       </body>
@@ -49,9 +49,60 @@ ${code}
 
 This code will expire in 10 minutes.
 
-If you didn’t request this, please ignore this email.
+If you didn't request this, please ignore this email.
 
 - ListUp Support
+    `
+  },
+  EMAIL_VERIFICATION: {
+    subject: 'Verify Your ListUp Email Address',
+    html: (verificationLink, userName) => `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Verify Your Email</title>
+        <style>
+          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8f9fa; color: #333; padding: 20px; }
+          .container { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-width: 600px; margin: auto; text-align: center; }
+          .logo { font-size: 28px; font-weight: bold; color: #84cc16; margin-bottom: 20px; }
+          .button { display: inline-block; background: #84cc16; color: white; padding: 16px 32px; border-radius: 8px; text-decoration: none; font-weight: bold; margin: 30px 0; }
+          .button:hover { background: #65a30d; }
+          .footer { margin-top: 40px; border-top: 1px solid #e5e7eb; color: #6b7280; font-size: 14px; padding-top: 20px; }
+          .link { color: #84cc16; word-break: break-all; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="logo">ListUp</div>
+          <h1>Welcome to ListUp! 🎉</h1>
+          <p>Hi ${userName || 'there'},</p>
+          <p>Thank you for signing up! To complete your registration and access all features, please verify your email address by clicking the button below:</p>
+          <a href="${verificationLink}" class="button">Verify Email Address</a>
+          <p style="margin-top: 30px; font-size: 14px; color: #6b7280;">Or copy and paste this link into your browser:</p>
+          <p class="link">${verificationLink}</p>
+          <p><strong>This link expires in 24 hours.</strong></p>
+          <p style="margin-top: 30px;">If you didn't create an account with ListUp, please ignore this email.</p>
+          <div class="footer">This is an automated message from ListUp. Please do not reply.</div>
+        </div>
+      </body>
+      </html>
+    `,
+    text: (verificationLink, userName) => `
+Welcome to ListUp!
+
+Hi ${userName || 'there'},
+
+Thank you for signing up! To complete your registration, please verify your email address by clicking the link below:
+
+${verificationLink}
+
+This link will expire in 24 hours.
+
+If you didn't create an account with ListUp, please ignore this email.
+
+- ListUp Team
     `
   }
 };
@@ -238,10 +289,76 @@ async function verifyEmailConfig() {
   }
 }
 
+/**
+ * Send email verification link to new users
+ * @param {string} email - Recipient email
+ * @param {string} verificationLink - Verification URL with token
+ * @param {string} userName - User's name
+ * @returns {Promise<boolean>}
+ */
+async function sendEmailVerification(email, verificationLink, userName = null) {
+  const template = EMAIL_TEMPLATES.EMAIL_VERIFICATION;
+
+  try {
+    // In development with Resend sandbox, only send to verified email
+    const isDevelopment = process.env.NODE_ENV !== 'production';
+    const verifiedEmail = 'benedictnnaoma0@gmail.com'; // Your verified Resend email
+    const recipientEmail = isDevelopment ? verifiedEmail : email;
+
+    // Log if we're redirecting the email in development
+    if (isDevelopment && email !== verifiedEmail) {
+      console.log(`📧 [DEV MODE] Redirecting email from ${email} to ${verifiedEmail}`);
+      console.log(`🔗 Verification link: ${verificationLink}`);
+    }
+
+    const { data, error } = await resend.emails.send({
+      from: 'ListUp <onboarding@resend.dev>',
+      to: recipientEmail,
+      subject: template.subject,
+      html: template.html(verificationLink, userName),
+      text: template.text(verificationLink, userName),
+    });
+
+    if (error) {
+      console.error('❌ Resend API Error (Email Verification):', error);
+      
+      // In development, log the verification link so you can still test
+      if (isDevelopment) {
+        console.log('⚠️  Email failed but here is the verification link for testing:');
+        console.log(`🔗 ${verificationLink}`);
+        console.log('💡 Copy this link and paste in browser to verify the account');
+        // Don't throw error in development - allow registration to continue
+        return true;
+      }
+      
+      throw new Error('Failed to send verification email');
+    }
+
+    console.log(`✅ Email verification sent to: ${recipientEmail}`);
+    if (isDevelopment && email !== recipientEmail) {
+      console.log(`   (Original recipient: ${email})`);
+    }
+    console.log(`📧 Message ID: ${data?.id}`);
+
+    return true;
+  } catch (error) {
+    console.error('❌ Unexpected Error (Email Verification):', error);
+    
+    // In development, don't fail registration due to email issues
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('⚠️  [DEV MODE] Continuing registration despite email error');
+      return true;
+    }
+    
+    throw new Error('Failed to send verification email');
+  }
+}
+
 module.exports = {
   sendPasswordResetCode,
   sendWelcomeEmail,
   testEmailService,
   verifyEmailConfig,
-  sendVendorPendingEmail
+  sendVendorPendingEmail,
+  sendEmailVerification
 };

@@ -37,7 +37,7 @@ export default function Navbar({ sidebarOpen, setSidebarOpen }: NavbarProps) {
       {/* Mobile menu button */}
       <Button
         variant="ghost"
-        size="icon"
+        size="lg"
         className="lg:hidden"
         onClick={() => setSidebarOpen(!sidebarOpen)}
       >
@@ -47,7 +47,7 @@ export default function Navbar({ sidebarOpen, setSidebarOpen }: NavbarProps) {
       {/* Desktop sidebar toggle */}
       <Button
         variant="ghost"
-        size="icon"
+        size="lg"
         className="hidden lg:flex"
         onClick={() => setSidebarOpen(!sidebarOpen)}
       >
@@ -67,7 +67,7 @@ export default function Navbar({ sidebarOpen, setSidebarOpen }: NavbarProps) {
       {/* Mobile search toggle */}
       <Button
         variant="ghost"
-        size="icon"
+        size="lg"
         className="md:hidden"
         onClick={() => setSearchOpen(!searchOpen)}
       >
@@ -78,13 +78,13 @@ export default function Navbar({ sidebarOpen, setSidebarOpen }: NavbarProps) {
         {/* Theme toggle */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon">
+            <Button variant="ghost" size="lg">
               <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
               <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
               <span className="sr-only">Toggle theme</span>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
+          <DropdownMenuContent>
             <DropdownMenuItem>
               Light
             </DropdownMenuItem>
@@ -100,14 +100,14 @@ export default function Navbar({ sidebarOpen, setSidebarOpen }: NavbarProps) {
         {/* Notifications */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="relative">
+            <Button variant="ghost" size="lg" className="relative">
               <Bell className="h-5 w-5" />
               <Badge className="absolute -right-1 -top-1 h-5 w-5 rounded-full p-0 flex items-center justify-center bg-lime-500">
                 <span className="text-[10px] font-medium text-white">3</span>
               </Badge>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-80">
+          <DropdownMenuContent className="w-80">
             <DropdownMenuLabel>Notifications</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <div className="max-h-80 overflow-y-auto">
@@ -148,7 +148,7 @@ export default function Navbar({ sidebarOpen, setSidebarOpen }: NavbarProps) {
               <ChevronDown className="h-4 w-4 text-gray-500" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
+          <DropdownMenuContent className="w-56">
             <DropdownMenuLabel>My Account</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem>

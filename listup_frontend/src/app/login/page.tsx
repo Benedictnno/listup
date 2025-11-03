@@ -6,6 +6,7 @@ import { ArrowRight, AlertCircle, CheckCircle, Eye, EyeOff, RefreshCw, AlertCirc
 import Link from "next/link";
 import { parseApiError, getFieldErrorMessage, getSuccessMessage } from "@/utils/errorHandler";
 import ErrorNotice from "@/components/ErrorNotice";
+import api from "@/utils/axios";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -16,16 +17,28 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [requiresEmailVerification, setRequiresEmailVerification] = useState(false);
   
   const login = useAuthStore((state) => state.login);  
   const router = useRouter();
 
-  // Clear errors when user starts typing
+  // Debug: Log when error state changes
   useEffect(() => {
-    if (error && (email || password)) {
+    console.log("Error state changed:", error);
+  }, [error]);
+
+  // Clear errors when user starts typing (only when they actually change the input)
+  const [lastEmail, setLastEmail] = useState("");
+  const [lastPassword, setLastPassword] = useState("");
+  
+  useEffect(() => {
+    // Only clear error if email or password actually changed (user is typing)
+    if (error && (email !== lastEmail || password !== lastPassword)) {
       setError("");
+      setLastEmail(email);
+      setLastPassword(password);
     }
-  }, [email, password, error]);
+  }, [email, password]);
 
   // Clear field errors when user types
   const handleFieldChange = (field: string, value: string) => {
@@ -69,16 +82,78 @@ export default function LoginPage() {
   setSuccess("");
 
   try {
-    await login(email.trim(), password);
-    setSuccess(getSuccessMessage('login'));
-    setTimeout(() => router.push("/dashboard"), 2000);
+    // Call API directly for better error handling
+    const response = await api.post("/auth/login", { 
+      email: email.trim(), 
+      password 
+    });
+
+    // Check if login was successful
+    if (response.data.success && response.data.data) {
+      const { token, user: userData } = response.data.data;
+      
+      // Save to localStorage
+      localStorage.setItem("token", token);
+      localStorage.setItem("id", userData.id);
+      localStorage.setItem("name", userData.name);
+      localStorage.setItem("email", userData.email);
+      localStorage.setItem("role", userData.role);
+      if (userData.phone) localStorage.setItem("phone", userData.phone);
+      
+      // Update Zustand store
+      const user = {
+        id: userData.id,
+        name: userData.name,
+        email: userData.email,
+        role: userData.role.toUpperCase() as "USER" | "VENDOR",
+        phone: userData.phone,
+        token,
+        ...(userData.vendorProfile && {
+          vendorProfile: userData.vendorProfile
+        })
+      };
+      
+      useAuthStore.getState().setAuth(user);
+      setSuccess(getSuccessMessage('login'));
+      setTimeout(() => router.push("/dashboard"), 2000);
+      
+    } else {
+      // API returned but login failed
+      setError(response.data.message || "Invalid email or password");
+    }
+    
   } catch (error: any) {
     console.error("Login failed:", error);
+    console.log("Error details:", {
+      response: error?.response,
+      responseData: error?.response?.data,
+      message: error?.message,
+      status: error?.response?.status
+    });
 
-    let message = "Unable to login. Please try again.";
-    if (error?.response?.data?.message) message = error.response.data.message;
-    else if (error?.message) message = error.message;
+    let message = "Invalid email or password. Please try again.";
+    
+    // Check for email verification requirement (403 status)
+    if (error?.response?.status === 403 && error?.response?.data?.requiresEmailVerification) {
+      setRequiresEmailVerification(true);
+      message = error.response.data.message || "Please verify your email address to continue.";
+    }
+    // Check response data first
+    else if (error?.response?.data?.message) {
+      message = error.response.data.message;
+    } else if (error?.response?.data?.error) {
+      message = error.response.data.error;
+    } else if (error?.response?.status === 401) {
+      message = "Invalid email or password";
+    } else if (error?.response?.status === 403) {
+      message = "Access denied. Please check your credentials.";
+    } else if (error?.response?.status >= 500) {
+      message = "Server error. Please try again later.";
+    } else if (error?.message && error.message !== "An error occurred") {
+      message = error.message;
+    }
 
+    console.log("Setting error message:", message);
     setError(message);
     setFieldErrors({});
   } finally {
@@ -86,9 +161,11 @@ export default function LoginPage() {
   }
 };
 
-const handleSubmit = (e: React.FormEvent) => {
+const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
-  attemptLogin();
+  e.stopPropagation();
+  await attemptLogin();
+  return false;
 };
 
   // const handleSubmit = async (e: React.FormEvent) => {
@@ -166,6 +243,8 @@ const handleSubmit = (e: React.FormEvent) => {
       
       <form
         onSubmit={handleSubmit}
+        action="#"
+        method="post"
         className="relative z-10 bg-white p-8 rounded-2xl shadow-lg w-full max-w-md border border-slate-200/20"
       >
         {/* Header */}
@@ -194,35 +273,47 @@ const handleSubmit = (e: React.FormEvent) => {
         
         {/* Error Display */}
   { error &&   (
-        // <ErrorNotice message={error} rawError={error} retryCount={retryCount} onRetry={handleRetry} /> 
-             <div className="mb-4 p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm">
+             <div className={`mb-4 p-4 rounded-xl border text-sm ${
+               requiresEmailVerification 
+                 ? 'bg-orange-50 border-orange-200 text-orange-700' 
+                 : 'bg-red-50 border-red-200 text-red-700'
+             }`}>
                 <div className="flex items-start gap-3">
-                  <AlertCircleIcon className="w-5 h-5 mt-0.5 flex-shrink-0 text-red-500" />
+                  <AlertCircleIcon className={`w-5 h-5 mt-0.5 flex-shrink-0 ${
+                    requiresEmailVerification ? 'text-orange-500' : 'text-red-500'
+                  }`} />
                   <div className="flex-1 space-y-2">
-                    <p className="font-medium text-red-800">{error}</p>
+                    <p className={`font-medium ${
+                      requiresEmailVerification ? 'text-orange-800' : 'text-red-800'
+                    }`}>{error}</p>
           
-                  
-                      <div className="text-xs text-red-600 bg-red-100 p-2 rounded-lg">
-                        <p className="font-medium mb-1">💡 Helpful tips:</p>
-                        <ul className="space-y-1">
-                          <li>• Check if your email address is spelled correctly</li>
-                          <li>• Make sure you're using the email you registered with</li>
-                        <ul className="space-y-1">
-                          <li>• Check if Caps Lock is turned off</li>
-                          <li>• Make sure you're using the correct password</li>
-                        </ul>
-                        </ul>
-                      </div>
-          
-                
-                      <div className="text-xs text-red-600 bg-red-100 p-2 rounded-lg">
-                        <p className="font-medium mb-1">💡 Helpful tips:</p>
-                      </div>         
-                 
-                      <div className="text-xs text-red-600 bg-red-100 p-2 rounded-lg">
-                        <p className="font-medium mb-1">💡 Don't have an account?</p>
-                        <p>You can create a new account by clicking the "Sign up" link.</p>
-                      </div>
+                    {requiresEmailVerification ? (
+                      <>
+                        <div className="text-xs text-orange-600 bg-orange-100 p-2 rounded-lg">
+                          <p className="font-medium mb-1">📧 Email Verification Required</p>
+                          <p className="mb-2">Please check your inbox for a verification email and click the link to verify your account.</p>
+                          <p className="text-xs text-orange-500">Check your spam folder if you don't see it.</p>
+                        </div>
+                        <Link
+                          href="/resend-verification"
+                          className="inline-block mt-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-xs font-medium rounded-lg transition-colors"
+                        >
+                          Resend Verification Email
+                        </Link>
+                      </>
+                    ) : (
+                      <>
+                        <div className="text-xs text-red-600 bg-red-100 p-2 rounded-lg">
+                          <p className="font-medium mb-1">💡 Helpful tips:</p>
+                          <ul className="space-y-1">
+                            <li>• Check if your email address is spelled correctly</li>
+                            <li>• Make sure you're using the email you registered with</li>
+                            <li>• Check if Caps Lock is turned off</li>
+                            <li>• Make sure you're using the correct password</li>
+                          </ul>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>

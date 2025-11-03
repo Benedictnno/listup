@@ -16,7 +16,8 @@ import {
   MapPinHouse,
   CircleFadingPlus,
   TicketSlash,
-  X 
+  X,
+  Megaphone
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Button  from '@/components/ui/button';
@@ -46,7 +47,7 @@ export default function Sidebar({ open, setOpen }: SidebarProps) {
     },
     {
       title: 'Users',
-      href: '/users',
+      href: '/dashboard/users',
       icon: <Users className="h-5 w-5" />,
     },
     {
@@ -58,6 +59,11 @@ export default function Sidebar({ open, setOpen }: SidebarProps) {
       title: 'Listings',
       href: '/dashboard/listings',
       icon: <ShoppingBag className="h-5 w-5" />,
+    },
+     {
+      title: 'Advertisements',
+      href: '/dashboard/advertisements',
+      icon: <Megaphone className="h-5 w-5" />,
     },
     {
       title: 'Analytics',
@@ -74,6 +80,7 @@ export default function Sidebar({ open, setOpen }: SidebarProps) {
       href: '/dashboard/categories',
       icon: <CircleFadingPlus className="h-5 w-5" />,
     },
+   
     {
       title: 'Settings',
       href: '/settings',

@@ -128,4 +128,17 @@ router.post('/reset-password',loginLimiter,
   AuthCtrl.resetPassword
 );
 
+// Email verification routes
+router.get('/verify-email', AuthCtrl.verifyEmail);
+
+router.post('/resend-verification', loginLimiter,
+  [
+    body('email')
+      .isEmail()
+      .normalizeEmail()
+      .withMessage('Please provide a valid email address'),
+  ],
+  AuthCtrl.resendVerificationEmail
+);
+
 module.exports = router;

@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { useFilterStore } from "@/store/useFilterStore";
 import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
 import { useIntersectionObserver } from "@/hooks/useIntersectionObserver";
+import OutsideAd from "@/components/OutsideAd";
 
 interface Listing {
   id: string;
@@ -567,6 +568,7 @@ export default function ListingsPage() {
   return (
     <Suspense fallback={<div>Loading...</div>}>
       <ListingsPageContent />
+      <OutsideAd/>
     </Suspense>
   );
 }

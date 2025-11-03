@@ -2,8 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation'; 
-import Sidebar from './Sidebar';
-import Navbar from './Navbar';
 import { cn } from '@/lib/utils';
 import { useResponsive } from './ResponsiveUtils';
 
@@ -43,11 +41,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
     <div className="h-screen flex overflow-hidden bg-gray-50 dark:bg-gray-900">
       {/* Sidebar */}
-      <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} />
+     
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        <Navbar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
+        
         
         {/* Page Content */}
         <main 

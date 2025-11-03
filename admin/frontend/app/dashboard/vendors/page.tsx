@@ -23,6 +23,10 @@ export default function VendorsPage() {
   const [showDetails, setShowDetails] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState("");
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalVendors, setTotalVendors] = useState(0);
+  const limit = 20;
   
   const { user } = useAuth();
   const router = useRouter();
@@ -42,30 +46,38 @@ export default function VendorsPage() {
 
   useEffect(() => {
     fetchVendors();
-  }, []);
+  }, [page, statusFilter]);
 
   const fetchVendors = async () => {
     try {
       setLoading(true);
+      setError("");
       const token = localStorage.getItem("token");
       
-      const response = await fetch(`${process.env.NEXT_PUBLIC_ADMIN_API_URL || 'http://localhost:4001'}/api/vendors`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+      const statusParam = statusFilter !== "ALL" ? `&status=${statusFilter}` : "";
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_ADMIN_API_URL || 'http://localhost:4001'}/api/vendors?page=${page}&limit=${limit}${statusParam}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
         }
-      });
+      );
 
       if (response.ok) {
         const data = await response.json();
-        setVendors(data.data.vendors);
-        console.log(data.data.vendors);
-        
+        const vendorsData = data.data?.vendors || data.data || [];
+        setVendors(Array.isArray(vendorsData) ? vendorsData : []);
+        setTotalPages(data.data?.totalPages || Math.ceil((data.data?.total || 0) / limit));
+        setTotalVendors(data.data?.total || vendorsData.length);
       } else {
         setError("Failed to load vendors");
+        setVendors([]);
       }
     } catch (err) {
       setError("Failed to load vendors");
+      setVendors([]);
       console.error("Vendors error:", err);
     } finally {
       setLoading(false);
@@ -156,8 +168,8 @@ export default function VendorsPage() {
             <p className="text-muted-foreground">Manage vendor registrations and approvals</p>
           </div>
           <div className="flex items-center gap-2">
-            <div className="px-3 py-1 bg-primary/10 text-primary rounded-md">
-              <span className="font-semibold">{filteredVendors.length}</span> vendors
+            <div className="px-3 py-1 bg-primary/10 text-primary rounded-md text-sm">
+              <span className="font-semibold">{filteredVendors.length}</span> of <span className="font-semibold">{totalVendors}</span> vendors
             </div>
           </div>
         </div>
@@ -208,6 +220,33 @@ export default function VendorsPage() {
             )}
           </div>
         </div>
+
+        {/* Pagination */}
+        {!loading && totalPages > 1 && (
+          <div className="bg-card rounded-lg border shadow-sm p-4">
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-muted-foreground">
+                Page {page} of {totalPages}
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                  className="px-3 py-1 border rounded-md hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                >
+                  Previous
+                </button>
+                <button
+                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                  disabled={page === totalPages}
+                  className="px-3 py-1 border rounded-md hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Vendor Details Modal */}
         {showDetails && selectedVendor && (
