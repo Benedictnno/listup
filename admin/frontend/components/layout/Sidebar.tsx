@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { 
   LayoutDashboard, 
   Users, 
@@ -22,6 +22,7 @@ import {
 import { cn } from '@/lib/utils';
 import Button  from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useAuth } from '@/hooks/useAuth';
 
 interface SidebarProps {
   open: boolean;
@@ -37,6 +38,8 @@ interface NavItem {
 
 export default function Sidebar({ open, setOpen }: SidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { logout } = useAuth();
   const [expandedItem, setExpandedItem] = useState<string | null>(null);
 
   const navItems: NavItem[] = [
@@ -230,17 +233,31 @@ export default function Sidebar({ open, setOpen }: SidebarProps) {
           "p-4 border-t border-gray-200",
           !open && "flex justify-center"
         )}>
-          <Button 
-            variant="ghost" 
-            size={open ? "md" : "sm"} 
-            className={cn(
-              "w-full text-red-500 hover:text-red-600 hover:bg-red-50",
-              !open && "w-auto"
-            )}
-          >
-            <LogOut className="h-5 w-5" />
-            {open && <span className="ml-2">Logout</span>}
-          </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size={open ? "md" : "sm"} 
+                  className={cn(
+                    "w-full text-red-500 hover:text-red-600 hover:bg-red-50",
+                    !open && "w-auto"
+                  )}
+                  onClick={() => {
+                    logout();
+                  }}
+                >
+                  <LogOut className="h-5 w-5" />
+                  {open && <span className="ml-2">Logout</span>}
+                </Button>
+              </TooltipTrigger>
+              {!open && (
+                <TooltipContent side="right">
+                  Logout
+                </TooltipContent>
+              )}
+            </Tooltip>
+          </TooltipProvider>
         </div>
       </aside>
     </>

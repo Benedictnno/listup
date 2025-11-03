@@ -78,11 +78,24 @@ export const logout = createAsyncThunk(
   'auth/logout',
   async (_, { rejectWithValue }) => {
     try {
-      await axios.post(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001/api'}/auth/logout`);
+      // Clear localStorage first
       localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      
+      // Try to call logout endpoint, but don't fail if it errors
+      try {
+        await axios.post(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001/api'}/auth/logout`);
+      } catch (err) {
+        // Ignore logout endpoint errors - we've already cleared local storage
+        console.log('Logout endpoint error (ignored):', err);
+      }
+      
       return null;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Logout failed');
+      // Even if there's an error, we should still clear the state
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      return null;
     }
   }
 );
