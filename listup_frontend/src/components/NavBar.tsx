@@ -138,7 +138,7 @@ function NavBar() {
                 </>
               ) : (
                 // User is not logged in - Show Login and Signup
-                <div className="mt-2 flex items-center gap-3 px-3 py-2">
+                <div className="mt-2 flex gap-3 py-2">
                   <Link 
                     href="/login" 
                     className="flex-1 rounded-xl px-4 py-2 text-center text-lg font-semibold text-white/80 transition hover:text-white hover:bg-white/10" 
