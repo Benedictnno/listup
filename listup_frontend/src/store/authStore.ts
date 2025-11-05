@@ -140,34 +140,11 @@ export const useAuthStore = create<AuthState>((set) => ({
         throw new Error(response.data.message || "Signup failed");
       }
 
-      const { token, user: userResponse } = response.data.data;
+      // Registration successful - NO automatic login!
+      // User must verify their email before they can login
+      // We don't save any token or user data to localStorage
       
-      const user: User = {
-        id: userResponse.id,
-        name: userResponse.name,
-        email: userResponse.email,
-        role: userResponse.role.toUpperCase() as "USER" | "VENDOR",
-        phone: userResponse.phone,
-        token,
-        ...(userResponse.vendorProfile && {
-          vendorProfile: userResponse.vendorProfile
-        })
-      };
-
-      // Save user data for interceptors and easy access
-      localStorage.setItem("token", token);
-      localStorage.setItem("id", user.id);
-      localStorage.setItem("name", user.name);
-      localStorage.setItem("email", user.email);
-      localStorage.setItem("role", user.role);
-      if (user.phone) localStorage.setItem("phone", user.phone);
-      if (user.vendorProfile) {
-        localStorage.setItem("storeName", user.vendorProfile.storeName);
-        localStorage.setItem("storeAddress", user.vendorProfile.storeAddress);
-        localStorage.setItem("businessCategory", user.vendorProfile.businessCategory);
-      }
-
-      set({ user });
+      return response.data; // Return data for the signup page to handle
     } catch (error) {
       console.error("Signup error:", error);
       throw error;

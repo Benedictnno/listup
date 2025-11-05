@@ -243,13 +243,18 @@ export default function SignupPage() {
         payload.businessCategory = String(form.businessCategory || "").trim();
       }
 
-      await signup(payload);
+      const result = await signup(payload);
 
-      setSuccess(getSuccessMessage("signup"));
+      setSuccess("Account created successfully! Please check your email to verify your account.");
       reset();
 
-      // redirect after tiny delay to allow success UI
-      setTimeout(() => router.push("/dashboard"), 1500);
+      // Store email temporarily for the verification page
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem('pendingVerificationEmail', payload.email);
+      }
+
+      // Redirect to email verification notice page
+      setTimeout(() => router.push("/signup-success"), 2000);
     } catch (err: unknown) {
       console.error("Signup error:", err);
       const message = parseApiError(err);

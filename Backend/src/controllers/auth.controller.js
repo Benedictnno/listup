@@ -144,35 +144,19 @@ exports.register = async (req, res, next) => {
       // Continue registration even if email fails
     }
 
-    // Generate JWT token (user can login but will be restricted until verified)
-    const token = sign({ 
-      id: user.id, 
-      email: user.email, 
-      name: user.name, 
-      role: user.role 
-    });
-
     await addToGoogleSheet(name, storeName || '', email, phone || '', role);
-    // Return success response
+    
+    // Return success response WITHOUT token - user must verify email before logging in
     res.status(201).json({
       success: true,
-      message: 'Account created successfully. Please check your email to verify your account.',
+      message: 'Account created successfully! Please check your email to verify your account before logging in.',
+      requiresEmailVerification: true,
       data: {
-        token,
         user: {
-          id: user.id,
-          name: user.name,
           email: user.email,
+          name: user.name,
           role: user.role,
-          phone: user.phone,
-          isEmailVerified: user.isEmailVerified,
-          ...(user.vendorProfile && {
-            vendorProfile: {
-              storeName: user.vendorProfile.storeName,
-              storeAddress: user.vendorProfile.storeAddress,
-              businessCategory: user.vendorProfile.businessCategory,
-            }
-          })
+          isEmailVerified: user.isEmailVerified
         }
       }
     });
