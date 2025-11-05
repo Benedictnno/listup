@@ -86,7 +86,7 @@ function NavBar() {
             </button>
           </div>
         ) : (
-          <div className="hidden items-center gap-3 md:flex">
+          <div className="hidden items-center gap-3 md:flex px-3 py-2">
             <Link href="/login" className="rounded-xl px-3 py-2 text-lg font-semibold text-white/80 transition hover:text-white">
               Log in
             </Link> 
