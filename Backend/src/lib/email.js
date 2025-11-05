@@ -127,7 +127,7 @@ async function sendVendorPendingEmail(email, userName, storeName) {
     `;
 
     const { data, error } = await resend.emails.send({
-      from: 'ListUp <onboarding@resend.dev>',
+      from: 'ListUp <noreply@listup.ng>',
       to: email,
       subject: 'Your vendor account is pending verification',
       html
@@ -155,7 +155,7 @@ console.log(email,code, userName);
 
   try {
     const { data, error } = await resend.emails.send({
-      from: 'ListUp <onboarding@resend.dev>', // ✅ use verified domain or sandbox
+      from: 'ListUp <noreply@listup.ng>',
       to: email,
       subject: template.subject,
       html: template.html(code, userName),
@@ -312,7 +312,7 @@ async function sendEmailVerification(email, verificationLink, userName = null) {
     }
 
     const { data, error } = await resend.emails.send({
-      from: 'ListUp <onboarding@resend.dev>',
+      from: 'ListUp <noreply@listup.ng>',
       to: recipientEmail,
       subject: template.subject,
       html: template.html(verificationLink, userName),
