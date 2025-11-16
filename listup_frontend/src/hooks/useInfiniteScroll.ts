@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { fetchListings } from '@/lib/api/listing';
+import { fetchListingsWithFilters } from '@/lib/api/listing';
+import { useFilterStore } from '@/store/useFilterStore';
 
 interface UseInfiniteScrollReturn {
   listings: any[];
@@ -19,46 +20,69 @@ export function useInfiniteScroll(
   const [error, setError] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(true);
   const [currentPage, setCurrentPage] = useState(initialPage);
-  
+
   // Use ref to track if we're already loading to prevent multiple calls
   const loadingRef = useRef(false);
+
+  // Subscribe to filter/search state from the global store so the hook reacts
+  const search = useFilterStore(state => state.search);
+  const minPrice = useFilterStore(state => state.minPrice);
+  const maxPrice = useFilterStore(state => state.maxPrice);
+  const categoryId = useFilterStore(state => state.category);
 
   const loadListings = useCallback(async (page: number, append = false) => {
     // Prevent multiple simultaneous calls
     if (loadingRef.current) return;
-    
+
     try {
       loadingRef.current = true;
       setLoading(true);
       setError(null);
 
-      const data = await fetchListings();
-      
-      // Defensive programming: ensure data and data.items exist and are arrays
-      if (!data) {
-        console.error('No data returned from API');
-        setError('No data returned from API');
-        return;
-      }
-      
-      // Handle different API response formats
-      const items = Array.isArray(data) ? data : 
-                   (data.items && Array.isArray(data.items)) ? data.items : 
-                   [];
-      
-      console.log('API response structure:', JSON.stringify(data).substring(0, 200) + '...');
-      
+      // Request server-side paginated & filtered data
+      const data = await fetchListingsWithFilters({
+        page,
+        limit,
+        q: search || undefined,
+        minPrice: minPrice != null ? minPrice : undefined,
+        maxPrice: maxPrice != null ? maxPrice : undefined,
+        categoryId: categoryId || undefined,
+      });
+
+      // Defensive programming: extract items array
+      const items = Array.isArray(data)
+        ? data
+        : data && Array.isArray(data.items)
+        ? data.items
+        : [];
+
+      // Append with dedupe by id (safety net for duplicate items)
       if (append) {
-        setListings(prev => [...prev, ...items]);
+        setListings(prev => {
+          const map = new Map<string, any>();
+          [...prev, ...items].forEach((it: any, idx: number) => {
+            if (it && (it.id || it._id)) {
+              map.set(String(it.id ?? it._id), it);
+            } else {
+              // fallback key for items without id
+              map.set(`no-id-${idx}-${JSON.stringify(it)}`, it);
+            }
+          });
+          return Array.from(map.values());
+        });
       } else {
         setListings(items);
       }
 
-      // Check if there are more pages - handle both pagination formats
-      const hasMorePages = data.page && data.pages ? (data.page < data.pages) : false;
-      setHasMore(hasMorePages);
-      setCurrentPage(data.page || page);
-
+      // Determine if there are more pages
+      if (typeof data?.page === 'number' && typeof data?.pages === 'number') {
+        setHasMore(data.page < data.pages);
+        setCurrentPage(data.page || page);
+      } else {
+        // fallback: assume more if returned items length === limit
+        setHasMore(items.length === limit);
+        setCurrentPage(page);
+      }
     } catch (err) {
       console.error('Error loading listings:', err);
       setError(err instanceof Error ? err.message : 'Failed to load listings');
@@ -66,7 +90,7 @@ export function useInfiniteScroll(
       setLoading(false);
       loadingRef.current = false;
     }
-  }, [limit]);
+  }, [limit, search, minPrice, maxPrice, categoryId]);
 
   const loadMore = useCallback(() => {
     if (!loading && hasMore && !loadingRef.current) {
@@ -81,10 +105,14 @@ export function useInfiniteScroll(
     loadListings(initialPage, false);
   }, [initialPage, loadListings]);
 
-  // Initial load - only run once on mount
+  // Initial load and whenever filters/search change: reset to page 1
   useEffect(() => {
+    setListings([]);
+    setCurrentPage(initialPage);
+    setHasMore(true);
     loadListings(initialPage, false);
-  }, []); // Empty dependency array to run only once
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialPage, limit, search, minPrice, maxPrice, categoryId]);
 
   return {
     listings,
