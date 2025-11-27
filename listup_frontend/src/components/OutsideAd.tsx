@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import Image from "next/image";
+import { useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
 import axios from "axios";
 
@@ -18,9 +17,13 @@ export default function FloatingAd() {
   const [currentAdIndex, setCurrentAdIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const hasFetchedRef = useRef(false);
 
   // Fetch all active advertisements on component mount
   useEffect(() => {
+    // Guard against React StrictMode double-invoking effects in development
+    if (hasFetchedRef.current) return;
+    hasFetchedRef.current = true;
     fetchAllAds();
   }, []);
 
@@ -52,31 +55,18 @@ export default function FloatingAd() {
   const fetchAllAds = async () => {
     try {
       setLoading(true);
-      // Fetch multiple times to get different random ads
-      const promises = Array(5).fill(null).map(() => 
-        axios.get(
-          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'}/advertisements/random`
-        )
+      // Fetch a single random advertisement to avoid excessive API calls
+      const response = await axios.get(
+        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'}/advertisements/random`
       );
 
-      const responses = await Promise.all(promises);
-      const ads: Advertisement[] = [];
-      const seenIds = new Set<string>();
-
-      responses.forEach(response => {
-        if (response.data.success && response.data.data.advertisement) {
-          const ad = response.data.data.advertisement;
-          if (!seenIds.has(ad.id)) {
-            ads.push(ad);
-            seenIds.add(ad.id);
-          }
-        }
-      });
-
-      if (ads.length > 0) {
-        setAdvertisements(ads);
-        // Track impression for first ad
-        trackImpression(ads[0].id);
+      if (response.data?.success && response.data.data?.advertisement) {
+        const ad = response.data.data.advertisement as Advertisement;
+        setAdvertisements([ad]);
+        // Track impression for first (and only) ad
+        trackImpression(ad.id);
+      } else {
+        setAdvertisements([]);
       }
     } catch (error) {
       console.error('Error fetching advertisements:', error);

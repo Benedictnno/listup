@@ -18,5 +18,6 @@ router.use('/settings',generalLimiter, require('./settings.routes'));
 router.use('/favourites',generalLimiter, require('./favourites.routes'));
 router.use('/saved-searches',generalLimiter, require('./saved-searches.routes'));
 router.use('/advertisements',generalLimiter, require('./advertisements.routes'));
+router.use('/analytics',generalLimiter, require('./analytics.routes'));
 
 module.exports = router;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { getUserSettings, updateStoreSettings, updatePersonalInfo, updatePassword } from "@/lib/api/settings";
 import { 
   Store, 
   User, 
@@ -26,6 +27,22 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
+
+  const [storeForm, setStoreForm] = useState({
+    storeName: "",
+    storeDescription: "",
+    businessCategory: "",
+    storeEmail: "",
+    storePhone: "",
+  });
+
+  const [personalForm, setPersonalForm] = useState({
+    firstName: "",
+    lastName: "",
+    personalEmail: "",
+    personalPhone: "",
+  });
 
   const tabs = [
     { id: 'store', label: 'Store Settings', icon: Store },
@@ -35,17 +52,110 @@ export default function SettingsPage() {
     { id: 'preferences', label: 'Preferences', icon: SettingsIcon }
   ];
 
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const response = await getUserSettings();
+        const user = response?.data ?? response;
+
+        const vendorProfile = user?.vendorProfile;
+
+        setStoreForm(prev => ({
+          ...prev,
+          storeName: vendorProfile?.storeName || "",
+          storeDescription: vendorProfile?.storeDescription || "",
+          businessCategory: vendorProfile?.businessCategory || "",
+          storeEmail: user?.email || "",
+          storePhone: user?.phone || "",
+        }));
+
+        const fullName = user?.name || "";
+        const [firstName, ...rest] = fullName.split(" ");
+        const lastName = rest.join(" ");
+
+        setPersonalForm(prev => ({
+          ...prev,
+          firstName: firstName || "",
+          lastName: lastName || "",
+          personalEmail: user?.email || "",
+          personalPhone: user?.phone || "",
+        }));
+      } catch (error) {
+        console.error("Failed to load user settings", error);
+      } finally {
+        setInitialLoading(false);
+      }
+    };
+
+    loadSettings();
+  }, []);
+
   const handleSave = async (section: string) => {
     setLoading(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setMessage({ type: 'success', text: `${section} settings updated successfully!` });
-      setTimeout(() => setMessage(null), 3000);
-    } catch {
-      setMessage({ type: 'error', text: `Failed to update ${section} settings. Please try again.` });
+      if (section === 'Store') {
+        const { storeName, businessCategory, storeDescription, storeEmail, storePhone } = storeForm;
+
+        if (!storeName || !businessCategory || !storeEmail || !storePhone) {
+          setMessage({ type: 'error', text: 'Please fill in all required store fields.' });
+          return;
+        }
+
+        await updateStoreSettings({
+          storeName,
+          storeDescription,
+          businessCategory,
+          storeAddress: storeAddressFromEmailAndPhone(storeEmail, storePhone),
+        } as any);
+
+        setMessage({ type: 'success', text: 'Store settings updated successfully!' });
+      } else if (section === 'Personal') {
+        const { firstName, lastName, personalEmail, personalPhone } = personalForm;
+
+        if (!firstName || !lastName || !personalEmail || !personalPhone) {
+          setMessage({ type: 'error', text: 'Please fill in all required personal fields.' });
+          return;
+        }
+
+        await updatePersonalInfo({
+          name: `${firstName} ${lastName}`.trim(),
+          phone: personalPhone,
+        });
+
+        setMessage({ type: 'success', text: 'Personal settings updated successfully!' });
+      } else if (section === 'Security') {
+        const currentPassword = (document.getElementById('currentPassword') as HTMLInputElement)?.value || '';
+        const newPassword = (document.getElementById('newPassword') as HTMLInputElement)?.value || '';
+        const confirmPassword = (document.getElementById('confirmPassword') as HTMLInputElement)?.value || '';
+
+        if (!currentPassword || !newPassword || !confirmPassword) {
+          setMessage({ type: 'error', text: 'Please fill in all password fields.' });
+          return;
+        }
+
+        if (newPassword !== confirmPassword) {
+          setMessage({ type: 'error', text: 'New password and confirmation do not match.' });
+          return;
+        }
+
+        await updatePassword({ currentPassword, newPassword });
+
+        setMessage({ type: 'success', text: 'Password updated successfully!' });
+      } else {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        setMessage({ type: 'success', text: `${section} settings updated successfully!` });
+      }
+    } catch (error: any) {
+      const errorText = error?.response?.data?.message || `Failed to update ${section} settings. Please try again.`;
+      setMessage({ type: 'error', text: errorText });
     } finally {
       setLoading(false);
+      setTimeout(() => setMessage(null), 3000);
     }
+  };
+
+  const storeAddressFromEmailAndPhone = (email: string, phone: string) => {
+    return `${email} | ${phone}`;
   };
 
   const renderStoreSettings = () => (
@@ -61,11 +171,20 @@ export default function SettingsPage() {
           <div className="grid grid-cols-1 gap-4">
             <div>
               <Label htmlFor="storeName">Store Name *</Label>
-              <Input id="storeName" placeholder="Enter store name" className="w-full" />
+              <Input
+                id="storeName"
+                placeholder="Enter store name"
+                className="w-full"
+                value={storeForm.storeName}
+                onChange={(e) => setStoreForm(prev => ({ ...prev, storeName: e.target.value }))}
+              />
             </div>
             <div>
               <Label htmlFor="businessCategory">Business Category *</Label>
-              <Select>
+              <Select
+                value={storeForm.businessCategory}
+                onValueChange={(value) => setStoreForm(prev => ({ ...prev, businessCategory: value }))}
+              >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
@@ -85,6 +204,8 @@ export default function SettingsPage() {
               placeholder="Describe your store and what you offer"
               rows={3}
               className="w-full"
+              value={storeForm.storeDescription}
+              onChange={(e) => setStoreForm(prev => ({ ...prev, storeDescription: e.target.value }))}
             />
           </div>
 
@@ -96,6 +217,8 @@ export default function SettingsPage() {
                 type="email"
                 placeholder="store@email.com"
                 className="w-full"
+                value={storeForm.storeEmail}
+                onChange={(e) => setStoreForm(prev => ({ ...prev, storeEmail: e.target.value }))}
               />
             </div>
             <div>
@@ -104,6 +227,8 @@ export default function SettingsPage() {
                 id="storePhone"
                 placeholder="+234 801 234 5678"
                 className="w-full"
+                value={storeForm.storePhone}
+                onChange={(e) => setStoreForm(prev => ({ ...prev, storePhone: e.target.value }))}
               />
             </div>
           </div>
@@ -147,11 +272,23 @@ export default function SettingsPage() {
           <div className="grid grid-cols-1 gap-4">
             <div>
               <Label htmlFor="firstName">First Name *</Label>
-              <Input id="firstName" placeholder="First name" className="w-full" />
+              <Input
+                id="firstName"
+                placeholder="First name"
+                className="w-full"
+                value={personalForm.firstName}
+                onChange={(e) => setPersonalForm(prev => ({ ...prev, firstName: e.target.value }))}
+              />
             </div>
             <div>
               <Label htmlFor="lastName">Last Name *</Label>
-              <Input id="lastName" placeholder="Last name" className="w-full" />
+              <Input
+                id="lastName"
+                placeholder="Last name"
+                className="w-full"
+                value={personalForm.lastName}
+                onChange={(e) => setPersonalForm(prev => ({ ...prev, lastName: e.target.value }))}
+              />
             </div>
           </div>
 
@@ -163,6 +300,8 @@ export default function SettingsPage() {
                 type="email"
                 placeholder="your@email.com"
                 className="w-full"
+                value={personalForm.personalEmail}
+                onChange={(e) => setPersonalForm(prev => ({ ...prev, personalEmail: e.target.value }))}
               />
             </div>
             <div>
@@ -171,6 +310,8 @@ export default function SettingsPage() {
                 id="personalPhone"
                 placeholder="+234 801 234 5678"
                 className="w-full"
+                value={personalForm.personalPhone}
+                onChange={(e) => setPersonalForm(prev => ({ ...prev, personalPhone: e.target.value }))}
               />
             </div>
           </div>
