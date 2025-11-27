@@ -45,6 +45,169 @@ interface FilterState {
   sortOrder: 'asc' | 'desc';
 }
 
+interface PriceFilterSectionProps {
+  minPrice: number | null;
+  maxPrice: number | null;
+  clearFilters: () => void;
+  hasActiveFilters: () => boolean;
+  isOpen: boolean;
+  toggleOpen: () => void;
+}
+
+function PriceFilterSection({
+  minPrice,
+  maxPrice,
+  clearFilters,
+  hasActiveFilters,
+  isOpen,
+  toggleOpen,
+}: PriceFilterSectionProps) {
+  return (
+        <>
+        {/* Enhanced Filter Section */}
+        <div className="mb-6 bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+          {/* Filter Header */}
+          <div className="bg-gradient-to-r from-lime-50 to-emerald-50 px-6 py-4 border-b border-gray-100">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-lime-100 rounded-lg flex items-center justify-center">
+                  <Filter size={18} className="text-lime-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900">Price Range Filter</h3>
+                  {/* <p className="text-sm text-gray-600">Set your budget range to find the perfect items</p> */}
+                </div>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={toggleOpen}
+                className="whitespace-nowrap"
+              >
+                {isOpen ? 'Hide filters' : 'Show filters'}
+              </Button>
+            </div>
+          </div>
+
+          {/* Filter Controls */}
+          {isOpen && (
+          <div className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
+              {/* Min Price */}
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-gray-700">
+                  Minimum Price
+                  <span className="text-lime-600 ml-1">*</span>
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 font-medium">
+                    ₦
+                  </span>
+                  <Input
+                    type="number"
+                    min="10"
+                    placeholder="10"
+                    value={minPrice || ''}
+                    onChange={(e) => {
+                      const value = e.target.value ? Number(e.target.value) : null;
+                      if (value !== null && value < 10) {
+                        useFilterStore.getState().setMinPrice(10);
+                      } else {
+                        useFilterStore.getState().setMinPrice(value);
+                      }
+                    }}
+                    onBlur={(e) => {
+                      const value = e.target.value ? Number(e.target.value) : null;
+                      if (value !== null && value < 10) {
+                        useFilterStore.getState().setMinPrice(10);
+                      }
+                    }}
+                    className="w-full pl-8 pr-4 py-3 border-gray-200 focus:border-lime-500 focus:ring-lime-500"
+                  />
+                </div>
+                <p className="text-xs text-gray-500">Minimum price is ₦10</p>
+              </div>
+
+              {/* Max Price */}
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-gray-700">
+                  Maximum Price
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 font-medium">
+                    ₦
+                  </span>
+                  <Input
+                    type="number"
+                    min={minPrice || 10}
+                    placeholder="No limit"
+                    value={maxPrice || ''}
+                    onChange={(e) => {
+                      const value = e.target.value ? Number(e.target.value) : null;
+                      if (value !== null && minPrice !== null && value < minPrice) {
+                        useFilterStore.getState().setMaxPrice(minPrice);
+                      } else {
+                        useFilterStore.getState().setMaxPrice(value);
+                      }
+                    }}
+                    className="w-full pl-8 pr-4 py-3 border-gray-200 focus:border-lime-500 focus:ring-lime-500"
+                  />
+                </div>
+                <p className="text-xs text-gray-500">Leave empty for no limit</p>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-col gap-3">
+                <Button
+                  onClick={clearFilters}
+                  className="w-full bg-lime-500 hover:bg-lime-600 text-white border-0 shadow-sm"
+                  disabled={!hasActiveFilters()}
+                >
+                  <X size={16} className="mr-2" />
+                  Clear All
+                </Button>
+                
+                {hasActiveFilters() && (
+                  <div className="text-center">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-lime-100 text-lime-800 text-xs font-medium rounded-full">
+                      <div className="w-2 h-2 bg-lime-500 rounded-full animate-pulse"></div>
+                      Active Filters
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Price Range Preview */}
+            {(minPrice !== null || maxPrice !== null) && (
+              <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-2 h-2 bg-lime-500 rounded-full"></div>
+                    <span className="text-sm font-medium text-gray-700">Current Price Range:</span>
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    ₦{minPrice || 10} - ₦{maxPrice || '∞'}
+                  </div>
+                </div>
+                <div className="mt-3 w-full bg-gray-200 rounded-full h-2">
+                  <div 
+                    className="bg-gradient-to-r from-lime-500 to-emerald-500 h-2 rounded-full transition-all duration-300"
+                    style={{ 
+                      width: `${maxPrice ? ((maxPrice - (minPrice || 10)) / (maxPrice * 2)) * 100 : 50}%`,
+                      marginLeft: `${minPrice ? ((minPrice - 10) / (maxPrice || 1000)) * 100 : 0}%`
+                    }}
+                  ></div>
+                </div>
+              </div>
+            )}
+          </div>
+          )}
+        </div>
+        </>
+  );
+}
+
 function ListingsPageContent() {
   const searchParams = useSearchParams();
   const { search, minPrice, maxPrice, setSearch } = useFilterStore();
@@ -71,6 +234,7 @@ function ListingsPageContent() {
     sortBy: 'createdAt',
     sortOrder: 'desc'
   });
+  const [isPriceFilterOpen, setIsPriceFilterOpen] = useState(false);
 
   // Intersection observer for infinite scroll
   const loadMoreRef = useIntersectionObserver(() => {
@@ -253,7 +417,6 @@ function ListingsPageContent() {
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">All Listings</h1>
           <SearchBar />
           <div className="mt-2 text-xs text-gray-500 text-center">
             💡 Tip: Use Ctrl+F to quickly search, or click the filter button to refine results
@@ -319,135 +482,14 @@ function ListingsPageContent() {
             </Button>
           </div>
         </div>
-
-                {/* Enhanced Filter Section */}
-        <div className="mb-6 bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
-          {/* Filter Header */}
-          <div className="bg-gradient-to-r from-lime-50 to-emerald-50 px-6 py-4 border-b border-gray-100">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-lime-100 rounded-lg flex items-center justify-center">
-                <Filter size={18} className="text-lime-600" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-900">Price Range Filter</h3>
-                <p className="text-sm text-gray-600">Set your budget range to find the perfect items</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Filter Controls */}
-          <div className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
-              {/* Min Price */}
-              <div className="space-y-2">
-                <label className="block text-sm font-semibold text-gray-700">
-                  Minimum Price
-                  <span className="text-lime-600 ml-1">*</span>
-                </label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 font-medium">
-                    ₦
-                  </span>
-                  <Input
-                    type="number"
-                    min="10"
-                    placeholder="10"
-                    value={minPrice || ''}
-                    onChange={(e) => {
-                      const value = e.target.value ? Number(e.target.value) : null;
-                      if (value !== null && value < 10) {
-                        useFilterStore.getState().setMinPrice(10);
-                      } else {
-                        useFilterStore.getState().setMinPrice(value);
-                      }
-                    }}
-                    onBlur={(e) => {
-                      const value = e.target.value ? Number(e.target.value) : null;
-                      if (value !== null && value < 10) {
-                        useFilterStore.getState().setMinPrice(10);
-                      }
-                    }}
-                    className="w-full pl-8 pr-4 py-3 border-gray-200 focus:border-lime-500 focus:ring-lime-500"
-                  />
-                </div>
-                <p className="text-xs text-gray-500">Minimum price is ₦10</p>
-              </div>
-
-              {/* Max Price */}
-              <div className="space-y-2">
-                <label className="block text-sm font-semibold text-gray-700">
-                  Maximum Price
-                </label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 font-medium">
-                    ₦
-                  </span>
-                  <Input
-                    type="number"
-                    min={minPrice || 10}
-                    placeholder="No limit"
-                    value={maxPrice || ''}
-                    onChange={(e) => {
-                      const value = e.target.value ? Number(e.target.value) : null;
-                      if (value !== null && minPrice !== null && value < minPrice) {
-                        useFilterStore.getState().setMaxPrice(minPrice);
-                      } else {
-                        useFilterStore.getState().setMaxPrice(value);
-                      }
-                    }}
-                    className="w-full pl-8 pr-4 py-3 border-gray-200 focus:border-lime-500 focus:ring-lime-500"
-                  />
-                </div>
-                <p className="text-xs text-gray-500">Leave empty for no limit</p>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex flex-col gap-3">
-                <Button
-                  onClick={clearFilters}
-                  className="w-full bg-lime-500 hover:bg-lime-600 text-white border-0 shadow-sm"
-                  disabled={!hasActiveFilters()}
-                >
-                  <X size={16} className="mr-2" />
-                  Clear All
-                </Button>
-                
-                {hasActiveFilters() && (
-                  <div className="text-center">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-lime-100 text-lime-800 text-xs font-medium rounded-full">
-                      <div className="w-2 h-2 bg-lime-500 rounded-full animate-pulse"></div>
-                      Active Filters
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Price Range Preview */}
-            {(minPrice !== null || maxPrice !== null) && (
-              <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-2 h-2 bg-lime-500 rounded-full"></div>
-                    <span className="text-sm font-medium text-gray-700">Current Price Range:</span>
-                  </div>
-                  <div className="text-sm text-gray-600">
-                    ₦{minPrice || 10} - ₦{maxPrice || '∞'}
-                  </div>
-                </div>
-                <div className="mt-3 w-full bg-gray-200 rounded-full h-2">
-                  <div 
-                    className="bg-gradient-to-r from-lime-500 to-emerald-500 h-2 rounded-full transition-all duration-300"
-                    style={{ 
-                      width: `${maxPrice ? ((maxPrice - (minPrice || 10)) / (maxPrice * 2)) * 100 : 50}%`,
-                      marginLeft: `${minPrice ? ((minPrice - 10) / (maxPrice || 1000)) * 100 : 0}%`
-                    }}
-                  ></div>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
+        <PriceFilterSection
+          minPrice={minPrice}
+          maxPrice={maxPrice}
+          clearFilters={clearFilters}
+          hasActiveFilters={hasActiveFilters}
+          isOpen={isPriceFilterOpen}
+          toggleOpen={() => setIsPriceFilterOpen(prev => !prev)}
+        />
 
 
 

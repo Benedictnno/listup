@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Phone, ClipboardCopy, Heart, Send, ChevronDown } from "lucide-react";
 import { useState, useEffect } from "react";
 import { getFavourites, toggleFavourite, removeFavourite } from "../lib/api/favourites";
+import { trackListingView, trackListingSave, trackListingMessageClick } from "@/lib/api/analytics";
 import { useAuthStore } from "@/store/authStore";
 import LoginPromptDialog from "@/components/LoginPromptDialog";
 import { copyToClipboard } from "@/utils/copyText";
@@ -51,6 +52,23 @@ export default function ListingDetails({ listing }: { listing: Listing }) {
         // ignore - probably unauthenticated
       }
     })();
+
+    // Track view
+    try {
+      const sessionKey = 'listup_session_id';
+      let sessionId = '';
+      if (typeof window !== 'undefined') {
+        sessionId = window.localStorage.getItem(sessionKey) || '';
+        if (!sessionId) {
+          sessionId = Math.random().toString(36).substring(2) + Date.now().toString(36);
+          window.localStorage.setItem(sessionKey, sessionId);
+        }
+      }
+      trackListingView(listing.id, sessionId);
+    } catch (e) {
+      console.error('Failed to track listing view', e);
+    }
+
     return () => { mounted = false; };
   }, [listing.id]);
 
@@ -66,7 +84,7 @@ export default function ListingDetails({ listing }: { listing: Listing }) {
 
   return (
     <>
-      <div className="grid md:grid-cols-4 gap-6 p-6 lg:mx-24">
+      <div className="grid md:grid-cols-5 gap-0 p-6 lg:mx-24">
       {/* Left - Images */}
       <div className="col-span-2">
         {/* Main Image */}
@@ -109,7 +127,7 @@ export default function ListingDetails({ listing }: { listing: Listing }) {
       </div>
 
       {/* Right - Info */}
-      <div className="col-span-2 flex flex-col gap-4 lg:mx-24">
+      <div className="col-span-3 flex flex-col gap-4 lg:mx-24">
         <div className="flex items-start justify-between">
           <div>
             <h1 className="text-2xl font-semibold">
@@ -135,6 +153,7 @@ export default function ListingDetails({ listing }: { listing: Listing }) {
                   } else {
                     await toggleFavourite(listing.id);
                     setIsSaved(true);
+                    trackListingSave(listing.id);
                   }
                 } catch (e) {
                   console.error('Failed to toggle saved', e);
@@ -220,6 +239,7 @@ export default function ListingDetails({ listing }: { listing: Listing }) {
 
                   const text = encodeURIComponent(parts.join("\n"));
                   const url = `https://wa.me/${phone}?text=${text}`;
+                  trackListingMessageClick(listing.id);
                   window.open(url, '_blank');
                 }}
                 className="inline-flex items-center justify-center gap-2 rounded-xl bg-green-600 px-4 py-2 text-white shadow hover:bg-green-700"
