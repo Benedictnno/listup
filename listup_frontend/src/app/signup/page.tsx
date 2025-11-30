@@ -1,4 +1,7 @@
 "use client";
+
+export const dynamic = 'force-dynamic';
+
 import { useState, useEffect } from "react";
 import { useSignupStore } from "@/store/signupStore";
 import { useAuthStore } from "@/store/authStore";
