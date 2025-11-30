@@ -16,6 +16,7 @@ const morgan = require('morgan');
 const passport = require('passport');
 const routes = require('./routes');
 const error = require('./middleware/error');
+const {cloudflareSecurity} = require('./middleware/security');
 
 require('./config/passport'); // init strategies
 
@@ -39,6 +40,7 @@ const corsOptions = {
         /^https:\/\/.*\.vercel\.app$/, // All Vercel subdomains
     ],
     
+    
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
     credentials: true,
@@ -52,7 +54,13 @@ app.use((req, res, next) => {
   const origin = req.headers.origin;
   next();
 });
+if(process.env.NODE_ENV === 'production') {
+// Cloudflare requires this to forward real IP addresses
+app.set("trust proxy", true);
 
+// Activate global backend protection
+app.use(cloudflareSecurity);
+}
 // Handle CORS preflight requests
 app.options('*', cors(corsOptions));
 
