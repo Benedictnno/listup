@@ -19,5 +19,7 @@ router.use('/favourites',generalLimiter, require('./favourites.routes'));
 router.use('/saved-searches',generalLimiter, require('./saved-searches.routes'));
 router.use('/advertisements',generalLimiter, require('./advertisements.routes'));
 router.use('/analytics',generalLimiter, require('./analytics.routes'));
+router.use('/referrals',generalLimiter, require('./referral.routes'));
+router.use('/kyc',generalLimiter, require('./kyc.routes'));
 
 module.exports = router;

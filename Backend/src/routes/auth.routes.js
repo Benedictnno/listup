@@ -69,6 +69,11 @@ router.post(
       .withMessage('Business category is required for vendor accounts')
       .isLength({ min: 2, max: 50 })
       .withMessage('Business category must be between 2 and 50 characters'),
+    
+    body('referralCode')
+      .optional()
+      .isString()
+      .withMessage('Referral code must be a string'),
   ],
   AuthCtrl.register
 );

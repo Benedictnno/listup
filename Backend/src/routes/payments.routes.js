@@ -2,7 +2,8 @@
 const express = require("express");
 const axios = require("axios");
 const prisma = require("../lib/prisma");
-const { auth } = require("../middleware/auth");
+const { auth, allow } = require("../middleware/auth");
+const KYCCtrl = require("../controllers/kyc.controller");
 
 const router = express.Router();
 
@@ -51,6 +52,112 @@ router.post("/initialize", auth, async (req, res) => {
   }
 });
 
+// Initialize KYC payment
+router.post("/kyc/initialize", auth, allow('VENDOR'), async (req, res) => {
+  try {
+    const vendorId = req.user.id;
+
+    const kyc = await prisma.vendorKYC.findUnique({
+      where: { vendorId },
+    });
+
+    if (!kyc) {
+      return res.status(400).json({ error: "KYC record not found for this vendor" });
+    }
+
+    if (kyc.paymentStatus === "SUCCESS") {
+      return res.status(400).json({ error: "KYC payment has already been completed" });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: vendorId },
+      select: { email: true },
+    });
+
+    if (!user || !user.email) {
+      return res.status(400).json({ error: "Vendor email not found" });
+    }
+
+    const response = await axios.post(
+      "https://api.paystack.co/transaction/initialize",
+      {
+        email: user.email,
+        amount: Math.round(kyc.signupFee * 100), // Paystack expects kobo
+        metadata: {
+          kycId: kyc.id,
+          vendorId: vendorId,
+          hasReferral: kyc.hasReferral,
+        },
+        callback_url: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/kyc/payment/success`,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
+        },
+      }
+    );
+
+    return res.json({ authorizationUrl: response.data.data.authorization_url });
+  } catch (error) {
+    console.error("KYC payment initialization failed:", error.response?.data || error.message);
+    return res.status(500).json({ error: "KYC payment initialization failed" });
+  }
+});
+
+// Initialize yearly KYC renewal payment (always full fee, no referral discount)
+router.post("/kyc/renew/initialize", auth, allow('VENDOR'), async (req, res) => {
+  try {
+    const vendorId = req.user.id;
+
+    const kyc = await prisma.vendorKYC.findUnique({
+      where: { vendorId },
+    });
+
+    if (!kyc) {
+      return res.status(400).json({ error: "KYC record not found for this vendor" });
+    }
+
+    if (kyc.paymentStatus !== "SUCCESS") {
+      return res.status(400).json({ error: "Initial KYC payment must be completed before renewal" });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: vendorId },
+      select: { email: true },
+    });
+
+    if (!user || !user.email) {
+      return res.status(400).json({ error: "Vendor email not found" });
+    }
+
+    const yearlyFee = 5000; // Full yearly renewal fee (NGN)
+
+    const response = await axios.post(
+      "https://api.paystack.co/transaction/initialize",
+      {
+        email: user.email,
+        amount: Math.round(yearlyFee * 100), // Paystack expects kobo
+        metadata: {
+          kycId: kyc.id,
+          vendorId: vendorId,
+          kycRenewal: true,
+        },
+        callback_url: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/kyc/payment/success`,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
+        },
+      }
+    );
+
+    return res.json({ authorizationUrl: response.data.data.authorization_url });
+  } catch (error) {
+    console.error("KYC renewal payment initialization failed:", error.response?.data || error.message);
+    return res.status(500).json({ error: "KYC renewal payment initialization failed" });
+  }
+});
+
 // Get payment status for an ad
 router.get("/ad/:adId/status", auth, async (req, res) => {
   try {
@@ -94,73 +201,85 @@ router.post("/webhook", express.json(), async (req, res) => {
   const event = req.body;
 
   if (event.event === "charge.success") {
-    const { adId } = event.data.metadata;
+    const metadata = event.data.metadata || {};
+    const { adId, kycId, kycRenewal } = metadata;
 
-    if (!adId) {
-      console.error("❌ No adId found in webhook metadata");
-      return res.status(400).json({ error: "Missing adId in metadata" });
+    // Handle KYC payments
+    if (kycId) {
+      try {
+        if (kycRenewal) {
+          console.log(`🔄 Processing successful KYC renewal payment for kycId: ${kycId}`);
+          await KYCCtrl._processKYCRenewalPaymentInternal(kycId);
+          console.log(`✅ KYC renewal payment processed for kycId: ${kycId}`);
+        } else {
+          console.log(`🔄 Processing successful initial KYC payment for kycId: ${kycId}`);
+          await KYCCtrl._processKYCPaymentInternal(kycId);
+          console.log(`✅ Initial KYC payment processed for kycId: ${kycId}`);
+        }
+      } catch (error) {
+        console.error(`❌ Error processing KYC payment for kycId ${kycId}:`, error);
+      }
     }
 
-    try {
-      console.log(`🔄 Processing successful payment for ad: ${adId}`);
-      
-      // Get the ad to check current status
-      const ad = await prisma.ad.findUnique({
-        where: { id: adId },
-        select: {
-          id: true,
-          status: true,
-          paymentStatus: true,
-          amount: true,
-          type: true,
-        },
-      });
+    // Handle Ad payments (existing behavior)
+    if (adId) {
+      try {
+        console.log(`🔄 Processing successful payment for ad: ${adId}`);
+        
+        // Get the ad to check current status
+        const ad = await prisma.ad.findUnique({
+          where: { id: adId },
+          select: {
+            id: true,
+            status: true,
+            paymentStatus: true,
+            amount: true,
+            type: true,
+          },
+        });
 
-      if (!ad) {
-        console.error(`❌ Ad ${adId} not found`);
-        return res.status(404).json({ error: "Ad not found" });
+        if (!ad) {
+          console.error(`❌ Ad ${adId} not found`);
+          // Do not return non-200 to avoid webhook retries
+        } else if (ad.paymentStatus !== "SUCCESS") {
+          // Set proper dates for the ad
+          const now = new Date();
+          const endDate = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days from now
+
+          const updatedAd = await prisma.ad.update({
+            where: { id: adId },
+            data: {
+              status: "ACTIVE",
+              paymentStatus: "SUCCESS",
+              transactionId: event.data.reference,
+              startDate: now,
+              endDate: endDate,
+            },
+          });
+
+          console.log(`✅ Ad ${adId} payment successful and updated`);
+          console.log(`📅 Start Date: ${now.toISOString()}`);
+          console.log(`📅 End Date: ${endDate.toISOString()}`);
+          console.log(`💰 Amount: ₦${ad.amount}`);
+          console.log(`🎯 Type: ${ad.type}`);
+          console.log(`🔗 Transaction ID: ${event.data.reference}`);
+
+          // Log the complete updated ad data
+          console.log("📊 Updated ad data:", JSON.stringify(updatedAd, null, 2));
+        } else {
+          console.log(`ℹ️ Ad ${adId} already marked as paid`);
+        }
+
+      } catch (error) {
+        console.error(`❌ Error updating ad ${adId}:`, error);
+        console.error("Error details:", {
+          message: error.message,
+          code: error.code,
+          stack: error.stack,
+        });
+        
+        // Don't fail the webhook - return 200 to acknowledge receipt
       }
-
-      if (ad.paymentStatus === "SUCCESS") {
-        console.log(`ℹ️ Ad ${adId} already marked as paid`);
-        return res.sendStatus(200);
-      }
-
-      // Set proper dates for the ad
-      const now = new Date();
-      const endDate = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days from now
-
-      const updatedAd = await prisma.ad.update({
-        where: { id: adId },
-        data: {
-          status: "ACTIVE",
-          paymentStatus: "SUCCESS",
-          transactionId: event.data.reference,
-          startDate: now,
-          endDate: endDate,
-        },
-      });
-
-      console.log(`✅ Ad ${adId} payment successful and updated`);
-      console.log(`📅 Start Date: ${now.toISOString()}`);
-      console.log(`📅 End Date: ${endDate.toISOString()}`);
-      console.log(`💰 Amount: ₦${ad.amount}`);
-      console.log(`🎯 Type: ${ad.type}`);
-      console.log(`🔗 Transaction ID: ${event.data.reference}`);
-
-      // Log the complete updated ad data
-      console.log("📊 Updated ad data:", JSON.stringify(updatedAd, null, 2));
-
-    } catch (error) {
-      console.error(`❌ Error updating ad ${adId}:`, error);
-      console.error("Error details:", {
-        message: error.message,
-        code: error.code,
-        stack: error.stack,
-      });
-      
-      // Don't fail the webhook - return 200 to acknowledge receipt
-      // The payment provider will retry if needed
     }
   } else {
     console.log(`ℹ️ Unhandled webhook event: ${event.event}`);

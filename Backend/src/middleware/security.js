@@ -22,17 +22,6 @@ const CLOUDFLARE_IP_RANGES = [
 ];
 
 /**
- * Gets client IP from Cloudflare headers or falls back to Express.
- */
-function extractClientIp(req) {
-  return (
-    (req.headers["cf-connecting-ip"]) ||
-    (req.headers["x-forwarded-for"]) ||
-    req.ip
-  );
-}
-
-/**
  * Global middleware:
  * Allows ONLY traffic routed through Cloudflare.
  * Blocks ALL direct traffic to your Render origin URL.

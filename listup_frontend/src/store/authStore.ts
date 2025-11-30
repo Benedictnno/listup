@@ -7,7 +7,6 @@ type User = {
   email: string;
   role: "USER" | "VENDOR";
   phone?: string;
-  token: string;
   vendorProfile?: {
     storeName: string;
     storeAddress: string;
@@ -40,39 +39,35 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   initializeAuth: () => {
     if (typeof window === "undefined") return; // Server-side check
-    
-    try {
-      const token = localStorage.getItem("token");
-      const id = localStorage.getItem("id");
-      const email = localStorage.getItem("email");
-      const role = localStorage.getItem("role");
-      const name = localStorage.getItem("name");
-      
-      if (token && id && email && role && name) {
+
+    // Cookie-based auth: ask backend who the current user is
+    api
+      .get("/auth/me")
+      .then((response) => {
+        if (!response.data?.success || !response.data?.data) {
+          set({ user: null, isInitialized: true });
+          return;
+        }
+
+        const userData = response.data.data;
         const user: User = {
-          id,
-          name,
-          email,
-          role: role.toUpperCase() as "USER" | "VENDOR",
-          phone: localStorage.getItem("phone") || undefined,
-          token,
-          ...(localStorage.getItem("storeName") && {
-            vendorProfile: {
-              storeName: localStorage.getItem("storeName") || "",
-              storeAddress: localStorage.getItem("storeAddress") || "",
-              businessCategory: localStorage.getItem("businessCategory") || ""
-            }
-          })
+          id: userData.id,
+          name: userData.name,
+          email: userData.email,
+          role: userData.role.toUpperCase() as "USER" | "VENDOR",
+          phone: userData.phone,
+          ...(userData.vendorProfile && {
+            vendorProfile: userData.vendorProfile,
+          }),
         };
-        
+
         set({ user, isInitialized: true });
-      } else {
-        set({ isInitialized: true });
-      }
-    } catch (error) {
-      console.error("Error initializing auth:", error);
-      set({ isInitialized: true });
-    }
+      })
+      .catch((error) => {
+        console.error("Error initializing auth:", error);
+        // On 401 or any error, treat as logged out but mark initialized
+        set({ user: null, isInitialized: true });
+      });
   },
 
   login: async (email: string, password: string) => {
@@ -86,33 +81,20 @@ export const useAuthStore = create<AuthState>((set) => ({
         throw error;
       }
 
-      const { token, user: userData } = response.data.data;
-      
+      const { user: userData } = response.data.data;
+
       const user: User = {
         id: userData.id,
         name: userData.name,
         email: userData.email,
         role: userData.role.toUpperCase() as "USER" | "VENDOR",
         phone: userData.phone,
-        token,
         ...(userData.vendorProfile && {
-          vendorProfile: userData.vendorProfile
-        })
+          vendorProfile: userData.vendorProfile,
+        }),
       };
 
-      // Save user data for interceptors and easy access
-      localStorage.setItem("token", token);
-      localStorage.setItem("id", user.id);
-      localStorage.setItem("name", user.name);
-      localStorage.setItem("email", user.email);
-      localStorage.setItem("role", user.role);
-      if (user.phone) localStorage.setItem("phone", user.phone);
-      if (user.vendorProfile) {
-        localStorage.setItem("storeName", user.vendorProfile.storeName);
-        localStorage.setItem("storeAddress", user.vendorProfile.storeAddress);
-        localStorage.setItem("businessCategory", user.vendorProfile.businessCategory);
-      }
-
+      // Backend sets HttpOnly cookie; just keep user in memory
       set({ user });
     } catch (error: any) {
       console.error("Login error:", error);
@@ -152,16 +134,15 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   logout: () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("id");
-    localStorage.removeItem("name");
-    localStorage.removeItem("email");
-    localStorage.removeItem("role");
-    localStorage.removeItem("phone");
-    localStorage.removeItem("storeName");
-    localStorage.removeItem("storeAddress");
-    localStorage.removeItem("businessCategory");
-    set({ user: null });
+    // Ask backend to clear cookie-based session and then clear client state
+    api
+      .post("/auth/logout")
+      .catch((error) => {
+        console.error("Logout error:", error);
+      })
+      .finally(() => {
+        set({ user: null });
+      });
   },
 
   setAuth: (user: User) => set({ user }),

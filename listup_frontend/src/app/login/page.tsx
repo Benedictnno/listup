@@ -76,160 +76,65 @@ export default function LoginPage() {
     return !getFieldError(field) && Boolean(value.trim());
   };
 
-  const attemptLogin = async () => {
-  setLoading(true);
-  setError("");
-  setSuccess("");
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Clear previous messages
+    setError("");
+    setSuccess("");
+    setRequiresEmailVerification(false);
+    
+    // Validate fields
+    const emailError = validateField('email', email);
+    const passwordError = validateField('password', password);
+    
+    if (emailError || passwordError) {
+      setFieldErrors({
+        email: emailError || "",
+        password: passwordError || ""
+      });
+      setError("Please fix the errors below to continue");
+      return;
+    }
 
-  try {
-    // Call API directly for better error handling
-    const response = await api.post("/auth/login", { 
-      email: email.trim(), 
-      password 
-    });
-
-    // Check if login was successful
-    if (response.data.success && response.data.data) {
-      const { token, user: userData } = response.data.data;
-      
-      // Save to localStorage
-      localStorage.setItem("token", token);
-      localStorage.setItem("id", userData.id);
-      localStorage.setItem("name", userData.name);
-      localStorage.setItem("email", userData.email);
-      localStorage.setItem("role", userData.role);
-      if (userData.phone) localStorage.setItem("phone", userData.phone);
-      
-      // Update Zustand store
-      const user = {
-        id: userData.id,
-        name: userData.name,
-        email: userData.email,
-        role: userData.role.toUpperCase() as "USER" | "VENDOR",
-        phone: userData.phone,
-        token,
-        ...(userData.vendorProfile && {
-          vendorProfile: userData.vendorProfile
-        })
-      };
-      
-      useAuthStore.getState().setAuth(user);
+    setLoading(true);
+    
+    try {
+      await login(email.trim(), password);
       setSuccess(getSuccessMessage('login'));
-      setTimeout(() => router.push("/dashboard"), 2000);
       
-    } else {
-      // API returned but login failed
-      setError(response.data.message || "Invalid email or password");
+      // Redirect after a short delay to show success message
+      setTimeout(() => {
+        router.push("/dashboard");
+      }, 2000);
+
+    } catch (error: any) {
+      console.error("Login failed:", error);
+
+      let message = "Invalid email or password. Please try again.";
+
+      if (error?.response?.status === 403 && error?.response?.data?.requiresEmailVerification) {
+        setRequiresEmailVerification(true);
+        message = error.response.data.message || "Please verify your email address to continue.";
+      }
+      else if (error?.response?.data?.message) {
+        message = error.response.data.message;
+      } else if (error?.response?.data?.error) {
+        message = error.response.data.error;
+      } else if (error?.response?.status === 401) {
+        message = "Invalid email or password";
+      } else if (error?.response?.status >= 500) {
+        message = "Server error. Please try again later.";
+      } else if (error?.message && error.message !== "An error occurred") {
+        message = error.message;
+      }
+
+      setError(message);
+      setFieldErrors({});
+    } finally {
+      setLoading(false);
     }
-    
-  } catch (error: any) {
-    console.error("Login failed:", error);
-    console.log("Error details:", {
-      response: error?.response,
-      responseData: error?.response?.data,
-      message: error?.message,
-      status: error?.response?.status
-    });
-
-    let message = "Invalid email or password. Please try again.";
-    
-    // Check for email verification requirement (403 status)
-    if (error?.response?.status === 403 && error?.response?.data?.requiresEmailVerification) {
-      setRequiresEmailVerification(true);
-      message = error.response.data.message || "Please verify your email address to continue.";
-    }
-    // Check response data first
-    else if (error?.response?.data?.message) {
-      message = error.response.data.message;
-    } else if (error?.response?.data?.error) {
-      message = error.response.data.error;
-    } else if (error?.response?.status === 401) {
-      message = "Invalid email or password";
-    } else if (error?.response?.status === 403) {
-      message = "Access denied. Please check your credentials.";
-    } else if (error?.response?.status >= 500) {
-      message = "Server error. Please try again later.";
-    } else if (error?.message && error.message !== "An error occurred") {
-      message = error.message;
-    }
-
-    console.log("Setting error message:", message);
-    setError(message);
-    setFieldErrors({});
-  } finally {
-    setLoading(false);
-  }
-};
-
-const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  e.stopPropagation();
-  await attemptLogin();
-  return false;
-};
-
-  // const handleSubmit = async (e: React.FormEvent) => {
-  //   e.preventDefault();
-    
-  //   // Clear previous messages
-  //   setError("");
-  //   setSuccess("");
-    
-  //   // Validate fields
-  //   const emailError = validateField('email', email);
-  //   const passwordError = validateField('password', password);
-    
-  //   if (emailError || passwordError) {
-  //     setFieldErrors({
-  //       email: emailError || "",
-  //       password: passwordError || ""
-  //     });
-  //     setError("Please fix the errors below to continue");
-  //     return;
-  //   }
-
-  //   setLoading(true);
-    
-  //   try {
-  //     await login(email.trim(), password);
-  //     setSuccess(getSuccessMessage('login'));
-      
-  //     // Redirect after a short delay to show success message
-  //     setTimeout(() => {
-  //       router.push("/dashboard");
-  //     }, 2000);
- 
-  //     } catch (error: any) {
-  // console.error("Login failed:", error);
-
-  // let message = "An unexpected error occurred. Please try again.";
-
-  // // If backend sends structured errors
-  // if (error?.response?.data?.message) {
-  //   message = error.response.data.message;
-  // }
-  // else if (error?.response?.data?.error) {
-  //   message = error.response.data.error;
-  // }
-  // else if (error?.message) {
-  //   message = error.message;
-  // }
-
-  // setError(message);
-
-      
-  //     // Increment retry count for retryable errors
-  //     // if (isRetryableError(error)) {
-  //     //   setRetryCount(prev => prev + 1);
-  //     // }
-
-      
-  //     // Clear field errors to avoid confusion
-  //     setFieldErrors({});
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
+  };
 
   const handleRetry = () => {
     setError("");
