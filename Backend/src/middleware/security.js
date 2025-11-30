@@ -30,7 +30,7 @@ function extractClientIp(req) {
 /**
  * Allow only Cloudflare-originated traffic.
  */
-export function cloudflareSecurity(req, res, next) {
+function cloudflareSecurity(req, res, next) {
   try {
     const clientIp = extractClientIp(req);
 
@@ -65,3 +65,7 @@ export function cloudflareSecurity(req, res, next) {
     });
   }
 }
+
+module.exports = {
+  cloudflareSecurity,
+};
