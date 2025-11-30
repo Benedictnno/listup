@@ -7,7 +7,9 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   const { initializeAuth } = useAuthStore();
 
   useEffect(() => {
-    initializeAuth();
+    if (typeof window !== "undefined") {
+      initializeAuth();
+    }
   }, [initializeAuth]);
 
   return <>{children}</>;

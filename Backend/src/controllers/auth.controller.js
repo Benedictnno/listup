@@ -2,12 +2,55 @@ const { validationResult } = require('express-validator');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const prisma = require('../lib/prisma');
-const { sign } = require('../lib/jwt');
+const { sign, verify } = require('../lib/jwt');
 
 // Helper function to generate unique verification token
 function generateVerificationToken() {
   return crypto.randomBytes(32).toString('hex');
 }
+
+exports.getMe = async (req, res) => {
+  try {
+    const token = req.cookies.accessToken;
+    if (!token) {
+      return res.status(401).json({ success: false, message: "No token provided" });
+    }
+console.log("Cookie token:", token);
+    // Verify JWT
+    const decoded = verify(token);
+    if (!decoded || !decoded.id) {
+      return res.status(401).json({ success: false, message: "Invalid token" });
+    }
+
+    // Fetch user
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.id },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        phone: true,
+        vendorProfile: {
+          select: {
+            storeName: true,
+            storeAddress: true,
+            businessCategory: true,
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      return res.status(401).json({ success: false, message: "User not found" });
+    }
+
+    res.json({ success: true, data: user });
+  } catch (err) {
+    console.error("getMe error:", err);
+    res.status(401).json({ success: false, message: "Invalid token" });
+  }
+};
 
 exports.register = async (req, res, next) => {
   try {
@@ -271,7 +314,7 @@ exports.login = async (req, res, next) => {
       name: fullUser.name, 
       role: fullUser.role 
     });
-
+console.log("Signed token:", token);
     res.cookie("accessToken", token, {
     httpOnly: true,
     secure: false,          // keep false on http://localhost, true in HTTPS prod

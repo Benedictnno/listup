@@ -17,7 +17,7 @@ const passport = require('passport');
 const routes = require('./routes');
 const error = require('./middleware/error');
 const {cloudflareSecurity} = require('./middleware/security');
-
+const cookieParser = require('cookie-parser');
 require('./config/passport'); // init strategies
 
 const app = express();
@@ -48,6 +48,7 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
+app.use(cookieParser());
 
 // Add CORS debugging middleware
 app.use((req, res, next) => {
