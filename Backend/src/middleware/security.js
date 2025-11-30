@@ -1,5 +1,5 @@
 // middleware/security.js
-const ipRangeCheck = require("ip-range-check")
+const ipRangeCheck = require("ip-range-check");
 
 /**
  * Cloudflare edge IP ranges (from: https://api.cloudflare.com/client/v4/ips)
