@@ -28,6 +28,7 @@
     "express-validator": "^7.2.1",
     "googleapis": "^162.0.0",
     "helmet": "^8.1.0",
+    "ip-range-check": "^0.2.0",
     "jsonwebtoken": "^9.0.2",
     "mongodb": "^6.19.0",
     "morgan": "^1.10.1",
