@@ -38,7 +38,8 @@ exports.register = async (req, res, next) => {
       role = 'USER', // Default to USER if not specified
       storeName, 
       storeAddress, 
-      businessCategory
+      businessCategory,
+      referralCode,
     } = req.body;
 
     console.log('Registration attempt for:', { email, role, name, phone: phone || 'not provided' });
@@ -81,6 +82,21 @@ exports.register = async (req, res, next) => {
       role: role.toUpperCase(),
     };
 
+    // If referral code was provided, validate it before creating the user
+    let referral = null;
+    if (referralCode) {
+      referral = await prisma.referral.findUnique({
+        where: { code: referralCode },
+      });
+
+      if (!referral || !referral.isActive) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid or inactive referral code',
+        });
+      }
+    }
+
     // Create user with or without vendor profile
     let user;
     if (role === 'VENDOR') {
@@ -108,6 +124,40 @@ exports.register = async (req, res, next) => {
           vendorProfile: true 
         },
       });
+
+      // If vendor signed up with a valid referral code, create referral use and increment totals
+      if (referral) {
+        try {
+          await prisma.$transaction(async (tx) => {
+            const existingUse = await tx.referralUse.findFirst({
+              where: {
+                referralId: referral.id,
+                vendorId: user.id,
+              },
+            });
+
+            if (!existingUse) {
+              await tx.referralUse.create({
+                data: {
+                  referralId: referral.id,
+                  vendorId: user.id,
+                  status: 'PENDING',
+                  commission: 1000,
+                },
+              });
+
+              await tx.referral.update({
+                where: { id: referral.id },
+                data: {
+                  totalReferrals: { increment: 1 },
+                },
+              });
+            }
+          });
+        } catch (e) {
+          console.error('Error creating referral use during registration:', e);
+        }
+      }
       // Fire-and-forget pending email
       try {
         const { sendVendorPendingEmail } = require('../lib/email');
@@ -221,6 +271,14 @@ exports.login = async (req, res, next) => {
       name: fullUser.name, 
       role: fullUser.role 
     });
+
+    res.cookie("accessToken", token, {
+    httpOnly: true,
+    secure: false,          // keep false on http://localhost, true in HTTPS prod
+    sameSite: "lax",        // good default for SPA on same site / localhost
+    // domain: not needed for localhost; omit it
+    maxAge: 7 * 24 * 60 * 60 * 1000, // example: 7 days
+  });
 
     // Return success response
     res.json({

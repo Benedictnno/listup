@@ -14,21 +14,9 @@ const api = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
+  // Use cookie-based auth (HttpOnly cookies set by the backend)
+  withCredentials: true,
 });
-
-// Optional: attach token automatically if in localStorage or Zustand
-api.interceptors.request.use(
-  (config) => {
-    if (typeof window !== "undefined") {
-      const token = localStorage.getItem("token"); // or from Zustand
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
 
 // Add response interceptor to handle errors properly
 api.interceptors.response.use(

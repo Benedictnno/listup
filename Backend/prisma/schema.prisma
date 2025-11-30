@@ -31,6 +31,21 @@ enum PaymentStatus {
   FAILED
 }
 
+enum ReferralStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
+}
+
+enum KYCStatus {
+  PENDING
+  DOCUMENTS_REVIEW
+  INTERVIEW_SCHEDULED
+  INTERVIEW_COMPLETED
+  APPROVED
+  REJECTED
+}
+
 model User {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
   name      String
@@ -60,6 +75,11 @@ model User {
   isEmailVerified       Boolean   @default(false)
   emailVerifiedAt       DateTime?
 
+  // KYC fields
+  listingLimit      Int      @default(3)
+  isKYCVerified     Boolean  @default(false)
+  kycCompletedAt    DateTime?
+
   // Relations
   listings             Listing[]
   ads                  Ad[]
@@ -75,6 +95,12 @@ model User {
   listingViews         ListingView[]
   listingSaveEvents    ListingSaveEvent[]
   listingMessageClicks ListingMessageClick[]
+
+  // Referral & KYC relations
+  referralCode        Referral?          @relation("ReferrerUser")
+  usedReferralCode    ReferralUse?       @relation("ReferredVendor")
+  vendorKYC           VendorKYC?
+  commissionPayments  CommissionPayment[]
 }
 
 model VendorProfile {
@@ -104,6 +130,103 @@ model VendorProfile {
   businessHours BusinessHours?
   socialMedia   SocialMedia?
   storeSettings StoreSettings?
+
+  // Listing controls
+  canCreateUnlimitedListings Boolean @default(false)
+  currentListingsCount       Int     @default(0)
+}
+
+model Referral {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  code         String   @unique
+  userId       String   @unique @db.ObjectId
+  user         User     @relation("ReferrerUser", fields: [userId], references: [id])
+
+  totalReferrals       Int     @default(0)
+  successfulReferrals  Int     @default(0)
+  totalEarnings        Float   @default(0)
+
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  referredVendors ReferralUse[]
+}
+
+model ReferralUse {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  referralId   String   @db.ObjectId
+  referral     Referral @relation(fields: [referralId], references: [id])
+
+  vendorId     String   @unique @db.ObjectId
+  vendor       User     @relation("ReferredVendor", fields: [vendorId], references: [id])
+
+  status       ReferralStatus @default(PENDING)
+  commission   Float    @default(1000)
+  commissionPaid Boolean @default(false)
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([referralId, vendorId])
+}
+
+model VendorKYC {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  vendorId     String   @unique @db.ObjectId
+  vendor       User     @relation(fields: [vendorId], references: [id])
+
+  // Business Socials
+  tiktokHandle    String?
+  instagramHandle String?
+  facebookPage    String?
+  twitterHandle   String?
+  otherSocial     String?
+
+  // Interview Details
+  interviewScheduled DateTime?
+  interviewCompleted DateTime?
+  interviewNotes     String?
+  interviewedBy      String?   @db.ObjectId
+
+  // KYC Status
+  status          KYCStatus @default(PENDING)
+  rejectionReason String?
+
+  // Payment Info
+  signupFee        Float
+  hasReferral      Boolean       @default(false)
+  paymentStatus    PaymentStatus @default(PENDING)
+  paymentReference String?
+  paidAt           DateTime?
+
+  // Validity & renewals
+  validUntil    DateTime?
+  renewalCount  Int       @default(0)
+
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([status])
+}
+
+model CommissionPayment {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  referralUseId   String   @db.ObjectId
+  userId          String   @db.ObjectId
+  user            User     @relation(fields: [userId], references: [id])
+
+  amount          Float
+  paymentMethod   String?
+  paymentReference String?
+  status          PaymentStatus @default(PENDING)
+
+  paidAt          DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([userId])
+  @@index([status])
 }
 
 model Category {

@@ -18,6 +18,7 @@ import Link from "next/link";
 import { useAuthStore } from "@/store/authStore";
 import { useRouter } from "next/navigation";
 import SavedListings from "@/components/SavedListings";
+import KYCStatusBanner from "@/components/KYCStatusBanner";
 
 interface DashboardData {
   totalListings: number;
@@ -148,6 +149,12 @@ export default function DashboardOverview() {
 
   return (
     <div className="space-y-6">
+      <KYCStatusBanner
+        // Backend enforces 3 listings before KYC, so approximate here
+        isKYCVerified={false}
+        listingLimit={3}
+        currentListingsCount={data?.totalListings || 0}
+      />
       {/* Welcome Section */}
       <div className="bg-gradient-to-r from-lime-50 to-green-50 rounded-2xl p-6 md:p-8">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between">

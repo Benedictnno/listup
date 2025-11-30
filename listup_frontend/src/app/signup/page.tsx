@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { useSignupStore } from "@/store/signupStore";
 import { useAuthStore } from "@/store/authStore";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import axios from "axios";
 import {
   ArrowRight,
@@ -44,6 +44,7 @@ export default function SignupPage() {
   const { form, setField, reset } = useSignupStore();
   const signup = useAuthStore((state) => state.signup);
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   // UI & flow state
   const [step, setStep] = useState<number>(1);
@@ -55,6 +56,7 @@ export default function SignupPage() {
   const [success, setSuccess] = useState<string>("");
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [retryCount, setRetryCount] = useState<number>(0);
+  const [hasReferralDiscount, setHasReferralDiscount] = useState<boolean>(false);
 
   // Addresses (admin-managed) for vendor signup
   const [addresses, setAddresses] = useState<{ id: string; name: string }[]>(
@@ -68,6 +70,16 @@ export default function SignupPage() {
     setFieldErrors({});
     setSuccess("");
   };
+
+  // Auto-fill referral code from URL (?ref=CODE) on first load
+  useEffect(() => {
+    const ref = searchParams.get("ref");
+    if (ref && !form.referralCode) {
+      setField("referralCode", ref.toUpperCase());
+      setHasReferralDiscount(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Fetch admin-defined active addresses when vendor reaches step 2
   const fetchAddresses = async () => {
@@ -203,6 +215,11 @@ export default function SignupPage() {
   const handleFieldChange = (field: string, value: string) => {
     setField(field, value);
     if (fieldErrors[field]) clearFieldError(field);
+
+     if (field === "referralCode") {
+       // Simple badge toggle: show discount badge if code is non-empty
+       setHasReferralDiscount(Boolean(value.trim()));
+     }
   };
 
   const handleNext = (e: React.FormEvent) => {
@@ -241,6 +258,10 @@ export default function SignupPage() {
         payload.storeName = String(form.storeName || "").trim();
         payload.storeAddress = String(form.storeAddress || "").trim();
         payload.businessCategory = String(form.businessCategory || "").trim();
+      }
+
+      if (String((form as any).referralCode || "").trim()) {
+        (payload as any).referralCode = String((form as any).referralCode).trim().toUpperCase();
       }
 
       const result = await signup(payload);
@@ -421,6 +442,28 @@ export default function SignupPage() {
                 </p>
               )}
               <p className="mt-1 text-xs text-slate-500">Optional - for account recovery and notifications</p>
+            </div>
+
+            {/* Referral Code (optional) */}
+            <div>
+              <label className="block text-sm font-medium mb-1 text-slate-700 flex items-center gap-2">
+                Referral Code
+                {hasReferralDiscount && form.role === "VENDOR" && (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-700">
+                    Save ₦2,000 on vendor signup
+                  </span>
+                )}
+              </label>
+              <input
+                type="text"
+                value={(form as any).referralCode || ""}
+                onChange={(e) => handleFieldChange("referralCode", e.target.value.toUpperCase())}
+                placeholder="Optional - e.g. BOB-A3F2E1"
+                className="w-full p-3 rounded-xl transition-colors border border-slate-300 focus:outline-none focus:ring-2 focus:ring-lime-200 text-sm tracking-wide"
+              />
+              <p className="mt-1 text-xs text-slate-500">
+                If you followed a friend&apos;s referral link, this should be filled automatically.
+              </p>
             </div>
 
             {/* Password */}

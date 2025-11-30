@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const { auth, allow } = require('../middleware/auth');
 const ListingsCtrl = require('../controllers/listings.controller');
+const KYCCtrl = require('../controllers/kyc.controller');
 const { body } = require('express-validator');
 const { generalLimiter } = require('../middleware/rateLimiter');
 
@@ -19,7 +20,9 @@ router.get("/stores/:storeName",generalLimiter, ListingsCtrl.getVendorListingsBy
 router.get("/vendors/:vendorId/listings",generalLimiter, auth, allow('VENDOR'), ListingsCtrl.getByVendorId);
 // 👇 only VENDORs can create listings
 router.post('/',generalLimiter,
-  auth, allow('VENDOR'),
+  auth, 
+  allow('VENDOR'),
+  KYCCtrl.checkListingLimit,
   body('title').isString().isLength({ min: 3 }),
   body('price').isFloat({ gt: 0 }),
   body('categoryId').isString(),
