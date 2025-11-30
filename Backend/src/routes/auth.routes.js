@@ -93,6 +93,9 @@ router.post('/login', loginLimiter,
   AuthCtrl.login
 );
 
+// Get current authenticated user (cookie-based)
+router.get('/me', AuthCtrl.getMe);
+
 // Password reset routes
 router.post('/forgot-password', loginLimiter,
   [
