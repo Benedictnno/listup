@@ -1,9 +1,8 @@
-// middleware/security.ts
-import ipRangeCheck from "ip-range-check";
+// middleware/security.js
+const ipRangeCheck = require("ip-range-check")
 
 /**
- * Cloudflare official IP ranges (IPv4)
- * Source: https://api.cloudflare.com/client/v4/ips
+ * Cloudflare edge IP ranges (from: https://api.cloudflare.com/client/v4/ips)
  */
 const CLOUDFLARE_IP_RANGES = [
   "173.245.48.0/20",
@@ -22,28 +21,47 @@ const CLOUDFLARE_IP_RANGES = [
 ];
 
 /**
- * Global middleware:
- * Allows ONLY traffic routed through Cloudflare.
- * Blocks ALL direct traffic to your Render origin URL.
+ * Extract Cloudflare-reported client IP.
  */
-export function cloudflareSecurity(
-  req,
-  res,
-  next
-) {
-  const clientIp = extractClientIp(req);
+function extractClientIp(req) {
+  return req.headers["cf-connecting-ip"] || null;
+}
 
-  const isFromCloudflare = CLOUDFLARE_IP_RANGES.some((range) =>
-    ipRangeCheck(clientIp, range)
-  );
+/**
+ * Allow only Cloudflare-originated traffic.
+ */
+export function cloudflareSecurity(req, res, next) {
+  try {
+    const clientIp = extractClientIp(req);
 
-  if (!isFromCloudflare) {
-    return res.status(403).json({
-      status: "forbidden",
-      message:
-        "Origin access blocked. Only Cloudflare edge traffic is permitted.",
+    // No Cloudflare header = someone hit Render directly
+    if (!clientIp) {
+      return res.status(403).json({
+        status: "forbidden",
+        message: "Request rejected: must pass through Cloudflare.",
+      });
+    }
+
+    // Validate the ORIGIN IP (Cloudflare edge → your backend)
+    const edgeIp = req.ip;
+
+    const isCloudflare = CLOUDFLARE_IP_RANGES.some((range) =>
+      ipRangeCheck(edgeIp, range)
+    );
+
+    if (!isCloudflare) {
+      return res.status(403).json({
+        status: "forbidden",
+        message: "Request blocked: origin is not Cloudflare.",
+      });
+    }
+
+    // Passed all checks
+    return next();
+  } catch (err) {
+    console.error("Cloudflare security error:", err);
+    return res.status(500).json({
+      message: err.message || "Internal security error",
     });
   }
-
-  next();
 }
