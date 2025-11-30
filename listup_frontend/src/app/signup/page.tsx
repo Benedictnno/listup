@@ -2,7 +2,7 @@
 
 export const dynamic = 'force-dynamic';
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSignupStore } from "@/store/signupStore";
 import { useAuthStore } from "@/store/authStore";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -43,7 +43,7 @@ type payloadType = {
   businessCategory?: string;
 }
 
-export default function SignupPage() {
+function SignupContent() {
   const { form, setField, reset } = useSignupStore();
   const signup = useAuthStore((state) => state.signup);
   const router = useRouter();
@@ -711,5 +711,13 @@ export default function SignupPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <SignupContent />
+    </Suspense>
   );
 }
