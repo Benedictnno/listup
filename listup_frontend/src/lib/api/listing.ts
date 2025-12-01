@@ -25,6 +25,41 @@ interface UpdateListingPayload {
   condition?: string;
   status?: string;
 }
+export async function fetchListings() {
+  try {
+    const response = await fetch(`${API_BASE_URL}/listings`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include', // Important: sends cookies with request
+      cache: 'no-store'
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    
+    if (!data) {
+      throw new Error('No data received from API');
+    }
+    
+    return data;
+  } catch (error: unknown) {
+    console.error("Error fetching listings:", error);
+    
+    if (error instanceof Error) {
+      if (error.message.includes('fetch') || error.message.includes('ECONNREFUSED')) {
+        throw new Error("Backend server is not running. Please start the backend server.");
+      }
+      throw new Error(error.message || "Failed to fetch listings");
+    }
+    
+    throw new Error("Failed to fetch listings");
+  }
+}
 
 // ✅ Fetch all listings
 // Add this to your listing.ts file if missing
