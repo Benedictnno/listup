@@ -1,6 +1,6 @@
 // Server-side API functions for Next.js App Router
 // Use environment variable with proper fallback for production
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://listup-api.onrender.com/api"
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://api.listup.ng/api"
 // Define proper types for the API
 interface CreateListingPayload {
   title: string;
@@ -68,8 +68,10 @@ export async function fetchListings() {
 // ✅ Fetch a single listing by ID (Server-side)
 export async function fetchListingById(listingId: string) {
   try {
+    const apiUrl = `${API_BASE_URL}/listings/${listingId}`;
+    console.log('Fetching listing from:', apiUrl);
     
-    const response = await fetch(`${API_BASE_URL}/listings/${listingId}`, {
+    const response = await fetch(apiUrl, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -78,9 +80,16 @@ export async function fetchListingById(listingId: string) {
       next: { revalidate: 60 } // Revalidate every 60 seconds
     });
 
+    console.log('Response status:', response.status);
+    console.log('Response ok:', response.ok);
+
     if (!response.ok) {
       if (response.status === 404) {
         throw new Error("Listing not found");
+      }
+      
+      if (response.status === 403) {
+        throw new Error("Access forbidden - API may be down or inaccessible");
       }
       
       // Try to get error message from response
@@ -97,6 +106,7 @@ export async function fetchListingById(listingId: string) {
     }
 
     const data = await response.json();
+    console.log('Listing data received:', !!data);
 
     return data;
   } catch (error: unknown) {
@@ -104,8 +114,8 @@ export async function fetchListingById(listingId: string) {
     
     // Handle network errors (backend not running)
     if (error instanceof Error) {
-      if (error.message.includes('fetch') || error.message.includes('ECONNREFUSED')) {
-        throw new Error("Backend server is not running. Please start the backend server.");
+      if (error.message.includes('fetch') || error.message.includes('ECONNREFUSED') || error.message.includes('ENOTFOUND')) {
+        throw new Error("Backend server is not running or not accessible. Please check the API status.");
       }
       if (error.message === "Listing not found") {
         throw new Error("Listing not found");
