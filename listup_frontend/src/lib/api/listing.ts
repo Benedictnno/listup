@@ -1,5 +1,5 @@
-// Server-side API functions for Next.js App Router
-import { cookies } from 'next/headers';
+// API functions for Next.js App Router with cookie-based auth
+// Works for both client and server components
 
 // Use environment variable with proper fallback for production
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://api.listup.ng/api"
@@ -26,33 +26,14 @@ interface UpdateListingPayload {
   status?: string;
 }
 
-// Helper function to get auth headers (server-side)
-async function getAuthHeaders() {
-  const cookieStore = await cookies();
-  const token = cookieStore.get('token')?.value;
-  
-  return {
-    'Content-Type': 'application/json',
-    ...(token && { 'Authorization': `Bearer ${token}` }),
-  };
-}
-
-// Helper function to get auth headers (client-side)
-function getClientAuthHeaders() {
-  return {
-    'Content-Type': 'application/json',
-    // Cookies are automatically sent with fetch requests in the browser
-  };
-}
-
-// ✅ Fetch all listings (can be used both server and client-side)
-export async function fetchListings(isServer = false) {
+// ✅ Fetch all listings
+export async function fetchListings() {
   try {
-    const headers = isServer ? await getAuthHeaders() : getClientAuthHeaders();
-    
     const response = await fetch(`${API_BASE_URL}/listings`, {
       method: 'GET',
-      headers,
+      headers: {
+        'Content-Type': 'application/json',
+      },
       credentials: 'include', // Important: sends cookies with request
       cache: 'no-store'
     });
@@ -82,18 +63,18 @@ export async function fetchListings(isServer = false) {
   }
 }
 
-// ✅ Fetch a single listing by ID (Server-side optimized)
-export async function fetchListingById(listingId: string, isServer = true) {
+// ✅ Fetch a single listing by ID
+export async function fetchListingById(listingId: string) {
   try {
     const apiUrl = `${API_BASE_URL}/listings/${listingId}`;
     console.log('Fetching listing from:', apiUrl);
     
-    const headers = isServer ? await getAuthHeaders() : getClientAuthHeaders();
-    
     const response = await fetch(apiUrl, {
       method: 'GET',
-      headers,
-      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include', // Send cookies
       cache: 'no-store'
     });
 
@@ -149,7 +130,7 @@ export async function fetchListingsWithFilters(params: {
   maxPrice?: number | null;
   page?: number;
   limit?: number;
-}, isServer = false) {
+}) {
   try {
     const query = new URLSearchParams();
     if (params.categoryId) query.set('categoryId', params.categoryId);
@@ -160,11 +141,12 @@ export async function fetchListingsWithFilters(params: {
     if (params.limit) query.set('limit', String(params.limit));
 
     const url = `${API_BASE_URL}/listings${query.toString() ? `?${query.toString()}` : ''}`;
-    const headers = isServer ? await getAuthHeaders() : getClientAuthHeaders();
     
     const res = await fetch(url, {
       method: 'GET',
-      headers,
+      headers: {
+        'Content-Type': 'application/json',
+      },
       credentials: 'include',
     });
     
@@ -178,12 +160,12 @@ export async function fetchListingsWithFilters(params: {
 }
 
 // ✅ Fetch all listings for a vendor
-export async function fetchVendorListings(vendorId: string | undefined, isServer = false) {
+export async function fetchVendorListings(vendorId: string | undefined) {
   try {
-    const headers = isServer ? await getAuthHeaders() : getClientAuthHeaders();
-    
     const res = await fetch(`${API_BASE_URL}/listings/vendors/${vendorId}/listings`, {
-      headers,
+      headers: {
+        'Content-Type': 'application/json',
+      },
       credentials: 'include',
     });
     
@@ -197,7 +179,7 @@ export async function fetchVendorListings(vendorId: string | undefined, isServer
   }
 }
 
-// ✅ Create a new listing (Client-side only - uses FormData)
+// ✅ Create a new listing
 export async function createListing(listingData: FormData | CreateListingPayload) {
   try {
     if (listingData instanceof FormData) {
@@ -268,7 +250,7 @@ export async function createListing(listingData: FormData | CreateListingPayload
   }
 }
 
-// ✅ Update an existing listing (Client-side)
+// ✅ Update an existing listing
 export async function updateListing(listingId: string, listingData: UpdateListingPayload) {
   try {
     const res = await fetch(`${API_BASE_URL}/listings/${listingId}`, {
@@ -291,11 +273,14 @@ export async function updateListing(listingId: string, listingData: UpdateListin
   }
 }
 
-// ✅ Delete a listing (Client-side)
+// ✅ Delete a listing
 export async function deleteListing(listingId: string) {
   try {
     const res = await fetch(`${API_BASE_URL}/listings/${listingId}`, {
       method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
       credentials: 'include',
     });
     
