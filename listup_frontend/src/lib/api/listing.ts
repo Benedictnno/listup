@@ -53,64 +53,6 @@ export async function fetchListingById(id: string) {
     throw error;
   }
     }
-// ✅ Fetch a single listing by ID
-export async function fetchListingById(listingId: string) {
-  try {
-    const apiUrl = `${API_BASE_URL}/listings/${listingId}`;
-    console.log('Fetching listing from:', apiUrl);
-    
-    const response = await fetch(apiUrl, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include', // Send cookies
-      cache: 'no-store'
-    });
-
-    console.log('Response status:', response.status);
-    console.log('Response ok:', response.ok);
-
-    if (!response.ok) {
-      if (response.status === 404) {
-        throw new Error("Listing not found");
-      }
-      
-      if (response.status === 403) {
-        throw new Error("Access forbidden - API may be down or inaccessible");
-      }
-      
-      let errorMessage = `HTTP error! status: ${response.status}`;
-      try {
-        const errorData = await response.json();
-        errorMessage = errorData.message || errorMessage;
-      } catch {
-        errorMessage = response.statusText || errorMessage;
-      }
-      
-      throw new Error(errorMessage);
-    }
-
-    const data = await response.json();
-    console.log('Listing data received:', !!data);
-
-    return data;
-  } catch (error: unknown) {
-    console.error("Error fetching listing:", error);
-    
-    if (error instanceof Error) {
-      if (error.message.includes('fetch') || error.message.includes('ECONNREFUSED') || error.message.includes('ENOTFOUND')) {
-        throw new Error("Backend server is not running or not accessible. Please check the API status.");
-      }
-      if (error.message === "Listing not found") {
-        throw new Error("Listing not found");
-      }
-      throw new Error(error.message || "Failed to fetch listing");
-    }
-    
-    throw new Error("Failed to fetch listing");
-  }
-}
 
 // Fetch listings with optional query parameters
 export async function fetchListingsWithFilters(params: {
