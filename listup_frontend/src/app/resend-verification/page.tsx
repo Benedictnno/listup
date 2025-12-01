@@ -16,7 +16,7 @@ export default function ResendVerificationPage() {
 
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'}/auth/resend-verification`,
+        `${process.env.NEXT_PUBLIC_API_URL || 'https://listup-api.onrender.com/api'}/auth/resend-verification`,
         {
           method: 'POST',
           headers: {

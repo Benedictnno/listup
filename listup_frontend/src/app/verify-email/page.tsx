@@ -24,7 +24,7 @@ function VerifyEmailContent() {
     const verifyEmail = async () => {
       try {
         const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'}/auth/verify-email?token=${token}`
+          `${process.env.NEXT_PUBLIC_API_URL || 'https://listup-api.onrender.com/api'}/auth/verify-email?token=${token}`
         );
 
         const data = await response.json();
