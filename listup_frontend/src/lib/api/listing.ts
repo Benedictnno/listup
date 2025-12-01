@@ -27,42 +27,32 @@ interface UpdateListingPayload {
 }
 
 // ✅ Fetch all listings
-export async function fetchListings() {
+// Add this to your listing.ts file if missing
+export async function fetchListingById(id: string) {
   try {
-    const response = await fetch(`${API_BASE_URL}/listings`, {
+    const response = await fetch(`${API_BASE_URL}/listings/${id}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
       },
-      credentials: 'include', // Important: sends cookies with request
-      cache: 'no-store'
+      cache: 'no-store', // Disable caching for dynamic data
     });
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      if (response.status === 404) {
+        throw new Error('Listing not found');
+      }
+      throw new Error(`Failed to fetch listing: ${response.statusText}`);
     }
 
     const data = await response.json();
-    
-    if (!data) {
-      throw new Error('No data received from API');
-    }
-    
+    console.log("Listing data received:", data); // Debug log
     return data;
-  } catch (error: unknown) {
-    console.error("Error fetching listings:", error);
-    
-    if (error instanceof Error) {
-      if (error.message.includes('fetch') || error.message.includes('ECONNREFUSED')) {
-        throw new Error("Backend server is not running. Please start the backend server.");
-      }
-      throw new Error(error.message || "Failed to fetch listings");
-    }
-    
-    throw new Error("Failed to fetch listings");
+  } catch (error) {
+    console.error("Error fetching listing:", error);
+    throw error;
   }
-}
-
+    }
 // ✅ Fetch a single listing by ID
 export async function fetchListingById(listingId: string) {
   try {
