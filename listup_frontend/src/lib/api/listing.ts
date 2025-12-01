@@ -1,6 +1,9 @@
 // Server-side API functions for Next.js App Router
+import { cookies } from 'next/headers';
+
 // Use environment variable with proper fallback for production
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://api.listup.ng/api"
+
 // Define proper types for the API
 interface CreateListingPayload {
   title: string;
@@ -23,19 +26,35 @@ interface UpdateListingPayload {
   status?: string;
 }
 
-// ✅ Fetch all listings (Client-side)
-export async function fetchListings() {
+// Helper function to get auth headers (server-side)
+async function getAuthHeaders() {
+  const cookieStore = await cookies();
+  const token = cookieStore.get('token')?.value;
+  
+  return {
+    'Content-Type': 'application/json',
+    ...(token && { 'Authorization': `Bearer ${token}` }),
+  };
+}
+
+// Helper function to get auth headers (client-side)
+function getClientAuthHeaders() {
+  return {
+    'Content-Type': 'application/json',
+    // Cookies are automatically sent with fetch requests in the browser
+  };
+}
+
+// ✅ Fetch all listings (can be used both server and client-side)
+export async function fetchListings(isServer = false) {
   try {
-    // Use the API_BASE_URL constant that handles both client and server environments
+    const headers = isServer ? await getAuthHeaders() : getClientAuthHeaders();
     
-    // Remove next.revalidate as it's not supported in client components
     const response = await fetch(`${API_BASE_URL}/listings`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('token')}`,
-      },
-      cache: 'no-store' // Don't cache in production
+      headers,
+      credentials: 'include', // Important: sends cookies with request
+      cache: 'no-store'
     });
 
     if (!response.ok) {
@@ -44,7 +63,6 @@ export async function fetchListings() {
 
     const data = await response.json();
     
-    // Handle different API response formats
     if (!data) {
       throw new Error('No data received from API');
     }
@@ -53,7 +71,6 @@ export async function fetchListings() {
   } catch (error: unknown) {
     console.error("Error fetching listings:", error);
     
-    // Handle network errors (backend not running)
     if (error instanceof Error) {
       if (error.message.includes('fetch') || error.message.includes('ECONNREFUSED')) {
         throw new Error("Backend server is not running. Please start the backend server.");
@@ -65,18 +82,18 @@ export async function fetchListings() {
   }
 }
 
-// ✅ Fetch a single listing by ID (Server-side)
-export async function fetchListingById(listingId: string) {
+// ✅ Fetch a single listing by ID (Server-side optimized)
+export async function fetchListingById(listingId: string, isServer = true) {
   try {
     const apiUrl = `${API_BASE_URL}/listings/${listingId}`;
     console.log('Fetching listing from:', apiUrl);
     
+    const headers = isServer ? await getAuthHeaders() : getClientAuthHeaders();
+    
     const response = await fetch(apiUrl, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      // Remove caching for debugging
+      headers,
+      credentials: 'include',
       cache: 'no-store'
     });
 
@@ -92,13 +109,11 @@ export async function fetchListingById(listingId: string) {
         throw new Error("Access forbidden - API may be down or inaccessible");
       }
       
-      // Try to get error message from response
       let errorMessage = `HTTP error! status: ${response.status}`;
       try {
         const errorData = await response.json();
         errorMessage = errorData.message || errorMessage;
       } catch {
-        // If we can't parse JSON, use the status text
         errorMessage = response.statusText || errorMessage;
       }
       
@@ -112,7 +127,6 @@ export async function fetchListingById(listingId: string) {
   } catch (error: unknown) {
     console.error("Error fetching listing:", error);
     
-    // Handle network errors (backend not running)
     if (error instanceof Error) {
       if (error.message.includes('fetch') || error.message.includes('ECONNREFUSED') || error.message.includes('ENOTFOUND')) {
         throw new Error("Backend server is not running or not accessible. Please check the API status.");
@@ -127,7 +141,7 @@ export async function fetchListingById(listingId: string) {
   }
 }
 
-// Fetch listings with optional query parameters (categoryId, q, minPrice, maxPrice, page, limit)
+// Fetch listings with optional query parameters
 export async function fetchListingsWithFilters(params: {
   categoryId?: string;
   q?: string;
@@ -135,7 +149,7 @@ export async function fetchListingsWithFilters(params: {
   maxPrice?: number | null;
   page?: number;
   limit?: number;
-}) {
+}, isServer = false) {
   try {
     const query = new URLSearchParams();
     if (params.categoryId) query.set('categoryId', params.categoryId);
@@ -146,13 +160,16 @@ export async function fetchListingsWithFilters(params: {
     if (params.limit) query.set('limit', String(params.limit));
 
     const url = `${API_BASE_URL}/listings${query.toString() ? `?${query.toString()}` : ''}`;
+    const headers = isServer ? await getAuthHeaders() : getClientAuthHeaders();
+    
     const res = await fetch(url, {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
+      credentials: 'include',
     });
+    
     if (!res.ok) throw new Error('Failed to fetch listings');
     const data = await res.json();
-    // backend returns { items, total, page, pages }
     return data;
   } catch (error) {
     console.error('Error fetching filtered listings:', error);
@@ -160,14 +177,16 @@ export async function fetchListingsWithFilters(params: {
   }
 }
 
-// ✅ Fetch all listings for a vendor (Client-side)
-export async function fetchVendorListings(vendorId: string | undefined) {
+// ✅ Fetch all listings for a vendor
+export async function fetchVendorListings(vendorId: string | undefined, isServer = false) {
   try {
-    const res = await fetch(`${API_BASE_URL}/listings/vendors/${vendorId}/listings`,{
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`,
-      },
+    const headers = isServer ? await getAuthHeaders() : getClientAuthHeaders();
+    
+    const res = await fetch(`${API_BASE_URL}/listings/vendors/${vendorId}/listings`, {
+      headers,
+      credentials: 'include',
     });
+    
     if (!res.ok) {
       throw new Error("Failed to fetch listings");
     }
@@ -178,26 +197,21 @@ export async function fetchVendorListings(vendorId: string | undefined) {
   }
 }
 
-// ✅ Create a new listing (Client-side)
+// ✅ Create a new listing (Client-side only - uses FormData)
 export async function createListing(listingData: FormData | CreateListingPayload) {
   try {
-    // If FormData is passed, use the existing logic
     if (listingData instanceof FormData) {
-      // normalize FileList → Array<File>
       const imagesArray = listingData.getAll("images") as File[];
 
-      // upload each image
       const uploadedImages: string[] = [];
       for (const img of imagesArray) {
         const formData = new FormData();
-        formData.append("image", img as File); // ✅ explicitly tell TS it's a File
+        formData.append("image", img as File);
 
         const res = await fetch(`${API_BASE_URL}/uploads/image`, {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          },
           method: 'POST',
           body: formData,
+          credentials: 'include', // Cookies sent automatically
         });
 
         if (!res.ok) {
@@ -208,13 +222,12 @@ export async function createListing(listingData: FormData | CreateListingPayload
         uploadedImages.push(imageData.url);
       }
 
-      // build final payload
       const newListingData: CreateListingPayload = {
         title: listingData.get("title") as string,
         price: Number(listingData.get("price")),
         categoryId: listingData.get("categoryId") as string,
         description: listingData.get("description") as string,
-        images: uploadedImages, // array of uploaded URLs
+        images: uploadedImages,
         location: listingData.get("location") as string || "eksu",
         condition: listingData.get("condition") as string || "brand new",
       };
@@ -223,9 +236,9 @@ export async function createListing(listingData: FormData | CreateListingPayload
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
         },
         body: JSON.stringify(newListingData),
+        credentials: 'include',
       });
 
       if (!listingRes.ok) {
@@ -234,14 +247,13 @@ export async function createListing(listingData: FormData | CreateListingPayload
 
       return listingRes.json();
     } else {
-      // If plain object is passed, send directly to listings endpoint
       const listingRes = await fetch(`${API_BASE_URL}/listings`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
         },
         body: JSON.stringify(listingData),
+        credentials: 'include',
       });
 
       if (!listingRes.ok) {
@@ -263,9 +275,9 @@ export async function updateListing(listingId: string, listingData: UpdateListin
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('token')}`,
       },
       body: JSON.stringify(listingData),
+      credentials: 'include',
     });
     
     if (!res.ok) {
@@ -284,9 +296,7 @@ export async function deleteListing(listingId: string) {
   try {
     const res = await fetch(`${API_BASE_URL}/listings/${listingId}`, {
       method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`,
-      },
+      credentials: 'include',
     });
     
     if (!res.ok) {
