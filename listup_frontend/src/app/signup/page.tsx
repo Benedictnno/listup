@@ -447,27 +447,7 @@ function SignupContent() {
               <p className="mt-1 text-xs text-slate-500">Optional - for account recovery and notifications</p>
             </div>
 
-            {/* Referral Code (optional) */}
-            <div>
-              <label className="block text-sm font-medium mb-1 text-slate-700 flex items-center gap-2">
-                Referral Code
-                {hasReferralDiscount && form.role === "VENDOR" && (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-700">
-                    Save ₦2,000 on vendor signup
-                  </span>
-                )}
-              </label>
-              <input
-                type="text"
-                value={(form as any).referralCode || ""}
-                onChange={(e) => handleFieldChange("referralCode", e.target.value.toUpperCase())}
-                placeholder="Optional - e.g. BOB-A3F2E1"
-                className="w-full p-3 rounded-xl transition-colors border border-slate-300 focus:outline-none focus:ring-2 focus:ring-lime-200 text-sm tracking-wide"
-              />
-              <p className="mt-1 text-xs text-slate-500">
-                If you followed a friend&apos;s referral link, this should be filled automatically.
-              </p>
-            </div>
+          
 
             {/* Password */}
             <div>
@@ -564,6 +544,27 @@ function SignupContent() {
               <p className="text-sm text-lime-600 mt-1">Complete your store information to start selling</p>
             </div>
 
+  {/* Referral Code (optional) */}
+            <div>
+              <label className="block text-sm font-medium mb-1 text-slate-700 flex items-center gap-2">
+                Referral Code
+                {hasReferralDiscount && form.role === "VENDOR" && (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-700">
+                    Save ₦2,000 on vendor signup
+                  </span>
+                )}
+              </label>
+              <input
+                type="text"
+                value={(form as any).referralCode || ""}
+                onChange={(e) => handleFieldChange("referralCode", e.target.value.toUpperCase())}
+                placeholder="Optional - e.g. BOB-A3F2E1"
+                className="w-full p-3 rounded-xl transition-colors border border-slate-300 focus:outline-none focus:ring-2 focus:ring-lime-200 text-sm tracking-wide"
+              />
+              <p className="mt-1 text-xs text-slate-500">
+                If you followed a friend&apos;s referral link, this should be filled automatically.
+              </p>
+            </div>
             {/* Store Name */}
             <div>
               <label className="block text-sm font-medium mb-1 text-slate-700">Store Name *</label>
