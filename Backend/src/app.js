@@ -51,7 +51,6 @@ app.use(cors(corsOptions));
 app.use(cookieParser());
 
 // Trust proxy configuration for Render and common reverse proxies
-app.set("trust proxy", 1); // Trust first hop proxy (Render)
 
 // Add CORS debugging middleware
 app.use((req, res, next) => {
@@ -59,13 +58,13 @@ app.use((req, res, next) => {
   next();
 });
 
-/*if(process.env.NODE_ENV === 'production') {
+if(process.env.NODE_ENV === 'production') {
 // Cloudflare requires this to forward real IP addresses
 app.set("trust proxy", true);
 
 // Activate global backend protection
 app.use(cloudflareSecurity);
-}*/
+}
 // Handle CORS preflight requests
 app.options('*', cors(corsOptions));
 
