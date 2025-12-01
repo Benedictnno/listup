@@ -11,24 +11,31 @@ export default async function SingleProductPage({
   // Await the params for Next.js 15 compatibility
   const { id } = await params;
   
+  console.log('SingleProductPage - ID:', id);
+  console.log('API_BASE_URL:', process.env.NEXT_PUBLIC_API_URL);
+  
   if (!id) {
+    console.log('No ID provided, calling notFound');
     notFound();
   }
 
   try {
+    console.log('Attempting to fetch listing with ID:', id);
     const listing = await fetchListingById(id);
     
     if (!listing) {
+      console.log('No listing returned, calling notFound');
       notFound();
     }
 
-   
+    console.log('Listing fetched successfully:', listing.title);
     return <ListingDetails listing={listing} />;
   } catch (error: unknown) {
     console.error("Error in SingleProductPage:", error);
     
     // If it's a "not found" error, show 404 page
     if (error instanceof Error && error.message === "Listing not found") {
+      console.log('Listing not found error, calling notFound');
       notFound();
     }
     
@@ -44,6 +51,7 @@ export default async function SingleProductPage({
       errorType = 'maintenance';
     }
     
+    console.log('Showing error page with type:', errorType, 'message:', errorMessage);
     return (
       <ErrorPage 
         errorType={errorType}
