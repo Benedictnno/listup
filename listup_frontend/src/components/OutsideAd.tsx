@@ -57,7 +57,7 @@ export default function FloatingAd() {
       setLoading(true);
       // Fetch a single random advertisement to avoid excessive API calls
       const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'}/advertisements/random`
+        `${process.env.NEXT_PUBLIC_API_URL || 'https://listup-api.onrender.com/api'}/advertisements/random`
       );
 
       if (response.data?.success && response.data.data?.advertisement) {
@@ -85,7 +85,7 @@ export default function FloatingAd() {
   const trackImpression = async (adId: string) => {
     try {
       await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'}/advertisements/${adId}/impression`
+        `${process.env.NEXT_PUBLIC_API_URL || 'https://listup-api.onrender.com/api'}/advertisements/${adId}/impression`
       );
     } catch (error) {
       console.error('Error tracking impression:', error);
@@ -99,7 +99,7 @@ export default function FloatingAd() {
     try {
       // Track click
       await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'}/advertisements/${currentAd.id}/click`
+        `${process.env.NEXT_PUBLIC_API_URL || 'https://listup-api.onrender.com/api'}/advertisements/${currentAd.id}/click`
       );
 
       // Redirect to target URL if available

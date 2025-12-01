@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://listup-api.onrender.com/api";
 
 export async function getFavourites() {
   const res = await fetch(`${API_BASE_URL}/favourites`, {

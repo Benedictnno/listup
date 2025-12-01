@@ -64,7 +64,10 @@ export const useAuthStore = create<AuthState>((set) => ({
         set({ user, isInitialized: true });
       })
       .catch((error) => {
-        console.error("Error initializing auth:", error);
+        // Don't log 401 errors as they're expected for non-logged-in users
+        if (error.response?.status !== 401) {
+          console.error("Error initializing auth:", error);
+        }
         // On 401 or any error, treat as logged out but mark initialized
         set({ user: null, isInitialized: true });
       });
