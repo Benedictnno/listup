@@ -4,6 +4,7 @@ const axios = require("axios");
 const prisma = require("../lib/prisma");
 const { auth, allow } = require("../middleware/auth");
 const KYCCtrl = require("../controllers/kyc.controller");
+const crypto = require("crypto");
 
 const router = express.Router();
 
@@ -194,7 +195,17 @@ router.get("/ad/:adId/status", auth, async (req, res) => {
 
 // Webhook for payment provider
 router.post("/webhook", express.json(), async (req, res) => {
-  console.log("=== WEBHOOK RECEIVED ===");
+  const hash = crypto
+    .createHmac("sha512", process.env.PAYSTACK_SECRET_KEY)
+    .update(JSON.stringify(req.body))
+    .digest("hex");
+
+  if (hash !== req.headers["x-paystack-signature"]) {
+    console.error("⚠️ Invalid Paystack signature - possible fraud attempt");
+    return res.sendStatus(401);
+  }
+
+  console.log("=== WEBHOOK RECEIVED (VERIFIED) ===");
   console.log("Event:", req.body.event);
   console.log("Data:", JSON.stringify(req.body.data, null, 2));
 

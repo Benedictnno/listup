@@ -384,14 +384,48 @@ exports.checkListingLimit = async (req, res, next) => {
         listings: {
           select: { id: true },
         },
+        vendorKYC: {
+          select: {
+            validUntil: true,
+            paymentStatus: true,
+            status: true,
+          },
+        },
       },
     });
 
     if (!user) {
-      return res.status(404).json({ success: false, message: 'User not found' });
+      return res.status(404).json({ 
+        success: false, 
+        message: 'User not found' 
+      });
+    }
+    const kyc = user.vendorKYC;
+
+    if (kyc && user.isKYCVerified) {
+      const now = new Date();
+      const validUntil = kyc.validUntil ? new Date(kyc.validUntil) : null;
+
+      if (validUntil && validUntil < now) {
+        return res.status(403).json({
+          success: false,
+          message: 'Your KYC verification has expired. Please renew your subscription to continue creating listings.',
+          expired: true,
+          validUntil: kyc.validUntil,
+          redirectTo: '/kyc/payment',
+        });
+      }
+
+      const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+      if (validUntil && validUntil < thirtyDaysFromNow) {
+        res.setHeader('X-KYC-Warning', 'KYC expiring soon');
+        res.setHeader('X-KYC-Expires', kyc.validUntil);
+      }
+
+      return next();
     }
 
-    if (user.isKYCVerified || user.listingLimit === -1) {
+    if (user.listingLimit === -1) {
       return next();
     }
 
@@ -400,13 +434,20 @@ exports.checkListingLimit = async (req, res, next) => {
     if (currentCount >= user.listingLimit) {
       return res.status(403).json({
         success: false,
-        message: 'You have reached the maximum of 3 listings. Complete KYC to unlock unlimited listings.',
+        message: `You have reached the maximum of ${user.listingLimit} listings. Complete KYC verification to unlock unlimited listings.`,
+        currentCount,
+        limit: user.listingLimit,
+        redirectTo: '/kyc/submit',
+        kycStatus: kyc?.status || 'NOT_SUBMITTED',
       });
     }
 
     return next();
   } catch (error) {
     console.error('Error in checkListingLimit middleware:', error);
-    return res.status(500).json({ success: false, message: 'Failed to validate listing limit' });
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Failed to validate listing limit' 
+    });
   }
 };

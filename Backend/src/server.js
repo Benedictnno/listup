@@ -1,5 +1,6 @@
 require('dotenv').config();
 require("./jobs/ad-expiry.job");
+require('./jobs/kyc-expiry-reminder.job');
 
 // Initialize advertisement expiry cron job
 const { scheduleAdvertisementExpiry } = require('./jobs/advertisement-expiry.job');
