@@ -76,8 +76,8 @@ export async function fetchListingById(listingId: string) {
       headers: {
         'Content-Type': 'application/json',
       },
-      // Add cache options for better performance
-      next: { revalidate: 60 } // Revalidate every 60 seconds
+      // Remove caching for debugging
+      cache: 'no-store'
     });
 
     console.log('Response status:', response.status);
