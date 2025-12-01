@@ -1,4 +1,4 @@
-"use client"
+
 import ListingDetails from "@/components/ListingDetails";
 import { fetchListingById } from "@/lib/api/listing";
 import { notFound } from "next/navigation";
