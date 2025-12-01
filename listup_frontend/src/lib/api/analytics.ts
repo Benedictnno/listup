@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://listup-api.onrender.com/api";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://api.listup.ng/api";
 
 function getAuthHeaders(): Record<string, string>{
   if (typeof window === 'undefined') return {};
