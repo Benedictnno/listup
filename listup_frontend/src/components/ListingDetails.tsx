@@ -56,15 +56,27 @@ export default function ListingDetails({ listing }: { listing: Listing }) {
     // Track view
     try {
       const sessionKey = 'listup_session_id';
-      let sessionId = '';
-      if (typeof window !== 'undefined') {
-        sessionId = window.localStorage.getItem(sessionKey) || '';
-        if (!sessionId) {
-          sessionId = Math.random().toString(36).substring(2) + Date.now().toString(36);
-          window.localStorage.setItem(sessionKey, sessionId);
-        }
-      }
-      trackListingView(listing.id, sessionId);
+let sessionId = '';
+
+if (typeof window !== 'undefined') {
+  const cookieValue = document.cookie
+    .split("; ")
+    .find((row) => row.startsWith(`${sessionKey}=`));
+
+  sessionId = cookieValue ? cookieValue.split("=")[1] : "";
+
+  if (!sessionId) {
+    sessionId =
+      Math.random().toString(36).substring(2) +
+      Date.now().toString(36);
+
+    document.cookie = `${sessionKey}=${sessionId}; path=/; max-age=${
+      60 * 60 * 24 * 365
+    }; secure; samesite=strict`;
+  }
+}
+
+trackListingView(listing.id, sessionId);
     } catch (e) {
       console.error('Failed to track listing view', e);
     }
