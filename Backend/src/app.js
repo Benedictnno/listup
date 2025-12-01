@@ -55,13 +55,13 @@ app.use((req, res, next) => {
   const origin = req.headers.origin;
   next();
 });
-if(process.env.NODE_ENV === 'production') {
+/*if(process.env.NODE_ENV === 'production') {
 // Cloudflare requires this to forward real IP addresses
 app.set("trust proxy", true);
 
 // Activate global backend protection
 app.use(cloudflareSecurity);
-}
+}*/
 // Handle CORS preflight requests
 app.options('*', cors(corsOptions));
 

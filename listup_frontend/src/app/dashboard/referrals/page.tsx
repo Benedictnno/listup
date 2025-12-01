@@ -70,6 +70,11 @@ export default function ReferralDashboardPage() {
       router.push("/login");
       return;
     }
+
+    if (user.role !== "VENDOR") {
+      router.push("/dashboard");
+      return;
+    }
   }, [user, router]);
 
   useEffect(() => {

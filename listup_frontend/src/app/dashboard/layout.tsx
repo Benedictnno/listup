@@ -4,7 +4,7 @@ import { useState } from "react";
 import { FiMenu, FiSettings, FiLogOut, FiX } from "react-icons/fi";
 import { CiBoxList } from "react-icons/ci";
 import { AiOutlineRise } from "react-icons/ai";
-import { Crown, ShoppingBag } from "lucide-react";
+import { Crown, ShoppingBag, Gift } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { safeLocalStorage } from "@/utils/helpers";
@@ -25,6 +25,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { icon: <ShoppingBag size={20} />, label: "My Products", href: "/dashboard/vendor-listing", color: "bg-green-500" },
     { icon: <CiBoxList size={20} />, label: "Add Listing", href: "/dashboard/create-list", color: "bg-lime-500" },
     { icon: <AiOutlineRise size={20} />, label: "Create Ad", href: "/dashboard/promote", color: "bg-blue-500" },
+    { icon: <Gift size={20} />, label: "Earn Referrals", href: "/dashboard/referrals", color: "bg-purple-500" },
     { icon: <FiSettings size={20} />, label: "Settings", href: "/dashboard/settings", color: "bg-orange-500" },
   ];
 

@@ -156,6 +156,120 @@ exports.getReferralStats = async (req, res) => {
   }
 };
 
+// Get all commission payments (admin only)
+// Supports filtering by status: PENDING, SUCCESS, FAILED
+exports.getAllCommissions = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 20;
+    const skip = (page - 1) * limit;
+    const status = req.query.status;
+
+    const where = status ? { status } : {};
+
+    const [total, commissions] = await Promise.all([
+      prisma.commissionPayment.count({ where }),
+      prisma.commissionPayment.findMany({
+        where,
+        skip,
+        take: limit,
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              phone: true,
+              vendorProfile: {
+                select: {
+                  storeName: true,
+                },
+              },
+            },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+      }),
+    ]);
+
+    return res.json({
+      success: true,
+      data: {
+        total,
+        page,
+        limit,
+        commissions,
+      },
+    });
+  } catch (error) {
+    console.error('Error in getAllCommissions:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to fetch commissions',
+    });
+  }
+};
+
+// Mark a commission payment as paid (admin only)
+// Records payment method and reference for audit trail
+exports.markCommissionPaid = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { paymentMethod, paymentReference } = req.body;
+
+    const commission = await prisma.commissionPayment.findUnique({
+      where: { id },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
+    });
+
+    if (!commission) {
+      return res.status(404).json({
+        success: false,
+        message: 'Commission payment not found',
+      });
+    }
+
+    if (commission.status === 'SUCCESS') {
+      return res.status(400).json({
+        success: false,
+        message: 'Commission has already been paid',
+      });
+    }
+
+    const updated = await prisma.commissionPayment.update({
+      where: { id },
+      data: {
+        status: 'SUCCESS',
+        paymentMethod: paymentMethod || 'BANK_TRANSFER',
+        paymentReference: paymentReference || `MANUAL_${Date.now()}`,
+        paidAt: new Date(),
+      },
+    });
+
+    console.log(`✅ Commission paid to ${commission.user.name}: ₦${commission.amount}`);
+
+    return res.json({
+      success: true,
+      message: 'Commission marked as paid',
+      data: updated,
+    });
+  } catch (error) {
+    console.error('Error in markCommissionPaid:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to mark commission as paid',
+    });
+  }
+};
+
 exports.validateReferralCode = async (req, res) => {
   try {
     const { code } = req.params;
