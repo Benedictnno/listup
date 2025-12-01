@@ -72,8 +72,6 @@ export default function ListingDetails({ listing }: { listing: Listing }) {
     return () => { mounted = false; };
   }, [listing.id]);
 
-  "use client";
-
 
   const handleCopy = async (text:any) => {
     const success = await copyToClipboard(text);
