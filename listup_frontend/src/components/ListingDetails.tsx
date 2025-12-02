@@ -71,7 +71,7 @@ if (typeof window !== 'undefined') {
       Date.now().toString(36);
 
     document.cookie = `${sessionKey}=${sessionId}; path=/; max-age=${
-      60 * 60 * 24 * 365
+      60 * 60 * 24 * 7
     }; secure; samesite=strict`;
   }
 }

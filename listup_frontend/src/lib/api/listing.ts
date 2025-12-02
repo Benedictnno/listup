@@ -68,7 +68,11 @@ export async function fetchListingById(id: string) {
     const response = await fetch(`${API_BASE_URL}/listings/${id}`, {
       method: 'GET',
       headers: {
-        'Content-Type': 'application/json',
+        // 💡 CRITICAL FIX: Impersonate a browser to bypass anti-scraping checks
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        
+        // 'Content-Type' is not needed for a GET request, but won't hurt
+        'Content-Type': 'application/json', 
       },
       cache: 'no-store', // Disable caching for dynamic data
     });
@@ -77,7 +81,8 @@ export async function fetchListingById(id: string) {
       if (response.status === 404) {
         throw new Error('Listing not found');
       }
-      throw new Error(`Failed to fetch listing: ${response.statusText}`);
+      // This will now likely show the correct status text (e.g., "Forbidden")
+      throw new Error(`Failed to fetch listing: ${response.statusText}`); 
     }
 
     const data = await response.json();
@@ -87,8 +92,7 @@ export async function fetchListingById(id: string) {
     console.error("Error fetching listing:", error);
     throw error;
   }
-    }
-
+}
 // Fetch listings with optional query parameters
 export async function fetchListingsWithFilters(params: {
   categoryId?: string;
