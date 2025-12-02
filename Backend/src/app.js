@@ -31,6 +31,7 @@ const corsOptions = {
         'http://www.listup.ng',
         'https://www.listup.ng',
         'https://api.listup.ng',
+        'https://www.listup.ng',
         'listup-admin.vercel.app',
         'http://localhost:3000', // Local development
         'http://localhost:3001', // Local development
