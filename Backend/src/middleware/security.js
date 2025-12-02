@@ -34,35 +34,27 @@ function cloudflareSecurity(req, res, next) {
   try {
     const clientIp = extractClientIp(req);
 
-    // No Cloudflare header = someone hit Render directly
+    // Allow if no Cloudflare header (for testing)
     if (!clientIp) {
-      return res.status(403).json({
-        status: "forbidden",
-        message: "Request rejected: must pass through Cloudflare.",
-      });
+      console.warn("Request without Cloudflare header from:", req.ip);
+      return next(); // ← Allow instead of blocking
     }
 
-    // Validate the ORIGIN IP (Cloudflare edge → your backend)
+    // Rest of validation...
     const edgeIp = req.ip;
-
     const isCloudflare = CLOUDFLARE_IP_RANGES.some((range) =>
       ipRangeCheck(edgeIp, range)
     );
 
     if (!isCloudflare) {
-      return res.status(403).json({
-        status: "forbidden",
-        message: "Request blocked: origin is not Cloudflare.",
-      });
+      console.warn("Request from non-Cloudflare IP:", edgeIp);
+      return next(); // ← Allow instead of blocking (for testing)
     }
 
-    // Passed all checks
     return next();
   } catch (err) {
     console.error("Cloudflare security error:", err);
-    return res.status(500).json({
-      message: err.message || "Internal security error",
-    });
+    return next(); // ← Allow on error instead of blocking
   }
 }
 

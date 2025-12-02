@@ -117,7 +117,6 @@ exports.search = async (req, res, next) => {
 
 exports.getOne = async (req, res, next) => {
  
-  
   try {
     const item = await prisma.listing.findUnique({
       where: { id: req.params.id },
@@ -130,7 +129,7 @@ exports.getOne = async (req, res, next) => {
     });
     if (!item) return res.status(404).json({ message: 'Listing not found' });
     res.json(item);
-  } catch (e) { next(e); }
+  } catch (e) { next(e) }
 };
 
 exports.create = async (req, res, next) => {
