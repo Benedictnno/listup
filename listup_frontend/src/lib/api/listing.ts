@@ -2,8 +2,8 @@
 // Works for both client and server components
 
 // Use environment variable with proper fallback for production
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://api.listup.ng/api"
-
+const API_BASE_URL = "https://api.listup.ng/api"
+// process.env.NEXT_PUBLIC_API_URL ||
 // Define proper types for the API
 interface CreateListingPayload {
   title: string;
@@ -73,6 +73,7 @@ export async function fetchListingById(id: string) {
         
         // 'Content-Type' is not needed for a GET request, but won't hurt
         'Content-Type': 'application/json', 
+        'Referer': 'https://listup.ng/',
       },
       cache: 'no-store', // Disable caching for dynamic data
     });
