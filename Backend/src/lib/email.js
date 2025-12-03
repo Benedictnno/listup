@@ -369,7 +369,27 @@ async function sendKYCEmail(email, templateName, ...args) {
     }),
     kycApproved: (name, fee) => ({
       subject: 'KYC Approved - Payment Required',
-      html: `<div><h2>KYC Approved!</h2><p>Hi ${name}, complete payment of ₦${fee.toLocaleString()} to activate verification.</p></div>`
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #84cc16;">🎉 KYC Approved!</h2>
+          <p>Hi ${name},</p>
+          <p>Great news! Your KYC submission has been approved.</p>
+          <p>To complete your verification and unlock unlimited listings, please pay the one-time verification fee of <strong>₦${fee.toLocaleString()}</strong>.</p>
+
+          <p style="margin: 32px 0; text-align: center;">
+            <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/dashboard/kyc-payment" style="background-color: #84cc16; color: white; padding: 16px 32px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block; font-size: 16px;">Pay Now with Paystack</a>
+          </p>
+          
+          <div style="background-color: #f0f9ff; border-left: 4px solid #84cc16; padding: 16px; margin: 24px 0;">
+            <p style="margin: 0; font-size: 14px; color: #666;">
+              ✓ Secure payment via Paystack<br>
+              ✓ Instant verification upon payment<br>
+              ✓ Unlock unlimited product listings
+            </p>
+          </div>
+
+          <p style="font-size: 14px; color: #666; text-align: center;">Once payment is confirmed, you'll receive a verification complete email and gain full access to your vendor account.</p>
+        </div>`
     }),
     kycRejected: (name, reason) => ({
       subject: 'KYC Update - ListUp',
