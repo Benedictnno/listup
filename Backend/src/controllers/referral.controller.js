@@ -76,26 +76,13 @@ exports.getReferralStats = async (req, res) => {
   try {
     const userId = req.user.id;
 
+    // Fetch referral and referredVendors, but NOT the vendor relation directly
+    // to avoid "Field vendor is required to return data, got null instead" error
+    // if a referenced User has been deleted.
     const referral = await prisma.referral.findFirst({
       where: { userId },
       include: {
-        referredVendors: {
-          include: {
-            vendor: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-                phone: true,
-                vendorProfile: {
-                  select: {
-                    storeName: true,
-                  },
-                },
-              },
-            },
-          },
-        },
+        referredVendors: true,
       },
     });
 
@@ -116,19 +103,47 @@ exports.getReferralStats = async (req, res) => {
       });
     }
 
-    const referrals = referral.referredVendors.map(r => ({
-      id: r.id,
-      vendorId: r.vendorId,
-      vendorName: r.vendor?.name || null,
-      vendorEmail: r.vendor?.email || null,
-      vendorPhone: r.vendor?.phone || null,
-      storeName: r.vendor?.vendorProfile?.storeName || null,
-      status: r.status,
-      commission: r.commission,
-      commissionPaid: r.commissionPaid,
-      createdAt: r.createdAt,
-      updatedAt: r.updatedAt,
-    }));
+    // Manually fetch the vendor details
+    const vendorIds = referral.referredVendors.map(r => r.vendorId);
+    const vendors = await prisma.user.findMany({
+      where: {
+        id: { in: vendorIds }
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        vendorProfile: {
+          select: {
+            storeName: true,
+          },
+        },
+      },
+    });
+
+    // Create a map for quick lookup
+    const vendorMap = vendors.reduce((acc, v) => {
+      acc[v.id] = v;
+      return acc;
+    }, {});
+
+    const referrals = referral.referredVendors.map(r => {
+      const vendor = vendorMap[r.vendorId];
+      return {
+        id: r.id,
+        vendorId: r.vendorId,
+        vendorName: vendor?.name || 'Unknown Vendor',
+        vendorEmail: vendor?.email || null,
+        vendorPhone: vendor?.phone || null,
+        storeName: vendor?.vendorProfile?.storeName || null,
+        status: r.status,
+        commission: r.commission,
+        commissionPaid: r.commissionPaid,
+        createdAt: r.createdAt,
+        updatedAt: r.updatedAt,
+      };
+    });
 
     const pendingReferrals = referrals.filter(r => r.status === 'PENDING').length;
     const completedReferrals = referrals.filter(r => r.status === 'COMPLETED').length;
