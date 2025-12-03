@@ -62,7 +62,7 @@ function SignupContent() {
   const [hasReferralDiscount, setHasReferralDiscount] = useState<boolean>(false);
 
   // Addresses (admin-managed) for vendor signup
-  const [addresses, setAddresses] = useState<{ id: string; name: string ,active: boolean,createdAt: string,updatedAt: string}[]>(
+  const [addresses, setAddresses] = useState<{ id: string; name: string, active: boolean, createdAt: string, updatedAt: string }[]>(
     []
   );
   const [addressesLoading, setAddressesLoading] = useState<boolean>(false);
@@ -93,11 +93,11 @@ function SignupContent() {
         process.env.NEXT_PUBLIC_ADDRESS_API || "http://localhost:4001/api";
       const res = await axios.get(`${API_BASE_URL}/addresses`);
       const data = Array.isArray(res.data) ? res.data : [];
-      const active = data.filter((a: any) => a.isActive);
+      const active = data.filter((a: any) => a.active);
       const mapped = active.map((a: any) => ({
         id: a.id ?? a._id ?? a.addressId ?? String(a.name),
         name: a.name ?? a.address ?? a.label ?? String(a.id ?? a._id),
-        active: a.isActive,
+        active: a.active,
         createdAt: a.createdAt,
         updatedAt: a.updatedAt,
       }));
@@ -385,10 +385,10 @@ function SignupContent() {
                 placeholder="John Doe"
                 required
                 className={`w-full p-3 rounded-xl transition-colors border ${getFieldError("name")
-                    ? "border-red-300 bg-red-50"
-                    : isFieldValid("name")
-                      ? "border-green-300 bg-green-50"
-                      : "border-slate-300"
+                  ? "border-red-300 bg-red-50"
+                  : isFieldValid("name")
+                    ? "border-green-300 bg-green-50"
+                    : "border-slate-300"
                   } focus:outline-none focus:ring-2 focus:ring-lime-200`}
               />
               {getFieldError("name") && (
@@ -409,10 +409,10 @@ function SignupContent() {
                 placeholder="you@example.com"
                 required
                 className={`w-full p-3 rounded-xl transition-colors border ${getFieldError("email")
-                    ? "border-red-300 bg-red-50"
-                    : isFieldValid("email")
-                      ? "border-green-300 bg-green-50"
-                      : "border-slate-300"
+                  ? "border-red-300 bg-red-50"
+                  : isFieldValid("email")
+                    ? "border-green-300 bg-green-50"
+                    : "border-slate-300"
                   } focus:outline-none focus:ring-2 focus:ring-lime-200`}
               />
               {getFieldError("email") && (
@@ -432,10 +432,10 @@ function SignupContent() {
                 onChange={(e) => handleFieldChange("phone", e.target.value)}
                 placeholder="08012345678"
                 className={`w-full p-3 rounded-xl transition-colors border ${getFieldError("phone")
-                    ? "border-red-300 bg-red-50"
-                    : form.phone?.trim() && !getFieldError("phone")
-                      ? "border-green-300 bg-green-50"
-                      : "border-slate-300"
+                  ? "border-red-300 bg-red-50"
+                  : form.phone?.trim() && !getFieldError("phone")
+                    ? "border-green-300 bg-green-50"
+                    : "border-slate-300"
                   } focus:outline-none focus:ring-2 focus:ring-lime-200`}
               />
               {getFieldError("phone") && (
@@ -460,10 +460,10 @@ function SignupContent() {
                   placeholder="••••••••"
                   required
                   className={`w-full p-3 pr-12 rounded-xl transition-colors border ${getFieldError("password")
-                      ? "border-red-300 bg-red-50"
-                      : isFieldValid("password")
-                        ? "border-green-300 bg-green-50"
-                        : "border-slate-300"
+                    ? "border-red-300 bg-red-50"
+                    : isFieldValid("password")
+                      ? "border-green-300 bg-green-50"
+                      : "border-slate-300"
                     } focus:outline-none focus:ring-2 focus:ring-lime-200`}
                 />
                 <button
@@ -574,10 +574,10 @@ function SignupContent() {
                 placeholder="Bob's Fashion Hub"
                 required
                 className={`w-full p-3 rounded-xl transition-colors border ${getFieldError("storeName")
-                    ? "border-red-300 bg-red-50"
-                    : isFieldValid("storeName")
-                      ? "border-green-300 bg-green-50"
-                      : "border-slate-300"
+                  ? "border-red-300 bg-red-50"
+                  : isFieldValid("storeName")
+                    ? "border-green-300 bg-green-50"
+                    : "border-slate-300"
                   } focus:outline-none focus:ring-2 focus:ring-lime-200`}
               />
               {getFieldError("storeName") && (
@@ -605,10 +605,10 @@ function SignupContent() {
                   onChange={(e) => handleFieldChange("storeAddress", e.target.value)}
                   required
                   className={`w-full p-3 rounded-xl transition-colors border ${getFieldError("storeAddress")
-                      ? "border-red-300 bg-red-50"
-                      : isFieldValid("storeAddress")
-                        ? "border-green-300 bg-green-50"
-                        : "border-slate-300"
+                    ? "border-red-300 bg-red-50"
+                    : isFieldValid("storeAddress")
+                      ? "border-green-300 bg-green-50"
+                      : "border-slate-300"
                     } focus:outline-none focus:ring-2 focus:ring-lime-200`}
                 >
                   {addresses.map((a) => (
@@ -639,10 +639,10 @@ function SignupContent() {
                 placeholder="Food / Electronics / Fashion"
                 required
                 className={`w-full p-3 rounded-xl transition-colors border ${getFieldError("businessCategory")
-                    ? "border-red-300 bg-red-50"
-                    : isFieldValid("businessCategory")
-                      ? "border-green-300 bg-green-50"
-                      : "border-slate-300"
+                  ? "border-red-300 bg-red-50"
+                  : isFieldValid("businessCategory")
+                    ? "border-green-300 bg-green-50"
+                    : "border-slate-300"
                   } focus:outline-none focus:ring-2 focus:ring-lime-200`}
               />
               {getFieldError("businessCategory") && (
