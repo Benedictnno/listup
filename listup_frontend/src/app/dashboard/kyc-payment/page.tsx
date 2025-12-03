@@ -35,11 +35,8 @@ export default function KYCPaymentPage() {
     const fetchPaymentStatus = async () => {
         try {
             setLoading(true);
-            const token = localStorage.getItem("token");
             const res = await fetch(`${API_URL}/kyc-payment/status`, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
+                credentials: 'include',
             });
 
             if (!res.ok) throw new Error("Failed to fetch payment status");
@@ -59,11 +56,10 @@ export default function KYCPaymentPage() {
             setProcessing(true);
             setError("");
 
-            const token = localStorage.getItem("token");
             const res = await fetch(`${API_URL}/kyc-payment/initialize`, {
                 method: "POST",
+                credentials: 'include',
                 headers: {
-                    Authorization: `Bearer ${token}`,
                     "Content-Type": "application/json",
                 },
             });
@@ -108,11 +104,10 @@ export default function KYCPaymentPage() {
             setVerifying(true);
             setError("");
 
-            const token = localStorage.getItem("token");
             const res = await fetch(`${API_URL}/kyc-payment/verify`, {
                 method: "POST",
+                credentials: 'include',
                 headers: {
-                    Authorization: `Bearer ${token}`,
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify({ reference }),
