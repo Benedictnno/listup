@@ -62,7 +62,7 @@ function SignupContent() {
   const [hasReferralDiscount, setHasReferralDiscount] = useState<boolean>(false);
 
   // Addresses (admin-managed) for vendor signup
-  const [addresses, setAddresses] = useState<{ id: string; name: string }[]>(
+  const [addresses, setAddresses] = useState<{ id: string; name: string ,active: boolean,createdAt: string,updatedAt: string}[]>(
     []
   );
   const [addressesLoading, setAddressesLoading] = useState<boolean>(false);
@@ -97,6 +97,9 @@ function SignupContent() {
       const mapped = active.map((a: any) => ({
         id: a.id ?? a._id ?? a.addressId ?? String(a.name),
         name: a.name ?? a.address ?? a.label ?? String(a.id ?? a._id),
+        active: a.isActive,
+        createdAt: a.createdAt,
+        updatedAt: a.updatedAt,
       }));
       setAddresses(mapped);
 
