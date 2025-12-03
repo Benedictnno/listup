@@ -32,20 +32,13 @@ router.get('/admin/submissions', auth, async (req, res) => {
             ];
         }
 
+        // Fetch profiles without including user to avoid Prisma validation errors on null relations
         const [profiles, total] = await Promise.all([
             prisma.vendorProfile.findMany({
                 where,
                 skip,
                 take,
                 include: {
-                    user: {
-                        select: {
-                            id: true,
-                            name: true,
-                            email: true,
-                            phone: true
-                        }
-                    },
                     socialMedia: true
                 },
                 orderBy: { createdAt: 'desc' }
@@ -53,44 +46,73 @@ router.get('/admin/submissions', auth, async (req, res) => {
             prisma.vendorProfile.count({ where })
         ]);
 
-        // Map VendorProfile to KYCSubmission interface expected by frontend
-        const kycs = profiles.map(profile => {
-            // Determine payment status based on verification
-            let paymentStatus = 'PENDING';
-            if (profile.verificationStatus === 'APPROVED') {
-                paymentStatus = 'SUCCESS';
-            }
+        // Get all unique user IDs
+        const userIds = profiles.map(p => p.userId).filter(Boolean);
 
-            return {
-                id: profile.id,
-                vendorId: profile.userId,
-                status: profile.verificationStatus || 'PENDING',
-                paymentStatus: paymentStatus,
-                signupFee: 5000, // Hardcoded for now as per requirement
-                hasReferral: false, // Placeholder
-                tiktokHandle: null, // Placeholder as not in SocialMedia model yet
-                instagramHandle: profile.socialMedia?.instagram || null,
-                facebookPage: profile.socialMedia?.facebook || null,
-                twitterHandle: profile.socialMedia?.twitter || null,
-                otherSocial: profile.socialMedia?.linkedin || null,
-                createdAt: profile.createdAt,
-                updatedAt: profile.updatedAt,
-                interviewScheduled: null, // Not persisted in current schema
-                interviewCompleted: null, // Not persisted in current schema
-                interviewNotes: null,
-                rejectionReason: profile.rejectionReason,
-                vendor: {
-                    id: profile.user.id,
-                    name: profile.user.name,
-                    email: profile.user.email,
-                    phone: profile.user.phone,
-                    vendorProfile: {
-                        storeName: profile.storeName,
-                        storeAddress: profile.addressId ? 'Address linked' : null // Simplified
-                    }
-                }
-            };
+        // Fetch users and their KYC data separately
+        const users = await prisma.user.findMany({
+            where: {
+                id: { in: userIds }
+            },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                phone: true,
+                vendorKYC: true
+            }
         });
+
+        // Create a map for quick lookup
+        const userMap = new Map(users.map(u => [u.id, u]));
+
+        // Filter out orphaned profiles and map to KYCSubmission interface
+        const kycs = profiles
+            .filter(profile => userMap.has(profile.userId)) // Only include profiles with valid users
+            .map(profile => {
+                const user = userMap.get(profile.userId);
+
+                // Determine payment status based on verification
+                let paymentStatus = 'PENDING';
+                if (profile.verificationStatus === 'APPROVED') {
+                    paymentStatus = 'SUCCESS';
+                }
+
+                const kycData = user.vendorKYC;
+
+                return {
+                    id: profile.id,
+                    vendorId: profile.userId,
+                    status: profile.verificationStatus || 'PENDING',
+                    paymentStatus: paymentStatus,
+                    signupFee: 5000,
+                    hasReferral: kycData?.hasReferral || false,
+                    tiktokHandle: kycData?.tiktokHandle || null,
+                    instagramHandle: kycData?.instagramHandle || profile.socialMedia?.instagram || null,
+                    facebookPage: kycData?.facebookPage || profile.socialMedia?.facebook || null,
+                    twitterHandle: kycData?.twitterHandle || profile.socialMedia?.twitter || null,
+                    otherSocial: kycData?.otherSocial || profile.socialMedia?.linkedin || null,
+                    cacNumber: kycData?.cacNumber || null,
+                    documentUrl: kycData?.documentUrl || null,
+                    documentType: kycData?.documentType || null,
+                    createdAt: profile.createdAt,
+                    updatedAt: profile.updatedAt,
+                    interviewScheduled: kycData?.interviewScheduled || null,
+                    interviewCompleted: kycData?.interviewCompleted || null,
+                    interviewNotes: kycData?.interviewNotes || null,
+                    rejectionReason: profile.rejectionReason,
+                    vendor: {
+                        id: user.id,
+                        name: user.name,
+                        email: user.email,
+                        phone: user.phone,
+                        vendorProfile: {
+                            storeName: profile.storeName,
+                            storeAddress: profile.addressId ? 'Address linked' : null
+                        }
+                    }
+                };
+            });
 
         res.json({
             success: true,
@@ -135,9 +157,9 @@ router.patch('/admin/:id/status', auth, async (req, res) => {
         };
 
         if (status === 'APPROVED') {
-            updateData.isVerified = true;
-            updateData.verifiedAt = new Date();
-            updateData.verifiedBy = req.user.id;
+            // APPROVED means documents are okay, but payment is needed.
+            // Do NOT set isVerified = true yet.
+            updateData.isVerified = false;
             updateData.rejectionReason = null;
         } else if (status === 'REJECTED') {
             updateData.isVerified = false;
@@ -161,13 +183,12 @@ router.patch('/admin/:id/status', auth, async (req, res) => {
 
         if (vendorUser?.email) {
             if (status === 'APPROVED') {
-                await sendKYCEmail(vendorUser.email, 'verificationComplete', vendorUser.name);
+                // Send "Payment Required" email
+                await sendKYCEmail(vendorUser.email, 'kycApproved', vendorUser.name, 5000);
             } else if (status === 'REJECTED') {
                 await sendKYCEmail(vendorUser.email, 'kycRejected', vendorUser.name, rejectionReason || 'Please contact support');
             } else if (status === 'INTERVIEW_SCHEDULED' && interviewScheduled) {
                 await sendKYCEmail(vendorUser.email, 'interviewScheduled', vendorUser.name, interviewScheduled);
-            } else if (status === 'INTERVIEW_COMPLETED') {
-                await sendKYCEmail(vendorUser.email, 'kycApproved', vendorUser.name, 5000);
             }
         }
 
@@ -206,13 +227,31 @@ router.post('/admin/:id/payment', auth, async (req, res) => {
             });
         }
 
-        // Just return success for now, maybe update status if needed
-        // But usually payment is separate from verification status in the model
-        // Since we don't have a Payment model linked to KYC, we'll just return success
+        // Payment processed -> Verify the vendor
+        await prisma.vendorProfile.update({
+            where: { id },
+            data: {
+                isVerified: true,
+                verifiedAt: new Date(),
+                verifiedBy: req.user.id,
+                verificationStatus: 'APPROVED' // Ensure status is APPROVED
+            }
+        });
+
+        // Send "Verification Complete" email
+        const { sendKYCEmail } = require('../../../Backend/src/lib/email');
+        const vendorUser = await prisma.user.findUnique({
+            where: { id: profile.userId },
+            select: { email: true, name: true }
+        });
+
+        if (vendorUser?.email) {
+            await sendKYCEmail(vendorUser.email, 'verificationComplete', vendorUser.name);
+        }
 
         res.json({
             success: true,
-            message: 'Payment processed successfully'
+            message: 'Payment processed and vendor verified successfully'
         });
 
     } catch (error) {
