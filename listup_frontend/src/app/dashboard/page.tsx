@@ -56,6 +56,36 @@ export default function DashboardOverview() {
     }
   }, [user, router]);
 
+  // Check if vendor needs to pay for KYC
+  useEffect(() => {
+    const checkPaymentStatus = async () => {
+      if (!user || user.role !== "VENDOR") return;
+
+      try {
+        const token = safeLocalStorage.getItem("token");
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api"}/kyc-payment/status`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+
+          // If vendor can pay (KYC approved but not verified), redirect to payment page
+          if (data.success && data.data.canPay) {
+            router.push("/dashboard/kyc-payment");
+          }
+        }
+      } catch (error) {
+        console.error("Error checking payment status:", error);
+        // Don't block dashboard access on error
+      }
+    };
+
+    checkPaymentStatus();
+  }, [user, router]);
+
   const vendorId = user?.id || safeLocalStorage.getItem("id");
   const vendorName = user?.name || safeLocalStorage.getItem("name") || "Vendor";
 
@@ -266,8 +296,8 @@ export default function DashboardOverview() {
                       </div>
                       <div className="text-right">
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${listing.status === 'active' ? 'bg-green-100 text-green-800' :
-                            listing.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                              'bg-gray-100 text-gray-800'
+                          listing.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-gray-100 text-gray-800'
                           }`}>
                           {listing.status}
                         </span>
