@@ -4,85 +4,103 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 
 export default function AddressesPage() {
-  const [addresses, setAddresses] = useState<string[]>([]);
+  const [addresses, setAddresses] = useState<any[]>([]);
   const [newAddress, setNewAddress] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [editName, setEditName] = useState('');
-  const [fetching , setIsFetching]= useState(false)
-  const [IsMutating , setIsMutating]= useState(false)
+  const [fetching, setIsFetching] = useState(false)
+  const [IsMutating, setIsMutating] = useState(false)
 
 
   const BASE_URL = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001'}`;
   const getAuthConfig = () => ({
-  withCredentials: true,
-  headers: {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${localStorage.getItem("admin_token")}`,
-  },
-});
+    withCredentials: true,
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${localStorage.getItem("admin_token")}`,
+    },
+  });
 
   useEffect(() => {
     fetchAddresses();
   }, []);
-  
-const fetchAddresses = async () => {
-  try {
-    setIsFetching(true);
-    const res = await axios.get(`${BASE_URL}/addresses`, getAuthConfig());
-    setAddresses(res.data);
-  } catch (err) {
-    console.error(err);
-    alert("Error fetching addresses");
-  } finally {
-    setIsFetching(false);
-  }
-};
+
+  const fetchAddresses = async () => {
+    try {
+      setIsFetching(true);
+      const res = await axios.get(`${BASE_URL}/addresses`, getAuthConfig());
+      setAddresses(res.data);
+    } catch (err) {
+      console.error(err);
+      alert("Error fetching addresses");
+    } finally {
+      setIsFetching(false);
+    }
+  };
 
 
-const handleAddAddress = async (e : any) => {
-  e.preventDefault();
-  if (!newAddress.trim()) return;
-  try {
-    setIsMutating(true);
-    const res = await axios.post(`${BASE_URL}/addresses`, { name: newAddress }, getAuthConfig());
-    setAddresses([...addresses, res.data]);
-    setNewAddress('');
-    alert("Address added successfully");
-  } catch (err : any) {
-    alert(err.response?.data?.message || "Error adding address");
-  } finally {
-    setIsMutating(false);
-  }
-};
+  const handleAddAddress = async (e: any) => {
+    e.preventDefault();
+    if (!newAddress.trim()) return;
+    try {
+      setIsMutating(true);
+      const res = await axios.post(`${BASE_URL}/addresses`, { name: newAddress }, getAuthConfig());
+      setAddresses([...addresses, res.data]);
+      setNewAddress('');
+      alert("Address added successfully");
+    } catch (err: any) {
+      alert(err.response?.data?.message || "Error adding address");
+    } finally {
+      setIsMutating(false);
+    }
+  };
 
-  const handleEditAddress = async (id : any) => {
+  const handleEditAddress = async (id: any) => {
     if (!editName.trim()) return;
-    
+
     try {
       setIsLoading(true);
       const response = await axios.patch(`${BASE_URL}/addresses/${id}`, { name: editName }, getAuthConfig());
 
-      setAddresses(addresses.map((addr : any) => addr.id === id ? response.data : addr));
+      setAddresses(addresses.map((addr: any) => addr.id === id ? response.data : addr));
       setEditingId(null);
       alert('Address updated successfully');
-    } catch (error : any) {
+    } catch (error: any) {
       alert(error.response?.data?.message || 'Error updating address');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleDeleteAddress = async (id : any) => {
+  const handleToggleActive = async (address: any) => {
+    try {
+      // Optimistic update
+      const newStatus = !address.active;
+      setAddresses(addresses.map((addr: any) =>
+        addr.id === address.id ? { ...addr, active: newStatus } : addr
+      ));
+
+      await axios.patch(`${BASE_URL}/addresses/${address.id}`, { active: newStatus }, getAuthConfig());
+    } catch (error: any) {
+      // Revert on error
+      setAddresses(addresses.map((addr: any) =>
+        addr.id === address.id ? { ...addr, active: address.active } : addr
+      ));
+      alert(error.response?.data?.message || 'Error updating status');
+    }
+  };
+
+  const handleDeleteAddress = async (id: any) => {
     if (!confirm('Are you sure you want to delete this address?')) return;
-    
+
     try {
       setIsLoading(true);
       await axios.delete(`${BASE_URL}/addresses/${id}`, getAuthConfig());
 
-      setAddresses(addresses.filter((addr:any) => addr.id !== id));
+      setAddresses(addresses.filter((addr: any) => addr.id !== id));
       alert('Address deleted successfully');
-    } catch (error : any) {
+    } catch (error: any) {
       alert(error.response?.data?.message || 'Error deleting address');
     } finally {
       setIsLoading(false);
@@ -97,7 +115,7 @@ const handleAddAddress = async (e : any) => {
   return (
     <div className="p-4 md:p-8">
       <h1 className="text-2xl md:text-3xl font-bold mb-6">Manage Addresses</h1>
-      
+
       {/* Add new address form */}
       <div className="bg-white rounded-lg shadow p-4 mb-8">
         <h2 className="text-lg font-semibold mb-4">Add New Address</h2>
@@ -119,11 +137,11 @@ const handleAddAddress = async (e : any) => {
           </button>
         </form>
       </div>
-      
+
       {/* Address list */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
         <h2 className="text-lg font-semibold p-4 border-b">Address List</h2>
-        
+
         {isLoading && addresses.length === 0 ? (
           <div className="p-4 text-center text-gray-500">Loading addresses...</div>
         ) : addresses.length === 0 ? (
@@ -139,7 +157,7 @@ const handleAddAddress = async (e : any) => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {addresses.map((address :any) => (
+                {addresses.map((address: any) => (
                   <tr key={address.id}>
                     <td className="px-4 py-3 whitespace-nowrap">
                       {editingId === address.id ? (
@@ -155,10 +173,18 @@ const handleAddAddress = async (e : any) => {
                       )}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        address.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                      }`}>
-                        {address.isActive ? 'Active' : 'Inactive'}
+                      <button
+                        onClick={() => handleToggleActive(address)}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${address.active ? 'bg-green-500' : 'bg-gray-200'
+                          }`}
+                      >
+                        <span
+                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${address.active ? 'translate-x-6' : 'translate-x-1'
+                            }`}
+                        />
+                      </button>
+                      <span className="ml-2 text-sm text-gray-500">
+                        {address.active ? 'Active' : 'Inactive'}
                       </span>
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
