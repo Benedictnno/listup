@@ -266,17 +266,34 @@ router.get('/status', auth, async (req, res) => {
             });
         }
 
+        if (!vendor.vendorProfile) {
+            return res.status(404).json({
+                success: false,
+                message: 'Vendor profile not found'
+            });
+        }
+
         const hasReferral = vendor.usedReferralCode !== null;
         const amount = hasReferral ? 3000 : 5000;
+        const isVerified = vendor.vendorProfile.isVerified || false;
+        const verificationStatus = vendor.vendorProfile.verificationStatus || 'PENDING';
+        const canPay = verificationStatus === 'APPROVED' && !isVerified;
+
+        console.log('Payment status check:', {
+            userId,
+            isVerified,
+            verificationStatus,
+            canPay
+        });
 
         res.json({
             success: true,
             data: {
-                isVerified: vendor.vendorProfile?.isVerified || false,
-                verificationStatus: vendor.vendorProfile?.verificationStatus || 'PENDING',
-                amount: amount,
-                hasReferral: hasReferral,
-                canPay: vendor.vendorProfile?.verificationStatus === 'APPROVED' && !vendor.vendorProfile?.isVerified
+                isVerified,
+                verificationStatus,
+                amount,
+                hasReferral,
+                canPay
             }
         });
 
