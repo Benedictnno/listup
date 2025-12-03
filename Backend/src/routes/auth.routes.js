@@ -15,7 +15,7 @@ router.post(
       .withMessage('Name is required')
       .isLength({ min: 2, max: 100 })
       .withMessage('Name must be between 2 and 100 characters'),
-    
+
     body('email')
       .trim()
       .notEmpty()
@@ -23,13 +23,13 @@ router.post(
       .isEmail()
       .normalizeEmail()
       .withMessage('Please provide a valid email address'),
-    
+
     body('password')
       .notEmpty()
       .withMessage('Password is required')
       .isLength({ min: 6 })
       .withMessage('Password must be at least 6 characters long'),
-    
+
     body('phone')
       .optional()
       .customSanitizer(value => {
@@ -39,12 +39,12 @@ router.post(
       .trim()
       .isLength({ min: 10, max: 15 })
       .withMessage('Phone number must be between 10 and 15 characters'),
-    
+
     body('role')
       .optional()
       .isIn(['USER', 'VENDOR'])
       .withMessage('Role must be either USER or VENDOR'),
-    
+
     // Vendor-specific validation (only if role is VENDOR)
     body('storeName')
       .if(body('role').equals('VENDOR'))
@@ -53,7 +53,7 @@ router.post(
       .withMessage('Store name is required for vendor accounts')
       .isLength({ min: 2, max: 100 })
       .withMessage('Store name must be between 2 and 100 characters'),
-    
+
     body('storeAddress')
       .if(body('role').equals('VENDOR'))
       .trim()
@@ -61,7 +61,7 @@ router.post(
       .withMessage('Store address is required for vendor accounts')
       .isLength({ min: 5, max: 200 })
       .withMessage('Store address must be between 5 and 200 characters'),
-    
+
     body('businessCategory')
       .if(body('role').equals('VENDOR'))
       .trim()
@@ -69,7 +69,7 @@ router.post(
       .withMessage('Business category is required for vendor accounts')
       .isLength({ min: 2, max: 50 })
       .withMessage('Business category must be between 2 and 50 characters'),
-    
+
     body('referralCode')
       .optional()
       .isString()
@@ -84,7 +84,7 @@ router.post('/login', loginLimiter,
       .isEmail()
       .normalizeEmail()
       .withMessage('Please provide a valid email address'),
-    
+
     body('password')
       .notEmpty()
       .withMessage('Password is required'),
@@ -120,7 +120,7 @@ router.post('/verify-reset-code', loginLimiter,
   AuthCtrl.verifyResetCode
 );
 
-router.post('/reset-password',loginLimiter,
+router.post('/reset-password', loginLimiter,
   [
     body('email')
       .isEmail()
@@ -148,5 +148,28 @@ router.post('/resend-verification', loginLimiter,
   ],
   AuthCtrl.resendVerificationEmail
 );
+
+// Logout route
+router.post('/logout', (req, res) => {
+  try {
+    // Clear the authentication cookie
+    res.clearCookie('accessToken', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax'
+    });
+
+    res.json({
+      success: true,
+      message: 'Logged out successfully'
+    });
+  } catch (error) {
+    console.error('Logout error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to logout'
+    });
+  }
+});
 
 module.exports = router;
