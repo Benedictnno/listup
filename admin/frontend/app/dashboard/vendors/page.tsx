@@ -10,7 +10,7 @@ import VendorItem from "@/components/vendors/VendorItem";
 import VendorDetailsModal from "@/components/vendors/VendorDetailsModal";
 import { StatusBadge } from "@/components/vendors/StatusBadge";
 import useAuth from "@/hooks/useAuth";
-import { XCircle, User, Mail, Phone, Store, MapPin, Calendar, CheckCircle, Clock } from "lucide-react";
+import { XCircle, User, Mail, Phone, Store, MapPin, Calendar } from "lucide-react";
 
 export default function VendorsPage() {
   // State variables
@@ -22,12 +22,11 @@ export default function VendorsPage() {
   const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
   const [showDetails, setShowDetails] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
-  const [rejectReason, setRejectReason] = useState("");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalVendors, setTotalVendors] = useState(0);
   const limit = 20;
-  
+
   const { user } = useAuth();
   const router = useRouter();
   const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001/api';
@@ -54,7 +53,7 @@ export default function VendorsPage() {
       setLoading(true);
       setError("");
       const token = localStorage.getItem("token");
-      
+
       const statusParam = statusFilter !== "ALL" ? `&status=${statusFilter}` : "";
       const response = await fetch(
         `${API_URL}/vendors?page=${page}&limit=${limit}${statusParam}`,
@@ -85,12 +84,12 @@ export default function VendorsPage() {
     }
   };
 
-  const handleApprove = async (vendorId: string) => {
+  const handleSuspend = async (vendorId: string) => {
     try {
       setActionLoading(vendorId);
       const token = localStorage.getItem("token");
-      
-      const response = await fetch(`${API_URL}/vendors/${vendorId}/approve`, {
+
+      const response = await fetch(`${API_URL}/vendors/${vendorId}/suspend`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -101,36 +100,10 @@ export default function VendorsPage() {
       if (response.ok) {
         await fetchVendors(); // Refresh the list
       } else {
-        setError("Failed to approve vendor");
+        setError("Failed to suspend vendor");
       }
     } catch (err) {
-      setError("Failed to approve vendor");
-    } finally {
-      setActionLoading(null);
-    }
-  };
-
-  const handleReject = async (vendorId: string, reason: string) => {
-    try {
-      setActionLoading(vendorId);
-      const token = localStorage.getItem("admin_token");
-      
-      const response = await fetch(`${API_URL}/vendors/${vendorId}/reject`, {
-        method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ reason })
-      });
-
-      if (response.ok) {
-        await fetchVendors(); // Refresh the list
-      } else {
-        setError("Failed to reject vendor");
-      }
-    } catch (err) {
-      setError("Failed to reject vendor");
+      setError("Failed to suspend vendor");
     } finally {
       setActionLoading(null);
     }
@@ -138,11 +111,11 @@ export default function VendorsPage() {
 
   const filteredVendors = vendors.filter(vendor => {
     const matchesSearch = vendor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         vendor.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         vendor.vendorProfile.storeName.toLowerCase().includes(searchTerm.toLowerCase());
-    
+      vendor.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      vendor.vendorProfile.storeName.toLowerCase().includes(searchTerm.toLowerCase());
+
     const matchesStatus = statusFilter === "ALL" || vendor.vendorProfile.verificationStatus === statusFilter;
-    
+
     return matchesSearch && matchesStatus;
   });
 
@@ -198,7 +171,7 @@ export default function VendorsPage() {
               Manage vendor accounts and approval status
             </p>
           </div>
-          
+
           <div className="divide-y">
             {filteredVendors.length === 0 ? (
               <div className="p-6 text-center">
@@ -214,8 +187,7 @@ export default function VendorsPage() {
                     setSelectedVendor(vendor);
                     setShowDetails(true);
                   }}
-                  onApprove={() => handleApprove(vendor.id)}
-                  onReject={(reason) => handleReject(vendor.id, reason)}
+                  onSuspend={() => handleSuspend(vendor.id)}
                 />
               ))
             )}
@@ -264,7 +236,7 @@ export default function VendorsPage() {
                   </button>
                 </div>
               </div>
-              
+
               <div className="p-6 space-y-6">
                 {/* Basic Info */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -287,7 +259,7 @@ export default function VendorsPage() {
                       )}
                     </div>
                   </div>
-                  
+
                   <div>
                     <h3 className="font-medium mb-3">Store Information</h3>
                     <div className="space-y-2">
@@ -329,46 +301,8 @@ export default function VendorsPage() {
                     </div>
                   )}
                 </div>
-
-                {/* Actions */}
-                {selectedVendor.vendorProfile.verificationStatus === "PENDING" && (
-                  <div className="flex gap-4 pt-4 border-t">
-                    <button
-                      onClick={() => handleApprove(selectedVendor.id)}
-                      disabled={actionLoading === selectedVendor.id}
-                      className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
-                    >
-                      <CheckCircle className="w-4 h-4" />
-                      Approve Vendor
-                    </button>
-                    
-                    <div className="flex-1">
-                      <input
-                        type="text"
-                        placeholder="Rejection reason..."
-                        value={rejectReason}
-                        onChange={(e) => setRejectReason(e.target.value)}
-                        className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
-                      />
-                    </div>
-                    
-                    <button
-                      onClick={() => {
-                        if (rejectReason.trim()) {
-                          handleReject(selectedVendor.id, rejectReason);
-                          setRejectReason("");
-                        }
-                      }}
-                      disabled={actionLoading === selectedVendor.id || !rejectReason.trim()}
-                      className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
-                    >
-                      <XCircle className="w-4 h-4" />
-                      Reject
-                    </button>
-                  </div>
-                )}
               </div>
-              
+
               <div className="p-6 border-t flex justify-end">
                 <button
                   onClick={() => setShowDetails(false)}

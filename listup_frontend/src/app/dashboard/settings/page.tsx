@@ -7,14 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
 import { getUserSettings, updateStoreSettings, updatePersonalInfo, updatePassword } from "@/lib/api/settings";
-import { 
-  Store, 
-  User, 
-  Shield, 
-  Bell, 
-  Settings as SettingsIcon,
+import {
+  Store,
+  User,
+  Shield,
   Camera,
   CheckCircle,
   AlertTriangle,
@@ -33,6 +30,7 @@ export default function SettingsPage() {
     storeName: "",
     storeDescription: "",
     businessCategory: "",
+    storeAddress: "",
     storeEmail: "",
     storePhone: "",
   });
@@ -48,8 +46,6 @@ export default function SettingsPage() {
     { id: 'store', label: 'Store Settings', icon: Store },
     { id: 'personal', label: 'Personal Info', icon: User },
     { id: 'security', label: 'Security', icon: Shield },
-    { id: 'notifications', label: 'Notifications', icon: Bell },
-    { id: 'preferences', label: 'Preferences', icon: SettingsIcon }
   ];
 
   useEffect(() => {
@@ -65,6 +61,7 @@ export default function SettingsPage() {
           storeName: vendorProfile?.storeName || "",
           storeDescription: vendorProfile?.storeDescription || "",
           businessCategory: vendorProfile?.businessCategory || "",
+          storeAddress: vendorProfile?.storeAddress || "",
           storeEmail: user?.email || "",
           storePhone: user?.phone || "",
         }));
@@ -94,10 +91,10 @@ export default function SettingsPage() {
     setLoading(true);
     try {
       if (section === 'Store') {
-        const { storeName, businessCategory, storeDescription, storeEmail, storePhone } = storeForm;
+        const { storeName, businessCategory, storeDescription, storeAddress } = storeForm;
 
-        if (!storeName || !businessCategory || !storeEmail || !storePhone) {
-          setMessage({ type: 'error', text: 'Please fill in all required store fields.' });
+        if (!storeName || !businessCategory || !storeAddress) {
+          setMessage({ type: 'error', text: 'Please fill in all required fields (Store Name, Category, Address).' });
           return;
         }
 
@@ -105,7 +102,7 @@ export default function SettingsPage() {
           storeName,
           storeDescription,
           businessCategory,
-          storeAddress: storeAddressFromEmailAndPhone(storeEmail, storePhone),
+          storeAddress,
         } as any);
 
         setMessage({ type: 'success', text: 'Store settings updated successfully!' });
@@ -138,11 +135,20 @@ export default function SettingsPage() {
           return;
         }
 
+        if (newPassword.length < 6) {
+          setMessage({ type: 'error', text: 'New password must be at least 6 characters long.' });
+          return;
+        }
+
         await updatePassword({ currentPassword, newPassword });
+
+        // Clear password fields after successful update
+        (document.getElementById('currentPassword') as HTMLInputElement).value = '';
+        (document.getElementById('newPassword') as HTMLInputElement).value = '';
+        (document.getElementById('confirmPassword') as HTMLInputElement).value = '';
 
         setMessage({ type: 'success', text: 'Password updated successfully!' });
       } else {
-        await new Promise(resolve => setTimeout(resolve, 1000));
         setMessage({ type: 'success', text: `${section} settings updated successfully!` });
       }
     } catch (error: any) {
@@ -154,9 +160,7 @@ export default function SettingsPage() {
     }
   };
 
-  const storeAddressFromEmailAndPhone = (email: string, phone: string) => {
-    return `${email} | ${phone}`;
-  };
+
 
   const renderStoreSettings = () => (
     <div className="space-y-4 md:space-y-6">
@@ -196,7 +200,19 @@ export default function SettingsPage() {
               </Select>
             </div>
           </div>
-          
+
+          <div>
+            <Label htmlFor="storeAddress">Store Address *</Label>
+            <Textarea
+              id="storeAddress"
+              placeholder="Enter your physical store address"
+              rows={2}
+              className="w-full"
+              value={storeForm.storeAddress}
+              onChange={(e) => setStoreForm(prev => ({ ...prev, storeAddress: e.target.value }))}
+            />
+          </div>
+
           <div>
             <Label htmlFor="storeDescription">Store Description</Label>
             <Textarea
@@ -211,40 +227,42 @@ export default function SettingsPage() {
 
           <div className="grid grid-cols-1 gap-4">
             <div>
-              <Label htmlFor="storeEmail">Store Email *</Label>
+              <Label htmlFor="storeEmail">Contact Email</Label>
               <Input
                 id="storeEmail"
                 type="email"
                 placeholder="store@email.com"
                 className="w-full"
                 value={storeForm.storeEmail}
-                onChange={(e) => setStoreForm(prev => ({ ...prev, storeEmail: e.target.value }))}
+                disabled
               />
+              <p className="text-xs text-gray-500 mt-1">This is your account email (read-only)</p>
             </div>
             <div>
-              <Label htmlFor="storePhone">Store Phone *</Label>
+              <Label htmlFor="storePhone">Contact Phone</Label>
               <Input
                 id="storePhone"
                 placeholder="+234 801 234 5678"
                 className="w-full"
                 value={storeForm.storePhone}
-                onChange={(e) => setStoreForm(prev => ({ ...prev, storePhone: e.target.value }))}
+                disabled
               />
+              <p className="text-xs text-gray-500 mt-1">Update in Personal Info tab</p>
             </div>
           </div>
         </CardContent>
       </Card>
 
       <div className="flex justify-end">
-        <Button 
-          onClick={() => handleSave('Store')} 
+        <Button
+          onClick={() => handleSave('Store')}
           disabled={loading}
           className="w-full md:w-auto"
         >
           {loading ? 'Saving...' : 'Save Store Settings'}
         </Button>
       </div>
-    </div>
+    </div >
   );
 
   const renderPersonalSettings = () => (
@@ -319,8 +337,8 @@ export default function SettingsPage() {
       </Card>
 
       <div className="flex justify-end">
-        <Button 
-          onClick={() => handleSave('Personal')} 
+        <Button
+          onClick={() => handleSave('Personal')}
           disabled={loading}
           className="w-full md:w-auto"
         >
@@ -349,7 +367,7 @@ export default function SettingsPage() {
               className="w-full"
             />
           </div>
-          
+
           <div className="grid grid-cols-1 gap-4">
             <div>
               <Label htmlFor="newPassword">New Password *</Label>
@@ -374,144 +392,12 @@ export default function SettingsPage() {
       </Card>
 
       <div className="flex justify-end">
-        <Button 
-          onClick={() => handleSave('Security')} 
+        <Button
+          onClick={() => handleSave('Security')}
           disabled={loading}
           className="w-full md:w-auto"
         >
           {loading ? 'Saving...' : 'Save Security Settings'}
-        </Button>
-      </div>
-    </div>
-  );
-
-  const renderNotificationSettings = () => (
-    <div className="space-y-4 md:space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg md:text-xl">
-            <Bell size={20} />
-            Notification Preferences
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-              <div className="flex-1">
-                <p className="font-medium text-sm md:text-base">Order Updates</p>
-                <p className="text-xs md:text-sm text-gray-600">Get notified when order status changes</p>
-              </div>
-              <Switch defaultChecked />
-            </div>
-            
-            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-              <div className="flex-1">
-                <p className="font-medium text-sm md:text-base">New Messages</p>
-                <p className="text-xs md:text-sm text-gray-600">Get notified of new customer messages</p>
-              </div>
-              <Switch defaultChecked />
-            </div>
-            
-            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-              <div className="flex-1">
-                <p className="font-medium text-sm md:text-base">Low Stock Alerts</p>
-                <p className="text-xs md:text-sm text-gray-600">Get notified when products are running low</p>
-              </div>
-              <Switch defaultChecked />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <div className="flex justify-end">
-        <Button 
-          onClick={() => handleSave('Notification')} 
-          disabled={loading}
-          className="w-full md:w-auto"
-        >
-          {loading ? 'Saving...' : 'Save Notification Settings'}
-        </Button>
-      </div>
-    </div>
-  );
-
-  const renderPreferenceSettings = () => (
-    <div className="space-y-4 md:space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg md:text-xl">
-            <SettingsIcon size={20} />
-            General Preferences
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 gap-4">
-            <div>
-              <Label htmlFor="language">Language</Label>
-              <Select>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select language" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="english">English</SelectItem>
-                  <SelectItem value="french">French</SelectItem>
-                  <SelectItem value="spanish">Spanish</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="timezone">Timezone</Label>
-              <Select>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select timezone" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="africa/lagos">Africa/Lagos</SelectItem>
-                  <SelectItem value="africa/accra">Africa/Accra</SelectItem>
-                  <SelectItem value="africa/nairobi">Africa/Nairobi</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 gap-4">
-            <div>
-              <Label htmlFor="currency">Currency</Label>
-              <Select>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select currency" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="NGN">NGN (₦)</SelectItem>
-                  <SelectItem value="USD">USD ($)</SelectItem>
-                  <SelectItem value="EUR">EUR (€)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="theme">Theme</Label>
-              <Select>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select theme" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="light">Light</SelectItem>
-                  <SelectItem value="dark">Dark</SelectItem>
-                  <SelectItem value="auto">Auto (System)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <div className="flex justify-end">
-        <Button 
-          onClick={() => handleSave('Preference')} 
-          disabled={loading}
-          className="w-full md:w-auto"
-        >
-          {loading ? 'Saving...' : 'Save Preference Settings'}
         </Button>
       </div>
     </div>
@@ -525,10 +411,6 @@ export default function SettingsPage() {
         return renderPersonalSettings();
       case 'security':
         return renderSecuritySettings();
-      case 'notifications':
-        return renderNotificationSettings();
-      case 'preferences':
-        return renderPreferenceSettings();
       default:
         return renderStoreSettings();
     }
@@ -563,11 +445,10 @@ export default function SettingsPage() {
       {/* Message Display */}
       {message && (
         <div className="mx-4 md:mx-6 mt-4">
-          <div className={`p-4 rounded-lg flex items-center gap-2 ${
-            message.type === 'success' 
-              ? 'bg-green-50 text-green-800 border border-green-200' 
-              : 'bg-red-50 text-red-800 border border-red-200'
-          }`}>
+          <div className={`p-4 rounded-lg flex items-center gap-2 ${message.type === 'success'
+            ? 'bg-green-50 text-green-800 border border-green-200'
+            : 'bg-red-50 text-red-800 border border-red-200'
+            }`}>
             {message.type === 'success' ? (
               <CheckCircle size={20} className="text-green-600" />
             ) : (
@@ -592,11 +473,10 @@ export default function SettingsPage() {
                       setActiveTab(tab.id);
                       setShowMobileMenu(false);
                     }}
-                    className={`w-full flex items-center gap-3 p-3 rounded-lg text-left transition-colors ${
-                      activeTab === tab.id
-                        ? 'bg-lime-50 text-lime-700 border border-lime-200'
-                        : 'text-gray-700 hover:bg-gray-50'
-                    }`}
+                    className={`w-full flex items-center gap-3 p-3 rounded-lg text-left transition-colors ${activeTab === tab.id
+                      ? 'bg-lime-50 text-lime-700 border border-lime-200'
+                      : 'text-gray-700 hover:bg-gray-50'
+                      }`}
                   >
                     <Icon size={18} />
                     <span className="font-medium">{tab.label}</span>
@@ -616,11 +496,10 @@ export default function SettingsPage() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`w-full flex items-center gap-3 p-3 rounded-lg text-left transition-colors ${
-                    activeTab === tab.id
-                      ? 'bg-lime-50 text-lime-700 border border-lime-200'
-                      : 'text-gray-700 hover:bg-gray-50'
-                  }`}
+                  className={`w-full flex items-center gap-3 p-3 rounded-lg text-left transition-colors ${activeTab === tab.id
+                    ? 'bg-lime-50 text-lime-700 border border-lime-200'
+                    : 'text-gray-700 hover:bg-gray-50'
+                    }`}
                 >
                   <Icon size={18} />
                   <span className="font-medium">{tab.label}</span>

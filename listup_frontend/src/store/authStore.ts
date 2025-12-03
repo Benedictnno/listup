@@ -7,6 +7,8 @@ type User = {
   email: string;
   role: "USER" | "VENDOR";
   phone?: string;
+  isKYCVerified?: boolean;
+  listingLimit?: number;
   vendorProfile?: {
     storeName: string;
     storeAddress: string;
@@ -56,6 +58,8 @@ export const useAuthStore = create<AuthState>((set) => ({
           email: userData.email,
           role: userData.role.toUpperCase() as "USER" | "VENDOR",
           phone: userData.phone,
+          isKYCVerified: userData.isKYCVerified,
+          listingLimit: userData.listingLimit,
           ...(userData.vendorProfile && {
             vendorProfile: userData.vendorProfile,
           }),
@@ -76,7 +80,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   login: async (email: string, password: string) => {
     try {
       const response = await api.post("/auth/login", { email, password });
-      
+
       if (!response.data.success) {
         const errorMessage = response.data.message || "Login failed";
         const error: any = new Error(errorMessage);
@@ -92,6 +96,8 @@ export const useAuthStore = create<AuthState>((set) => ({
         email: userData.email,
         role: userData.role.toUpperCase() as "USER" | "VENDOR",
         phone: userData.phone,
+        isKYCVerified: userData.isKYCVerified,
+        listingLimit: userData.listingLimit,
         ...(userData.vendorProfile && {
           vendorProfile: userData.vendorProfile,
         }),
@@ -101,7 +107,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       set({ user });
     } catch (error: any) {
       console.error("Login error:", error);
-      
+
       // Ensure error has proper structure for the UI to display
       if (!error.response) {
         const enhancedError: any = new Error(error.message || "Login failed");
@@ -112,7 +118,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         };
         throw enhancedError;
       }
-      
+
       throw error;
     }
   },
@@ -120,7 +126,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   signup: async (userData) => {
     try {
       const response = await api.post("/auth/register", userData);
-      
+
       if (!response.data.success) {
         throw new Error(response.data.message || "Signup failed");
       }
@@ -128,7 +134,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       // Registration successful - NO automatic login!
       // User must verify their email before they can login
       // We don't save any token or user data to localStorage
-      
+
       return response.data; // Return data for the signup page to handle
     } catch (error) {
       console.error("Signup error:", error);

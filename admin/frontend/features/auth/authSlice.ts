@@ -11,7 +11,6 @@ export interface User {
 
 interface AuthState {
   user: User | null;
-  token: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
@@ -19,7 +18,6 @@ interface AuthState {
 
 const initialState: AuthState = {
   user: null,
-  token: typeof window !== 'undefined' ? localStorage.getItem('token') : null,
   isAuthenticated: false,
   isLoading: false,
   error: null,
@@ -30,21 +28,16 @@ export const login = createAsyncThunk(
   'auth/login',
   async ({ email, password }: { email: string; password: string }, { rejectWithValue }) => {
     try {
-      const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001/api'}/auth/login`, {
-        email,
-        password,
-      });
-     
-      
-      const {token,user } = response.data.data;
-     
-      
-      
-      // Store token in localStorage
-      localStorage.setItem('user',JSON.stringify(user));
-      localStorage.setItem('token', token);
-      
-      return { token, user };
+      const response = await axios.post(
+        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001/api'}/auth/login`,
+        { email, password },
+        { withCredentials: true } // Ensure cookies are sent/received
+      );
+
+      const { user } = response.data.data;
+
+      // Cookie is set by backend automatically
+      return { user };
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Login failed');
     }
@@ -53,21 +46,14 @@ export const login = createAsyncThunk(
 
 export const fetchCurrentUser = createAsyncThunk(
   'auth/fetchCurrentUser',
-  async (_, { getState, rejectWithValue }) => {
+  async (_, { rejectWithValue }) => {
     try {
-      const { auth } = getState() as { auth: AuthState };
-      
-      if (!auth.token) {
-        return rejectWithValue('No token found');
-      }
-      
-      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001/api'}/auth/me`, {
-        headers: {
-          Authorization: `Bearer ${auth.token}`,
-        },
-      });
-      
-      return response.data;
+      const response = await axios.get(
+        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001/api'}/auth/me`,
+        { withCredentials: true } // Cookie sent automatically
+      );
+
+      return response.data.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch user');
     }
@@ -78,23 +64,16 @@ export const logout = createAsyncThunk(
   'auth/logout',
   async (_, { rejectWithValue }) => {
     try {
-      // Clear localStorage first
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      
-      // Try to call logout endpoint, but don't fail if it errors
-      try {
-        await axios.post(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001/api'}/auth/logout`);
-      } catch (err) {
-        // Ignore logout endpoint errors - we've already cleared local storage
-        console.log('Logout endpoint error (ignored):', err);
-      }
-      
+      // Call backend logout to clear cookie
+      await axios.post(
+        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001/api'}/auth/logout`,
+        {},
+        { withCredentials: true }
+      );
+
       return null;
     } catch (error: any) {
-      // Even if there's an error, we should still clear the state
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
+      // Even if logout fails, clear client state
       return null;
     }
   }
@@ -115,18 +94,16 @@ const authSlice = createSlice({
         state.isLoading = true;
         state.error = null;
       })
-      .addCase(login.fulfilled, (state, action: PayloadAction<{ token: string; user: User }>) => {
+      .addCase(login.fulfilled, (state, action: PayloadAction<{ user: User }>) => {
         state.isLoading = false;
         state.isAuthenticated = true;
-        state.token = action.payload.token;
         state.user = action.payload.user;
-        
       })
       .addCase(login.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
       })
-      
+
       // Fetch current user
       .addCase(fetchCurrentUser.pending, (state) => {
         state.isLoading = true;
@@ -141,11 +118,9 @@ const authSlice = createSlice({
         state.isLoading = false;
         state.isAuthenticated = false;
         state.user = null;
-        state.token = null;
         state.error = action.payload as string;
-        localStorage.removeItem('token');
       })
-      
+
       // Logout
       .addCase(logout.pending, (state) => {
         state.isLoading = true;
@@ -154,7 +129,6 @@ const authSlice = createSlice({
         state.isLoading = false;
         state.isAuthenticated = false;
         state.user = null;
-        state.token = null;
       })
       .addCase(logout.rejected, (state, action) => {
         state.isLoading = false;

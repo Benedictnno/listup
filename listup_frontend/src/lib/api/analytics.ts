@@ -1,19 +1,13 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://api.listup.ng/api";
 
-function getAuthHeaders(): Record<string, string>{
-  if (typeof window === 'undefined') return {};
-  const token = localStorage.getItem('token');
-  return token ? { Authorization: `Bearer ${token}` } : {};
-}
-
 export async function trackListingView(listingId: string, sessionId?: string) {
   try {
     await fetch(`${API_BASE_URL}/analytics/listings/${listingId}/view`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        ...getAuthHeaders(),
       },
+      credentials: 'include',
       body: JSON.stringify({ sessionId }),
     });
   } catch (e) {
@@ -27,8 +21,8 @@ export async function trackListingSave(listingId: string) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        ...getAuthHeaders(),
       },
+      credentials: 'include',
     });
   } catch (e) {
     console.error('Failed to track listing save', e);
@@ -41,8 +35,8 @@ export async function trackListingMessageClick(listingId: string) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        ...getAuthHeaders(),
       },
+      credentials: 'include',
     });
   } catch (e) {
     console.error('Failed to track listing message click', e);
@@ -77,8 +71,8 @@ export async function fetchVendorListingMetrics(
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
-      ...getAuthHeaders(),
     },
+    credentials: 'include',
   });
 
   if (!res.ok) {

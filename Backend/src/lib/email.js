@@ -151,7 +151,7 @@ async function sendVendorPendingEmail(email, userName, storeName) {
 // ==========================
 async function sendPasswordResetCode(email, code, userName = null) {
   const template = EMAIL_TEMPLATES.PASSWORD_RESET;
-console.log(email,code, userName);
+  console.log(email, code, userName);
 
   try {
     const { data, error } = await resend.emails.send({
@@ -161,7 +161,7 @@ console.log(email,code, userName);
       html: template.html(code, userName),
       text: template.text(code, userName),
     });
-console.log(email,code, userName);
+    console.log(email, code, userName);
 
     if (error) {
       console.error('❌ Resend API Error:', error);
@@ -212,17 +212,17 @@ async function sendWelcomeEmail(email, userName) {
     };
 
     const info = await transporter.sendMail(mailOptions);
-    
+
     console.log(`✅ Welcome email sent to: ${email}`);
     console.log(`📧 Message ID: ${info.messageId}`);
-    
+
     // Log Mailtrap info if using it
     if (process.env.EMAIL_SERVICE === 'mailtrap') {
       console.log(`🔍 Check Mailtrap inbox: ${process.env.MAILTRAP_INBOX_URL || 'https://mailtrap.io'}`);
     }
-    
+
     return true;
-    
+
   } catch (error) {
     console.error('❌ Failed to send welcome email:', error);
     return false; // Don't throw for welcome emails
@@ -250,14 +250,14 @@ async function testEmailService() {
     const info = await transporter.sendMail(mailOptions);
     console.log('✅ Email service test successful');
     console.log(`📧 Test message ID: ${info.messageId}`);
-    
+
     // Log Mailtrap info if using it
     if (process.env.EMAIL_SERVICE === 'mailtrap') {
       console.log(`🔍 Check Mailtrap inbox: ${process.env.MAILTRAP_INBOX_URL || 'https://mailtrap.io'}`);
     }
-    
+
     return true;
-    
+
   } catch (error) {
     console.error('❌ Email service test failed:', error);
     return false;
@@ -272,7 +272,7 @@ async function verifyEmailConfig() {
   try {
     await transporter.verify();
     console.log('✅ Email service configuration verified');
-    
+
     // Log current email service
     if (process.env.EMAIL_SERVICE === 'mailtrap') {
       console.log('📧 Using Mailtrap for email testing');
@@ -281,7 +281,7 @@ async function verifyEmailConfig() {
     } else {
       console.log('📧 Using Gmail SMTP');
     }
-    
+
     return true;
   } catch (error) {
     console.error('❌ Email service configuration failed:', error);
@@ -321,7 +321,7 @@ async function sendEmailVerification(email, verificationLink, userName = null) {
 
     if (error) {
       console.error('❌ Resend API Error (Email Verification):', error);
-      
+
       // In development, log the verification link so you can still test
       if (isDevelopment) {
         console.log('⚠️  Email failed but here is the verification link for testing:');
@@ -330,7 +330,7 @@ async function sendEmailVerification(email, verificationLink, userName = null) {
         // Don't throw error in development - allow registration to continue
         return true;
       }
-      
+
       throw new Error('Failed to send verification email');
     }
 
@@ -343,14 +343,77 @@ async function sendEmailVerification(email, verificationLink, userName = null) {
     return true;
   } catch (error) {
     console.error('❌ Unexpected Error (Email Verification):', error);
-    
+
     // In development, don't fail registration due to email issues
     if (process.env.NODE_ENV !== 'production') {
       console.log('⚠️  [DEV MODE] Continuing registration despite email error');
       return true;
     }
-    
+
     throw new Error('Failed to send verification email');
+  }
+}
+
+/**
+ * KYC Email Functions
+ */
+async function sendKYCEmail(email, templateName, ...args) {
+  const templates = {
+    kycSubmitted: (name) => ({
+      subject: 'KYC Submission Received - ListUp',
+      html: `<div style="font-family: Arial;"><h2>KYC Received</h2><p>Hi ${name}, we've received your KYC submission and will review it shortly.</p></div>`
+    }),
+    interviewScheduled: (name, datetime) => ({
+      subject: 'Interview Scheduled - ListUp',
+      html: `<div><h2>Interview Scheduled</h2><p>Hi ${name}, your interview is scheduled for ${new Date(datetime).toLocaleString()}.</p></div>`
+    }),
+    kycApproved: (name, fee) => ({
+      subject: 'KYC Approved - Payment Required',
+      html: `<div><h2>KYC Approved!</h2><p>Hi ${name}, complete payment of ₦${fee.toLocaleString()} to activate verification.</p></div>`
+    }),
+    kycRejected: (name, reason) => ({
+      subject: 'KYC Update - ListUp',
+      html: `<div><h2>KYC Update</h2><p>Hi ${name}, your submission was not approved. Reason: ${reason}</p></div>`
+    }),
+    verificationComplete: (name) => ({
+      subject: "You're Verified! - ListUp",
+      html: `<div><h2>You're Verified!</h2><p>Hi ${name}, your verification is complete. You now have unlimited listings!</p></div>`
+    }),
+    referralReward: (name, vendorName, amount) => ({
+      subject: 'Referral Reward Earned!',
+      html: `<div><h2>Reward Earned!</h2><p>Hi ${name}, ${vendorName} completed verification. You earned ₦${amount.toLocaleString()}!</p></div>`
+    }),
+    kycReminder: (name, days) => ({
+      subject: `${days} Days Left - Complete KYC`,
+      html: `<div><h2>KYC Reminder</h2><p>Hi ${name}, you have ${days} days left to complete KYC or your account will be deleted.</p></div>`
+    })
+  };
+
+  try {
+    const template = templates[templateName];
+    if (!template) return false;
+
+    const { subject, html } = template(...args);
+    const isDev = process.env.NODE_ENV !== 'production';
+    const recipientEmail = isDev ? 'benedictnnaoma0@gmail.com' : email;
+
+    const { data, error } = await resend.emails.send({
+      from: 'ListUp <noreply@listup.ng>',
+      to: recipientEmail,
+      subject,
+      html
+    });
+
+    if (error) {
+      console.error(`❌ KYC email error (${templateName}):`, error);
+      return false;
+    }
+
+    console.log(`✅ KYC email sent: ${templateName} (${data.id})`);
+    return true;
+  } catch (error) {
+    console.error(`❌ KYC email failed:`, error);
+    return false;
   }
 }
 
@@ -360,5 +423,6 @@ module.exports = {
   testEmailService,
   verifyEmailConfig,
   sendVendorPendingEmail,
-  sendEmailVerification
+  sendEmailVerification,
+  sendKYCEmail
 };

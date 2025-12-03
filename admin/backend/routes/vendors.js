@@ -20,12 +20,15 @@ router.get('/', auth, async (req, res) => {
       }
     };
 
-    // Filter by verification status
+    // Filter by verification status - need to use AND to combine with isNot null
     if (status && ['PENDING', 'APPROVED', 'REJECTED'].includes(status)) {
-      where.vendorProfile = {
-        ...where.vendorProfile,
-        verificationStatus: status
-      };
+      where.AND = [
+        {
+          vendorProfile: {
+            verificationStatus: status
+          }
+        }
+      ];
     }
 
     // Search by name or store name
@@ -52,7 +55,7 @@ router.get('/', auth, async (req, res) => {
             select: {
               id: true,
               storeName: true,
-              address: true,
+              storeAddress: true,
               businessCategory: true,
               coverImage: true,
               logo: true,
@@ -100,7 +103,7 @@ router.get('/:vendorId', auth, async (req, res) => {
     const { vendorId } = req.params;
 
     const vendor = await prisma.user.findUnique({
-      where: { 
+      where: {
         id: vendorId,
         role: 'VENDOR'
       },
@@ -189,7 +192,7 @@ router.patch('/:vendorId/approve', isAuthenticated, async (req, res) => {
     const { vendorId } = req.params;
 
     const vendor = await prisma.user.findUnique({
-      where: { 
+      where: {
         id: vendorId,
         role: 'VENDOR'
       },
@@ -260,7 +263,7 @@ router.patch('/:vendorId/reject', auth, [
     const { reason } = req.body;
 
     const vendor = await prisma.user.findUnique({
-      where: { 
+      where: {
         id: vendorId,
         role: 'VENDOR'
       },
@@ -324,7 +327,7 @@ router.get('/stats/overview', auth, async (req, res) => {
       recentVendors
     ] = await Promise.all([
       prisma.user.count({
-        where: { 
+        where: {
           role: 'VENDOR',
           vendorProfile: { isNot: null }
         }

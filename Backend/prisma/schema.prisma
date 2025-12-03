@@ -183,6 +183,11 @@ model VendorKYC {
   twitterHandle   String?
   otherSocial     String?
 
+  // Business Registration
+  cacNumber       String?  // Corporate Affairs Commission number
+  documentUrl     String?  // URL to uploaded CAC certificate or student portal screenshot
+  documentType    String?  // "CAC_CERTIFICATE" or "STUDENT_PORTAL"
+
   // Interview Details
   interviewScheduled DateTime?
   interviewCompleted DateTime?

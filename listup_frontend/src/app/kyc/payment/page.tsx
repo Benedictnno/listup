@@ -67,6 +67,32 @@ export default function KYCPaymentPage() {
     }
   }, [user]);
 
+  // Route protection
+  useEffect(() => {
+    if (!loading && !initializing && !renewInitializing) {
+      if (!kyc) {
+        // No KYC submitted -> Go to submit
+        router.push("/kyc/submit");
+        return;
+      }
+
+      const status = kyc.status;
+
+      if (status === "REJECTED") {
+        // Rejected -> Go to submit to re-apply
+        router.push("/kyc/submit");
+        return;
+      }
+
+      if (status !== "APPROVED" && status !== "INTERVIEW_COMPLETED") {
+        // Pending or other non-approved status -> Go to dashboard
+        // (User shouldn't access payment until it's time)
+        router.push("/dashboard");
+        return;
+      }
+    }
+  }, [loading, kyc, router, initializing, renewInitializing]);
+
   const handleInitializePayment = async () => {
     try {
       setInitializing(true);

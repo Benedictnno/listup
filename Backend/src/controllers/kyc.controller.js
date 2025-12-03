@@ -1,4 +1,5 @@
 const prisma = require('../lib/prisma');
+const { sendKYCEmail } = require('../lib/email');
 
 exports.submitKYC = async (req, res) => {
   try {
@@ -10,6 +11,9 @@ exports.submitKYC = async (req, res) => {
       twitterHandle,
       otherSocial,
       referralCode,
+      cacNumber,
+      documentType,
+      documentUrl,
     } = req.body;
 
     if (!tiktokHandle && !instagramHandle && !facebookPage && !twitterHandle && !otherSocial) {
@@ -24,9 +28,17 @@ exports.submitKYC = async (req, res) => {
     });
 
     if (existingKYC) {
-      return res.status(400).json({
-        success: false,
-        message: 'KYC has already been submitted for this vendor',
+      // Allow resubmission only if previous KYC was rejected
+      if (existingKYC.status !== 'REJECTED') {
+        return res.status(400).json({
+          success: false,
+          message: 'KYC has already been submitted for this vendor',
+        });
+      }
+
+      // Delete the rejected KYC to allow resubmission
+      await prisma.vendorKYC.delete({
+        where: { vendorId },
       });
     }
 
@@ -44,19 +56,30 @@ exports.submitKYC = async (req, res) => {
     const signupFee = hasReferral ? 3000 : 5000;
 
     const result = await prisma.$transaction(async (tx) => {
+      const kycData = {
+        vendorId,
+        tiktokHandle,
+        instagramHandle,
+        facebookPage,
+        twitterHandle,
+        otherSocial,
+        signupFee,
+        hasReferral,
+        status: 'PENDING',
+        paymentStatus: 'PENDING',
+      };
+
+      // Add CAC fields if provided
+      if (cacNumber) {
+        kycData.cacNumber = cacNumber;
+      }
+      if (documentType && documentUrl) {
+        kycData.documentType = documentType;
+        kycData.documentUrl = documentUrl; // Store base64 or cloud URL
+      }
+
       const kyc = await tx.vendorKYC.create({
-        data: {
-          vendorId,
-          tiktokHandle,
-          instagramHandle,
-          facebookPage,
-          twitterHandle,
-          otherSocial,
-          signupFee,
-          hasReferral,
-          status: 'PENDING',
-          paymentStatus: 'PENDING',
-        },
+        data: kycData,
       });
 
       if (hasReferral && referral) {
@@ -89,7 +112,11 @@ exports.submitKYC = async (req, res) => {
       return kyc;
     });
 
-    // TODO: Send notification to admin about new KYC submission (email/Slack/etc.)
+    // Send email notification
+    const user = await prisma.user.findUnique({ where: { id: vendorId } });
+    if (user?.email) {
+      await sendKYCEmail(user.email, 'kycSubmitted', user.name);
+    }
 
     return res.status(201).json({
       success: true,
@@ -111,10 +138,10 @@ exports.getKYCStatus = async (req, res) => {
     });
 
     if (!kyc) {
-      return res.json({ success: true, data: null });
+      return res.json({ success: true, data: { kyc: null } });
     }
 
-    return res.json({ success: true, data: kyc });
+    return res.json({ success: true, data: { kyc } });
   } catch (error) {
     console.error('Error in getKYCStatus:', error);
     return res.status(500).json({ success: false, message: 'Failed to fetch KYC status' });
@@ -205,6 +232,42 @@ exports.updateKYCStatus = async (req, res) => {
       where: { id },
       data,
     });
+
+    // Send email notifications based on status
+    const kyc = await prisma.vendorKYC.findUnique({
+      where: { id },
+      include: {
+        vendor: {
+          select: { email: true, name: true }
+        }
+      }
+    });
+
+    if (kyc?.vendor?.email) {
+      if (status === 'INTERVIEW_SCHEDULED' && interviewScheduled) {
+        await sendKYCEmail(
+          kyc.vendor.email,
+          'interviewScheduled',
+          kyc.vendor.name,
+          interviewScheduled,
+          req.body.adminWhatsAppNumber || 'TBD'
+        );
+      } else if (status === 'INTERVIEW_COMPLETED') {
+        await sendKYCEmail(
+          kyc.vendor.email,
+          'kycApproved',
+          kyc.vendor.name,
+          kyc.signupFee
+        );
+      } else if (status === 'REJECTED') {
+        await sendKYCEmail(
+          kyc.vendor.email,
+          'kycRejected',
+          kyc.vendor.name,
+          rejectionReason || 'Please contact support for details'
+        );
+      }
+    }
 
     return res.json({ success: true, data: updated });
   } catch (error) {
@@ -308,7 +371,26 @@ exports._processKYCPaymentInternal = async (kycId) => {
             status: 'PENDING',
           },
         });
+
+        // Send referral reward email
+        const referrer = await tx.user.findUnique({
+          where: { id: (await tx.referral.findUnique({ where: { id: referralUse.referralId } })).userId }
+        });
+        if (referrer?.email) {
+          await sendKYCEmail(
+            referrer.email,
+            'referralReward',
+            referrer.name,
+            user.name,
+            referralUse.commission || 1000
+          );
+        }
       }
+    }
+
+    // Send verification complete email to vendor
+    if (user?.email) {
+      await sendKYCEmail(user.email, 'verificationComplete', user.name);
     }
 
     return { kyc: updatedKYC, user };
@@ -395,9 +477,9 @@ exports.checkListingLimit = async (req, res, next) => {
     });
 
     if (!user) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'User not found' 
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
       });
     }
     const kyc = user.vendorKYC;
@@ -445,9 +527,9 @@ exports.checkListingLimit = async (req, res, next) => {
     return next();
   } catch (error) {
     console.error('Error in checkListingLimit middleware:', error);
-    return res.status(500).json({ 
-      success: false, 
-      message: 'Failed to validate listing limit' 
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to validate listing limit'
     });
   }
 };

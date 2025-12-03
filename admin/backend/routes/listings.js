@@ -79,7 +79,7 @@ router.get('/', auth, async (req, res) => {
     res.json({
       success: true,
       data: {
-        listings,
+        items: listings, // Changed from 'listings' to 'items' to match frontend expectations
         pagination: {
           total,
           page: Number(page),
@@ -177,6 +177,66 @@ router.get('/:listingId', auth, async (req, res) => {
   }
 });
 
+// Update listing (admin can update any field)
+router.patch('/:listingId', auth, async (req, res) => {
+  try {
+    const { listingId } = req.params;
+    const updateData = req.body;
+
+    const listing = await prisma.listing.findUnique({
+      where: { id: listingId }
+    });
+
+    if (!listing) {
+      return res.status(404).json({
+        success: false,
+        message: 'Listing not found'
+      });
+    }
+
+    const updatedListing = await prisma.listing.update({
+      where: { id: listingId },
+      data: {
+        ...updateData,
+        updatedAt: new Date()
+      },
+      include: {
+        category: {
+          select: {
+            id: true,
+            name: true,
+            slug: true
+          }
+        },
+        seller: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            vendorProfile: {
+              select: {
+                storeName: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    res.json({
+      success: true,
+      data: updatedListing
+    });
+
+  } catch (error) {
+    console.error('Update listing error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while updating listing'
+    });
+  }
+});
+
 // Toggle listing active status
 router.patch('/:listingId/toggle-status', auth, async (req, res) => {
   try {
@@ -237,7 +297,11 @@ router.delete('/:listingId', auth, async (req, res) => {
     const { listingId } = req.params;
 
     const listing = await prisma.listing.findUnique({
-      where: { id: listingId }
+      where: { id: listingId },
+      include: {
+        favorites: true,
+        Ad: true
+      }
     });
 
     if (!listing) {
@@ -247,8 +311,47 @@ router.delete('/:listingId', auth, async (req, res) => {
       });
     }
 
-    await prisma.listing.delete({
-      where: { id: listingId }
+    // Delete in a transaction to ensure all related records are removed
+    await prisma.$transaction(async (tx) => {
+      // Delete analytics records first
+      await tx.listingView.deleteMany({
+        where: { listingId }
+      });
+
+      await tx.listingSaveEvent.deleteMany({
+        where: { listingId }
+      });
+
+      await tx.listingMessageClick.deleteMany({
+        where: { listingId }
+      });
+
+      // Delete favorites
+      if (listing.favorites.length > 0) {
+        await tx.favorite.deleteMany({
+          where: { listingId }
+        });
+      }
+
+      // Delete ads and their payments
+      if (listing.Ad.length > 0) {
+        for (const ad of listing.Ad) {
+          // Delete payments for this ad
+          await tx.payment.deleteMany({
+            where: { adId: ad.id }
+          });
+        }
+
+        // Delete ads
+        await tx.ad.deleteMany({
+          where: { productId: listingId }
+        });
+      }
+
+      // Finally delete the listing
+      await tx.listing.delete({
+        where: { id: listingId }
+      });
     });
 
     res.json({

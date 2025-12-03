@@ -66,6 +66,14 @@ router.post('/login', [
       { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
     );
 
+    // Set token as HTTP-only cookie for cookie-based authentication
+    res.cookie('token', token, {
+      httpOnly: true, // Prevents client-side JavaScript from accessing the cookie
+      secure: process.env.NODE_ENV === 'production', // Only send over HTTPS in production
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // CSRF protection
+      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days in milliseconds
+    });
+
     // Remove password from response
     const { password: _, ...userWithoutPassword } = user;
 
@@ -74,7 +82,7 @@ router.post('/login', [
       message: 'Login successful',
       data: {
         user: userWithoutPassword,
-        token
+        token // Still return token for backward compatibility
       }
     });
 
@@ -115,8 +123,15 @@ router.get('/me', auth, async (req, res) => {
   }
 });
 
-// Logout (client-side token removal)
+// Logout (clear cookie)
 router.post('/logout', auth, (req, res) => {
+  // Clear the authentication cookie
+  res.clearCookie('token', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
+  });
+
   res.json({
     success: true,
     message: 'Logout successful'

@@ -3,7 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Search, Filter, User, Store, Phone, Mail, Calendar, ShieldCheck, AlertTriangle, Clock, CheckCircle, XCircle, CreditCard } from "lucide-react";
+import { Loader2, Search, Eye } from "lucide-react";
+import KYCDetailsModal from "@/components/kyc/KYCDetailsModal";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4001/api";
 
@@ -40,6 +41,9 @@ interface KYCSubmission {
   facebookPage?: string | null;
   twitterHandle?: string | null;
   otherSocial?: string | null;
+  cacNumber?: string | null;
+  documentUrl?: string | null;
+  documentType?: string | null;
   createdAt: string;
   updatedAt: string;
   interviewScheduled?: string | null;
@@ -66,53 +70,6 @@ const STATUS_LABELS: { value: KYCStatus | "ALL"; label: string }[] = [
   { value: "REJECTED", label: "Rejected" },
 ];
 
-function statusBadge(status: KYCStatus) {
-  const map: Record<KYCStatus, { label: string; classes: string; Icon: any }> = {
-    PENDING: {
-      label: "Pending",
-      classes: "bg-yellow-100 text-yellow-800",
-      Icon: Clock,
-    },
-    DOCUMENTS_REVIEW: {
-      label: "Documents Review",
-      classes: "bg-blue-100 text-blue-800",
-      Icon: Filter,
-    },
-    INTERVIEW_SCHEDULED: {
-      label: "Interview Scheduled",
-      classes: "bg-indigo-100 text-indigo-800",
-      Icon: Calendar,
-    },
-    INTERVIEW_COMPLETED: {
-      label: "Interview Completed",
-      classes: "bg-emerald-100 text-emerald-800",
-      Icon: CheckCircle,
-    },
-    APPROVED: {
-      label: "Approved",
-      classes: "bg-green-100 text-green-800",
-      Icon: ShieldCheck,
-    },
-    REJECTED: {
-      label: "Rejected",
-      classes: "bg-red-100 text-red-800",
-      Icon: XCircle,
-    },
-  };
-
-  const cfg = map[status];
-  const Icon = cfg.Icon;
-
-  return (
-    <span
-      className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${cfg.classes}`}
-    >
-      <Icon className="w-3 h-3" />
-      {cfg.label}
-    </span>
-  );
-}
-
 export default function AdminKYCPage() {
   const [kycs, setKycs] = useState<KYCSubmission[]>([]);
   const [loading, setLoading] = useState(true);
@@ -123,6 +80,7 @@ export default function AdminKYCPage() {
   const [statusFilter, setStatusFilter] = useState<KYCStatus | "ALL">("ALL");
   const [search, setSearch] = useState("");
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
+  const [selectedKYC, setSelectedKYC] = useState<KYCSubmission | null>(null);
   const limit = 20;
 
   useEffect(() => {
@@ -211,6 +169,7 @@ export default function AdminKYCPage() {
       }
 
       await fetchKYC();
+      setSelectedKYC(null); // Close modal after update
     } catch (e) {
       console.error("update status error", e);
       setError("Failed to update KYC status");
@@ -237,6 +196,7 @@ export default function AdminKYCPage() {
       }
 
       await fetchKYC();
+      setSelectedKYC(null); // Close modal after update
     } catch (e) {
       console.error("process payment error", e);
       setError("Failed to process KYC payment");
@@ -266,13 +226,7 @@ export default function AdminKYCPage() {
         {/* Filters */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-base flex items-center justify-between gap-3">
-              <span>Filters</span>
-              <span className="text-xs text-muted-foreground flex items-center gap-1">
-                <ShieldCheck className="w-4 h-4" />
-                Manage verification pipeline
-              </span>
-            </CardTitle>
+            <CardTitle className="text-base">Filters</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -339,7 +293,6 @@ export default function AdminKYCPage() {
                   <tr className="border-b">
                     <th className="py-3 px-4">Vendor</th>
                     <th className="py-3 px-4">Store</th>
-                    <th className="py-3 px-4">Socials</th>
                     <th className="py-3 px-4">Status</th>
                     <th className="py-3 px-4">Payment</th>
                     <th className="py-3 px-4">Created</th>
@@ -350,151 +303,59 @@ export default function AdminKYCPage() {
                   {filtered.map((k) => {
                     const created = new Date(k.createdAt).toLocaleDateString();
                     const v = k.vendor;
-                    const canScheduleInterview =
-                      k.status === "PENDING" || k.status === "DOCUMENTS_REVIEW";
-                    const canMarkInterviewCompleted = k.status === "INTERVIEW_SCHEDULED";
-                    const canApproveWithoutPayment =
-                      k.status === "INTERVIEW_COMPLETED" && k.paymentStatus !== "SUCCESS";
-                    const canProcessPayment =
-                      k.paymentStatus !== "SUCCESS" &&
-                      (k.status === "APPROVED" || k.status === "INTERVIEW_COMPLETED");
 
                     return (
-                      <tr key={k.id} className="border-b last:border-0 align-top">
-                        <td className="py-3 px-4 min-w-[180px]">
+                      <tr key={k.id} className="border-b last:border-0 hover:bg-muted/30">
+                        <td className="py-3 px-4">
                           <div className="flex flex-col gap-1">
-                            <div className="flex items-center gap-2">
-                              <User className="w-4 h-4 text-muted-foreground" />
-                              <span className="font-medium">{v.name}</span>
-                            </div>
-                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                              <Mail className="w-3 h-3" />
-                              <span>{v.email}</span>
-                            </div>
-                            {v.phone && (
-                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                <Phone className="w-3 h-3" />
-                                <span>{v.phone}</span>
-                              </div>
-                            )}
+                            <span className="font-medium">{v.name}</span>
+                            <span className="text-xs text-muted-foreground">{v.email}</span>
                           </div>
                         </td>
-                        <td className="py-3 px-4 min-w-[160px]">
-                          <div className="flex flex-col gap-1 text-xs">
-                            <div className="flex items-center gap-2">
-                              <Store className="w-3 h-3 text-muted-foreground" />
-                              <span className="font-medium">
-                                {v.vendorProfile?.storeName || "—"}
-                              </span>
-                            </div>
-                            <div className="flex items-start gap-2 text-muted-foreground">
-                              <span className="sr-only">Address</span>
-                              <span className="ml-[1.1rem]">
-                                {v.vendorProfile?.storeAddress || ""}
-                              </span>
-                            </div>
-                          </div>
+                        <td className="py-3 px-4">
+                          <span className="text-sm">{v.vendorProfile?.storeName || "—"}</span>
                         </td>
-                        <td className="py-3 px-4 min-w-[220px] text-xs text-muted-foreground">
-                          <div className="space-y-1">
-                            {k.tiktokHandle && <div>TikTok: {k.tiktokHandle}</div>}
-                            {k.instagramHandle && <div>IG: {k.instagramHandle}</div>}
-                            {k.facebookPage && <div>FB: {k.facebookPage}</div>}
-                            {k.twitterHandle && <div>Twitter: {k.twitterHandle}</div>}
-                            {k.otherSocial && <div>Other: {k.otherSocial}</div>}
-                          </div>
+                        <td className="py-3 px-4">
+                          <span
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${k.status === "APPROVED"
+                                ? "bg-green-100 text-green-800"
+                                : k.status === "REJECTED"
+                                  ? "bg-red-100 text-red-800"
+                                  : k.status === "INTERVIEW_COMPLETED"
+                                    ? "bg-emerald-100 text-emerald-800"
+                                    : k.status === "INTERVIEW_SCHEDULED"
+                                      ? "bg-indigo-100 text-indigo-800"
+                                      : k.status === "DOCUMENTS_REVIEW"
+                                        ? "bg-blue-100 text-blue-800"
+                                        : "bg-yellow-100 text-yellow-800"
+                              }`}
+                          >
+                            {k.status.replace(/_/g, " ")}
+                          </span>
                         </td>
-                        <td className="py-3 px-4 min-w-[160px]">
-                          <div className="flex flex-col gap-1">
-                            {statusBadge(k.status)}
-                            {k.rejectionReason && (
-                              <p className="text-[11px] text-red-700 bg-red-50 border border-red-200 rounded px-2 py-1 mt-1">
-                                {k.rejectionReason}
-                              </p>
-                            )}
-                          </div>
-                        </td>
-                        <td className="py-3 px-4 min-w-[140px]">
-                          <div className="flex flex-col gap-1 text-xs">
-                            <div className="flex items-center gap-1">
-                              <CreditCard className="w-3 h-3 text-muted-foreground" />
-                              <span>
-                                ₦{k.signupFee.toLocaleString()} ({k.hasReferral ? "with referral" : "no referral"})
-                              </span>
-                            </div>
-                            <span
-                              className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium ${
-                                k.paymentStatus === "SUCCESS"
-                                  ? "bg-emerald-100 text-emerald-800"
-                                  : k.paymentStatus === "FAILED"
+                        <td className="py-3 px-4">
+                          <span
+                            className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium ${k.paymentStatus === "SUCCESS"
+                                ? "bg-emerald-100 text-emerald-800"
+                                : k.paymentStatus === "FAILED"
                                   ? "bg-red-100 text-red-800"
                                   : "bg-gray-100 text-gray-700"
                               }`}
-                            >
-                              {k.paymentStatus}
-                            </span>
-                          </div>
+                          >
+                            {k.paymentStatus}
+                          </span>
                         </td>
                         <td className="py-3 px-4 text-xs text-muted-foreground whitespace-nowrap">
                           {created}
                         </td>
-                        <td className="py-3 px-4 min-w-[220px]">
-                          <div className="flex flex-col gap-1 text-xs">
-                            {k.status === "PENDING" && (
-                              <button
-                                onClick={() => handleUpdateStatus(k.id, "DOCUMENTS_REVIEW")}
-                                disabled={actionLoadingId === k.id}
-                                className="inline-flex items-center justify-center px-2 py-1 rounded-md border bg-white hover:bg-muted"
-                              >
-                                <Filter className="w-3 h-3 mr-1" /> Move to Review
-                              </button>
-                            )}
-                            {canScheduleInterview && (
-                              <button
-                                onClick={() => handleUpdateStatus(k.id, "INTERVIEW_SCHEDULED")}
-                                disabled={actionLoadingId === k.id}
-                                className="inline-flex items-center justify-center px-2 py-1 rounded-md border bg-white hover:bg-muted"
-                              >
-                                <Calendar className="w-3 h-3 mr-1" /> Schedule Interview
-                              </button>
-                            )}
-                            {canMarkInterviewCompleted && (
-                              <button
-                                onClick={() => handleUpdateStatus(k.id, "INTERVIEW_COMPLETED")}
-                                disabled={actionLoadingId === k.id}
-                                className="inline-flex items-center justify-center px-2 py-1 rounded-md border bg-white hover:bg-muted"
-                              >
-                                <CheckCircle className="w-3 h-3 mr-1" /> Mark Interview Completed
-                              </button>
-                            )}
-                            {canApproveWithoutPayment && (
-                              <button
-                                onClick={() => handleUpdateStatus(k.id, "APPROVED")}
-                                disabled={actionLoadingId === k.id}
-                                className="inline-flex items-center justify-center px-2 py-1 rounded-md border bg-white hover:bg-muted"
-                              >
-                                <ShieldCheck className="w-3 h-3 mr-1" /> Mark Approved
-                              </button>
-                            )}
-                            {canProcessPayment && (
-                              <button
-                                onClick={() => handleProcessPayment(k.id)}
-                                disabled={actionLoadingId === k.id}
-                                className="inline-flex items-center justify-center px-2 py-1 rounded-md border bg-emerald-600 text-white hover:bg-emerald-700"
-                              >
-                                <CreditCard className="w-3 h-3 mr-1" /> Process Payment
-                              </button>
-                            )}
-                            {k.status !== "REJECTED" && (
-                              <button
-                                onClick={() => handleUpdateStatus(k.id, "REJECTED")}
-                                disabled={actionLoadingId === k.id}
-                                className="inline-flex items-center justify-center px-2 py-1 rounded-md border bg-red-50 text-red-700 hover:bg-red-100"
-                              >
-                                <XCircle className="w-3 h-3 mr-1" /> Reject
-                              </button>
-                            )}
-                          </div>
+                        <td className="py-3 px-4">
+                          <button
+                            onClick={() => setSelectedKYC(k)}
+                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md border bg-white hover:bg-muted text-sm"
+                          >
+                            <Eye className="w-4 h-4" />
+                            View Details
+                          </button>
                         </td>
                       </tr>
                     );
@@ -532,6 +393,17 @@ export default function AdminKYCPage() {
               </div>
             </CardContent>
           </Card>
+        )}
+
+        {/* KYC Details Modal */}
+        {selectedKYC && (
+          <KYCDetailsModal
+            kyc={selectedKYC}
+            onClose={() => setSelectedKYC(null)}
+            onUpdateStatus={handleUpdateStatus}
+            onProcessPayment={handleProcessPayment}
+            actionLoading={actionLoadingId === selectedKYC.id}
+          />
         )}
       </div>
     </DashboardLayout>
