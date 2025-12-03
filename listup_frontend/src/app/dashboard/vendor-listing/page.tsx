@@ -1,64 +1,30 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { fetchVendorListings, updateListing, deleteListing } from "@/lib/api/listing";
 import { uploadImage } from "@/lib/api/upload";
 import { fetchCategories, Category } from "@/lib/api/categories";
 import { fetchVendorListingMetrics, VendorListingMetricsResponse } from "@/lib/api/analytics";
 import { safeLocalStorage } from "@/utils/helpers";
-import { 
-  Edit, 
-  Trash2, 
-  Eye, 
-  TrendingUp, 
-  AlertTriangle,
-  BarChart3,
-  CheckSquare,
-  Square,
-  SortAsc,
-  SortDesc,
-  Package
-} from "lucide-react";
-import Image from "next/image";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
+import { useAuthStore } from "@/store/authStore";
 
-interface Listing {
-  id: string;
-  title: string;
-  price: number;
-  stock: number;
-  description: string;
-  images?: string[];
-  status: 'active' | 'inactive' | 'pending' | 'sold';
-  category: string;
-  views: number;
-  sales: number;
-  revenue: number;
-  createdAt: string;
-  seoScore?: number;
-  location?: string;
-  condition?: string;
-}
-
-interface FilterState {
-  search: string;
-  status: string;
-  category: string;
-  priceRange: { min: number; max: number };
-  stockLevel: string;
-  sortBy: string;
-  sortOrder: 'asc' | 'desc';
-}
+// Components
+import { VendorListingHeader } from "@/components/dashboard/vendor-listing/VendorListingHeader";
+import { VendorListingMetrics } from "@/components/dashboard/vendor-listing/VendorListingMetrics";
+import { VendorListingFilters, FilterState } from "@/components/dashboard/vendor-listing/VendorListingFilters";
+import { VendorListingBulkActions } from "@/components/dashboard/vendor-listing/VendorListingBulkActions";
+import { VendorListingGrid, Listing } from "@/components/dashboard/vendor-listing/VendorListingGrid";
+import { VendorListingEmptyState } from "@/components/dashboard/vendor-listing/VendorListingEmptyState";
+import { EditListingModal } from "@/components/dashboard/vendor-listing/EditListingModal";
+import { PromoteListingModal } from "@/components/dashboard/vendor-listing/PromoteListingModal";
 
 export default function VendorListingsPage() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const { user } = useAuthStore(); // Use auth store for user ID
+
   const [listings, setListings] = useState<Listing[]>([]);
   const [filteredListings, setFilteredListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
@@ -90,6 +56,7 @@ export default function VendorListingsPage() {
     messages: 0,
   });
   const [metricsByListing, setMetricsByListing] = useState<Record<string, { views: number; saves: number; messages: number }>>({});
+
   const defaultFilters: FilterState = {
     search: '',
     status: '',
@@ -103,10 +70,13 @@ export default function VendorListingsPage() {
   const [draftFilters, setDraftFilters] = useState<FilterState>(defaultFilters);
   const [searchInput, setSearchInput] = useState('');
 
-  const id: string | undefined = safeLocalStorage.getItem("id") || undefined;
+  // Use user.id from store instead of localStorage
+  const id = user?.id;
 
   useEffect(() => {
     async function loadData() {
+      if (!id) return; // Wait for user ID
+
       try {
         // Load categories
         const categoriesData = await fetchCategories();
@@ -134,37 +104,35 @@ export default function VendorListingsPage() {
 
         // Load listings
         const res = await fetchVendorListings(id);
-        // Add mock data for demonstration
-        const enhancedListings = res.map((listing: { id: string; title: string; price: number; status: string; createdAt?: string; created_at?: string; image?: string; images?: string[]; category?: string }) => ({
+        // Add mock data for demonstration if needed, or map response
+        const enhancedListings = res.map((listing: any) => ({
           ...listing,
           status: listing.status || 'active',
-                     category: listing.category || (categories.length > 0 ? categories[0].name : 'Uncategorized'),
+          category: listing.category || (categories.length > 0 ? categories[0].name : 'Uncategorized'),
           views: 0,
           sales: 0,
           revenue: 0,
-          createdAt: new Date().toISOString(),
+          createdAt: listing.createdAt || new Date().toISOString(),
           seoScore: 0,
         }));
         setListings(enhancedListings);
         setFilteredListings(enhancedListings);
 
         // Load real analytics metrics for this vendor's listings
-        if (id) {
-          try {
-            const metrics: VendorListingMetricsResponse = await fetchVendorListingMetrics(id, metricsRange);
-            setMetricsTotals(metrics.totals);
-            const byListing: Record<string, { views: number; saves: number; messages: number }> = {};
-            metrics.perListing.forEach((m) => {
-              byListing[m.listingId] = {
-                views: m.views,
-                saves: m.saves,
-                messages: m.messages,
-              };
-            });
-            setMetricsByListing(byListing);
-          } catch (err) {
-            console.error('Error loading listing metrics:', err);
-          }
+        try {
+          const metrics: VendorListingMetricsResponse = await fetchVendorListingMetrics(id, metricsRange);
+          setMetricsTotals(metrics.totals);
+          const byListing: Record<string, { views: number; saves: number; messages: number }> = {};
+          metrics.perListing.forEach((m) => {
+            byListing[m.listingId] = {
+              views: m.views,
+              saves: m.saves,
+              messages: m.messages,
+            };
+          });
+          setMetricsByListing(byListing);
+        } catch (err) {
+          console.error('Error loading listing metrics:', err);
         }
       } catch (error) {
         console.error('Error loading data:', error);
@@ -229,10 +197,10 @@ export default function VendorListingsPage() {
     filtered.sort((a, b) => {
       let aValue = a[filters.sortBy as keyof Listing];
       let bValue = b[filters.sortBy as keyof Listing];
-      
+
       if (typeof aValue === 'string') aValue = aValue.toLowerCase();
       if (typeof bValue === 'string') bValue = bValue.toLowerCase();
-      
+
       if (filters.sortOrder === 'asc') {
         return (aValue as string | number) > (bValue as string | number) ? 1 : -1;
       } else {
@@ -287,19 +255,6 @@ export default function VendorListingsPage() {
     params.delete('q');
     const query = params.toString();
     router.push(query ? `${pathname}?${query}` : pathname);
-  };
-
-  const hasActiveFilters = () => {
-    return (
-      !!filters.search ||
-      !!filters.status ||
-      !!filters.category ||
-      filters.priceRange.min !== defaultFilters.priceRange.min ||
-      filters.priceRange.max !== defaultFilters.priceRange.max ||
-      !!filters.stockLevel ||
-      filters.sortBy !== defaultFilters.sortBy ||
-      filters.sortOrder !== defaultFilters.sortOrder
-    );
   };
 
   const openEdit = (listing: Listing) => {
@@ -391,7 +346,7 @@ export default function VendorListingsPage() {
 
   const compressImage = (file: File, maxWidth = 1200, quality = 0.8): Promise<File> => {
     return new Promise((resolve, reject) => {
-    const image = new window.Image();
+      const image = new window.Image();
       const reader = new FileReader();
 
       reader.onload = (e) => {
@@ -554,10 +509,10 @@ export default function VendorListingsPage() {
       status === 'active'
         ? 'activate'
         : status === 'inactive'
-        ? 'deactivate'
-        : status === 'sold'
-        ? 'mark as sold'
-        : 'update';
+          ? 'deactivate'
+          : status === 'sold'
+            ? 'mark as sold'
+            : 'update';
 
     const confirmed = window.confirm(`Are you sure you want to ${actionLabel} ${selectedListings.length} selected listing(s)?`);
     if (!confirmed) return;
@@ -602,11 +557,7 @@ export default function VendorListingsPage() {
 
   const createPromotionAds = async () => {
     try {
-      const token = safeLocalStorage.getItem("token");
-      if (!token) {
-        alert("Authentication required. Please login again.");
-        return;
-      }
+      // Cookie-based auth handled automatically
 
       const plan = promotionPlans.find(p => p.type === promotePlan);
       if (!plan) {
@@ -615,14 +566,14 @@ export default function VendorListingsPage() {
       }
 
       const totalAmount = calculatePromotionCost();
-      
+
       // Create ads for each selected product
       const adPromises = promoteListings.map(async (listingId) => {
         const payload = {
           type: promotePlan,
           startDate: new Date().toISOString(),
           endDate: new Date(Date.now() + promoteDuration * 24 * 60 * 60 * 1000).toISOString(),
-          vendorId: safeLocalStorage.getItem("id") || "",
+          vendorId: id || "", // Use ID from store
           amount: plan.price * promoteDuration,
           status: "PENDING",
           paymentStatus: "PENDING",
@@ -649,8 +600,8 @@ export default function VendorListingsPage() {
   };
 
   const toggleListingSelection = (listingId: string) => {
-    setSelectedListings(prev => 
-      prev.includes(listingId) 
+    setSelectedListings(prev =>
+      prev.includes(listingId)
         ? prev.filter(id => id !== listingId)
         : [...prev, listingId]
     );
@@ -663,22 +614,6 @@ export default function VendorListingsPage() {
 
   const clearSelection = () => {
     setSelectedListings([]);
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active': return 'bg-green-100 text-green-800';
-      case 'inactive': return 'bg-gray-100 text-gray-800';
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'sold': return 'bg-blue-100 text-blue-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getStockColor = (stock: number) => {
-    if (stock === 0) return 'text-red-600';
-    if (stock <= 5) return 'text-orange-600';
-    return 'text-green-600';
   };
 
   if (loading) return (
@@ -696,730 +631,86 @@ export default function VendorListingsPage() {
 
   return (
     <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h2 className="text-2xl font-semibold">My Listings</h2>
-          <p className="text-gray-600">Manage your product listings and inventory</p>
-        </div>
-        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto sm:items-center">
-          <div className="w-full sm:w-64">
-            <Input
-              placeholder="Search listings..."
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-            />
-          </div>
-          <Button onClick={() => setShowFilters(!showFilters)} variant="outline">
-            Filters
-          </Button>
-          <Button variant="outline" onClick={clearSearch} disabled={!filters.search && !searchInput}>
-            Clear search
-          </Button>
-        </div>
-      </div>
+      <VendorListingHeader
+        searchInput={searchInput}
+        setSearchInput={setSearchInput}
+        showFilters={showFilters}
+        setShowFilters={setShowFilters}
+        hasActiveSearch={!!filters.search || !!searchInput}
+        clearSearch={clearSearch}
+      />
 
-      {/* Results summary */}
-      <div className="flex justify-between items-center text-sm text-gray-600">
-        <span>{filteredListings.length} result{filteredListings.length === 1 ? '' : 's'}</span>
-        <div className="flex items-center gap-2">
-          <span className="hidden sm:inline">Date range:</span>
-          <Select value={metricsRange} onValueChange={(value) => setMetricsRange(value as '7d' | '30d' | 'all')}>
-            <SelectTrigger className="w-32">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="7d">Last 7 days</SelectItem>
-              <SelectItem value="30d">Last 30 days</SelectItem>
-              <SelectItem value="all">All time</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
+      <VendorListingMetrics
+        metricsTotals={metricsTotals}
+        filteredListingsCount={filteredListings.length}
+        metricsRange={metricsRange}
+        setMetricsRange={setMetricsRange}
+      />
 
-      {/* Metrics overview */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
-        <Card>
-          <CardContent className="py-3 flex flex-col items-start">
-            <span className="text-xs text-gray-500">Total Views</span>
-            <span className="text-lg font-semibold">{metricsTotals.views.toLocaleString()}</span>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="py-3 flex flex-col items-start">
-            <span className="text-xs text-gray-500">Total Saves</span>
-            <span className="text-lg font-semibold">{metricsTotals.saves.toLocaleString()}</span>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="py-3 flex flex-col items-start">
-            <span className="text-xs text-gray-500">Total Messages</span>
-            <span className="text-lg font-semibold">{metricsTotals.messages.toLocaleString()}</span>
-          </CardContent>
-        </Card>
-      </div>
+      <VendorListingFilters
+        showFilters={showFilters}
+        filters={filters}
+        setFilters={setFilters}
+        draftFilters={draftFilters}
+        setDraftFilters={setDraftFilters}
+        searchInput={searchInput}
+        setSearchInput={setSearchInput}
+        categories={categories}
+        applyFilters={applyFilters}
+        resetFilters={resetFilters}
+        defaultFilters={defaultFilters}
+      />
 
-      {/* Filters */}
-      {showFilters && (
-        <Card>
-          <CardContent className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">Search</label>
-                <Input
-                  placeholder="Search listings..."
-                  value={searchInput}
-                  onChange={(e) => setSearchInput(e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">Status</label>
-                <Select value={draftFilters.status} onValueChange={(value) => setDraftFilters(prev => ({ ...prev, status: value === 'all' ? '' : value }))}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="All Statuses" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Statuses</SelectItem>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="inactive">Inactive</SelectItem>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="sold">Sold</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">Category</label>
-                                 <Select value={draftFilters.category} onValueChange={(value) => setDraftFilters(prev => ({ ...prev, category: value === 'all' ? '' : value }))}>
-                   <SelectTrigger>
-                     <SelectValue placeholder="All Categories" />
-                   </SelectTrigger>
-                   <SelectContent>
-                     <SelectItem value="all">All Categories</SelectItem>
-                     {categories.map((cat) => (
-                       <SelectItem key={cat.id} value={cat.name}>
-                         {cat.name}
-                       </SelectItem>
-                     ))}
-                   </SelectContent>
-                 </Select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">Stock Level</label>
-                <Select value={draftFilters.stockLevel} onValueChange={(value) => setDraftFilters(prev => ({ ...prev, stockLevel: value === 'all' ? '' : value }))}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="All Stock Levels" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Stock Levels</SelectItem>
-                    <SelectItem value="low">Low Stock (≤5)</SelectItem>
-                    <SelectItem value="out">Out of Stock</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">Min Price (₦)</label>
-                <Input
-                  type="number"
-                  placeholder="0"
-                  value={draftFilters.priceRange.min}
-                  onChange={(e) => setDraftFilters(prev => ({ 
-                    ...prev, 
-                    priceRange: { ...prev.priceRange, min: Number(e.target.value) }
-                  }))}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">Max Price (₦)</label>
-                <Input
-                  type="number"
-                  placeholder="1000000"
-                  value={draftFilters.priceRange.max}
-                  onChange={(e) => setDraftFilters(prev => ({ 
-                    ...prev, 
-                    priceRange: { ...prev.priceRange, max: Number(e.target.value) }
-                  }))}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">Sort By</label>
-                <Select value={draftFilters.sortBy} onValueChange={(value) => setDraftFilters(prev => ({ ...prev, sortBy: value }))}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="createdAt">Date Created</SelectItem>
-                    <SelectItem value="title">Title</SelectItem>
-                    <SelectItem value="price">Price</SelectItem>
-                    <SelectItem value="views">Views</SelectItem>
-                    <SelectItem value="sales">Sales</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="flex justify-between items-center mt-4">
-              <Button
-                variant="outline"
-                onClick={resetFilters}
-              >
-                Clear All Filters
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => setDraftFilters(prev => ({ 
-                  ...prev, 
-                  sortOrder: prev.sortOrder === 'asc' ? 'desc' : 'asc'
-                }))}
-              >
-                {draftFilters.sortOrder === 'asc' ? <SortAsc size={16} /> : <SortDesc size={16} />}
-                {draftFilters.sortOrder === 'asc' ? 'Ascending' : 'Descending'}
-              </Button>
-              <Button onClick={applyFilters}>
-                Apply Filters
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      <VendorListingBulkActions
+        selectedCount={selectedListings.length}
+        bulkLoading={bulkLoading}
+        bulkLabel={bulkLabel}
+        selectAllVisible={selectAllVisible}
+        clearSelection={clearSelection}
+        handleBulkStatusUpdate={handleBulkStatusUpdate}
+        handlePromoteProducts={handlePromoteProducts}
+        handleBulkDelete={handleBulkDelete}
+      />
 
-      {/* Active filter chips */}
-      {hasActiveFilters() && (
-        <div className="flex flex-wrap gap-2 text-sm">
-          {filters.search && (
-            <button
-              className="px-2 py-1 bg-gray-100 rounded-full flex items-center gap-1"
-              onClick={() => {
-                const updated = { ...filters, search: '' };
-                setFilters(updated);
-                setDraftFilters(updated);
-                setSearchInput('');
-              }}
-            >
-              <span>Search: "{filters.search}"</span>
-              <span className="text-gray-500">×</span>
-            </button>
-          )}
-          {filters.status && (
-            <button
-              className="px-2 py-1 bg-gray-100 rounded-full flex items-center gap-1"
-              onClick={() => {
-                const updated = { ...filters, status: '' };
-                setFilters(updated);
-                setDraftFilters(updated);
-              }}
-            >
-              <span>Status: {filters.status}</span>
-              <span className="text-gray-500">×</span>
-            </button>
-          )}
-          {filters.category && (
-            <button
-              className="px-2 py-1 bg-gray-100 rounded-full flex items-center gap-1"
-              onClick={() => {
-                const updated = { ...filters, category: '' };
-                setFilters(updated);
-                setDraftFilters(updated);
-              }}
-            >
-              <span>Category: {filters.category}</span>
-              <span className="text-gray-500">×</span>
-            </button>
-          )}
-          {(filters.priceRange.min !== defaultFilters.priceRange.min || filters.priceRange.max !== defaultFilters.priceRange.max) && (
-            <button
-              className="px-2 py-1 bg-gray-100 rounded-full flex items-center gap-1"
-              onClick={() => {
-                const updated = { ...filters, priceRange: defaultFilters.priceRange };
-                setFilters(updated);
-                setDraftFilters(updated);
-              }}
-            >
-              <span>Price: ₦{filters.priceRange.min} - ₦{filters.priceRange.max}</span>
-              <span className="text-gray-500">×</span>
-            </button>
-          )}
-          {filters.stockLevel && (
-            <button
-              className="px-2 py-1 bg-gray-100 rounded-full flex items-center gap-1"
-              onClick={() => {
-                const updated = { ...filters, stockLevel: '' };
-                setFilters(updated);
-                setDraftFilters(updated);
-              }}
-            >
-              <span>Stock: {filters.stockLevel}</span>
-              <span className="text-gray-500">×</span>
-            </button>
-          )}
-          {(filters.sortBy !== defaultFilters.sortBy || filters.sortOrder !== defaultFilters.sortOrder) && (
-            <button
-              className="px-2 py-1 bg-gray-100 rounded-full flex items-center gap-1"
-              onClick={() => {
-                setFilters(defaultFilters);
-                setDraftFilters(defaultFilters);
-                setSearchInput('');
-              }}
-            >
-              <span>Sorting</span>
-              <span className="text-gray-500">×</span>
-            </button>
-          )}
-        </div>
-      )}
-
-      {/* Bulk Actions */}
-      {selectedListings.length > 0 && (
-        <Card className="bg-blue-50 border-blue-200">
-          <CardContent className="p-4">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-              <div className="flex items-center gap-2">
-                <CheckSquare size={20} className="text-blue-600" />
-                <span className="font-medium text-blue-900">
-                  {selectedListings.length} listing(s) selected
-                </span>
-                {bulkLoading && bulkLabel && (
-                  <span className="text-sm text-blue-700">{bulkLabel}</span>
-                )}
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={selectAllVisible}
-                  disabled={bulkLoading}
-                >
-                  Select all on page
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={clearSelection}
-                  disabled={bulkLoading}
-                >
-                  Clear selection
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleBulkStatusUpdate('active')}
-                  disabled={bulkLoading}
-                >
-                  Activate All
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleBulkStatusUpdate('inactive')}
-                  disabled={bulkLoading}
-                >
-                  Deactivate All
-                </Button>
-                <Button
-                  variant="default"
-                  size="sm"
-                  onClick={handlePromoteProducts}
-                  disabled={bulkLoading}
-                  className="bg-blue-600 hover:bg-blue-700"
-                >
-                  <TrendingUp size={16} className="mr-2" />
-                  Promote Selected
-                </Button>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={handleBulkDelete}
-                  disabled={bulkLoading}
-                >
-                  <Trash2 size={16} className="mr-2" />
-                  Delete All
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Listings Grid */}
       {filteredListings.length === 0 ? (
-        <div className="p-6 text-center text-gray-600 border rounded-lg bg-gray-50">
-          <p className="font-medium mb-1">No results found</p>
-          <p className="text-sm">Try adjusting your search or filters, or resetting all filters.</p>
-        </div>
+        <VendorListingEmptyState hasFilters={!!filters.search || !!filters.status || !!filters.category} />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredListings.map((listing) => {
-          const metrics = metricsByListing[listing.id] || { views: 0, saves: 0, messages: 0 };
-          return (
-          <Card key={listing.id} className="hover:shadow-lg transition-shadow">
-            <CardContent className="p-4 space-y-3">
-              {/* Selection Checkbox */}
-              <div className="flex justify-between items-start">
-                <button
-                  onClick={() => toggleListingSelection(listing.id)}
-                  className="mt-1"
-                >
-                  {selectedListings.includes(listing.id) ? (
-                    <CheckSquare size={18} className="text-lime-600" />
-                  ) : (
-                    <Square size={18} className="text-gray-400" />
-                  )}
-                </button>
-                <div className="flex gap-1">
-                  <Button variant="ghost" size="sm" onClick={() => openEdit(listing)}>
-                    <Edit size={16} />
-                  </Button>
-                  <Button variant="ghost" size="sm" onClick={() => handleDelete(listing.id)}>
-                    <Trash2 size={16} />
-                  </Button>
-                </div>
-              </div>
-
-              {/* Product Image */}
-              <Image 
-                width={300}
-                height={300}
-                src={listing.images?.[0] || "/placeholder.svg"}
-                alt={listing.title}
-                className="w-full h-40 object-cover rounded-lg"
-              />
-
-              {/* Product Info */}
-              <div>
-                <h3 className="text-lg font-semibold line-clamp-2">{listing.title}</h3>
-                <p className="text-sm text-gray-500 line-clamp-2">{listing.description}</p>
-                
-                {/* Status and Category */}
-                <div className="flex items-center gap-2 mt-2">
-                   <p className={`text-sm font-medium ${getStockColor(listing.stock)}`}>
-                    {/* Stock: {listing.stock} */}
-                  </p>
-                  <span className="px-2 py-1 bg-gray-100 rounded-full text-xs text-gray-600">
-                    {/* {listing.category} */}
-                  </span>
-                </div>
-
-                {/* Price and Stock */}
-                <div className="flex justify-between items-center mt-3">
-                  <p className="text-lg font-bold text-lime-600">₦{listing.price.toLocaleString()}</p>
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(listing.status)}`}>
-                    {listing.status.charAt(0).toUpperCase() + listing.status.slice(1)}
-                  </span>
-                </div>
-
-                {/* Performance Metrics */}
-                <div className="grid grid-cols-3 gap-2 mt-3 pt-3 border-t">
-                  <div className="text-center">
-                    <div className="flex items-center justify-center gap-1 text-blue-600">
-                      <Eye size={14} />
-                      <span className="text-xs font-medium">{metrics.views}</span>
-                    </div>
-                    <span className="text-xs text-gray-500">Views</span>
-                  </div>
-                  <div className="text-center">
-                    <div className="flex items-center justify-center gap-1 text-green-600">
-                      <TrendingUp size={14} />
-                      <span className="text-xs font-medium">{metrics.saves}</span>
-                    </div>
-                    <span className="text-xs text-gray-500">Saves</span>
-                  </div>
-                  <div className="text-center">
-                    <div className="flex items-center justify-center gap-1 text-purple-600">
-                      <BarChart3 size={14} />
-                      <span className="text-xs font-medium">{metrics.messages}</span>
-                    </div>
-                    <span className="text-xs text-gray-500">Messages</span>
-                  </div>
-                </div>
-
-                {/* Low Stock Alert */}
-                {/* {listing.stock <= 5 && listing.stock > 0 && (
-                  <div className="flex items-center gap-2 mt-2 p-2 bg-orange-50 rounded-lg">
-                    <AlertTriangle size={14} className="text-orange-600" />
-                    <span className="text-xs text-orange-700">Low stock alert</span>
-                  </div>
-                )} */}
-
-                {/* Out of Stock Alert */}
-                {/* {listing.stock === 0 && (
-                  <div className="flex items-center gap-2 mt-2 p-2 bg-red-50 rounded-lg">
-                    <AlertTriangle size={14} className="text-red-600" />
-                    <span className="text-xs text-red-700">Out of stock</span>
-                  </div>
-                )} */}
-              </div>
-            </CardContent>
-          </Card>
-        );
-        })}
-      </div>
+        <VendorListingGrid
+          listings={filteredListings}
+          selectedListings={selectedListings}
+          toggleListingSelection={toggleListingSelection}
+          openEdit={openEdit}
+          handleDelete={handleDelete}
+          metricsByListing={metricsByListing}
+        />
       )}
 
-      {/* Empty State */}
-      {filteredListings.length === 0 && (
-        <Card>
-          <CardContent className="p-12 text-center">
-            <div className="text-gray-400 mb-4">
-              <Package size={48} className="mx-auto" />
-            </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No listings found</h3>
-            <p className="text-gray-500 mb-4">
-              {filters.search || filters.status || filters.category 
-                ? 'Try adjusting your filters or search terms'
-                : 'Get started by creating your first listing'
-              }
-            </p>
-            
-          </CardContent>
-        </Card>
-      )}
+      <EditListingModal
+        editing={editing}
+        setEditing={setEditing}
+        categories={categories}
+        imagePreviews={imagePreviews}
+        removeImageAt={removeImageAt}
+        moveImage={moveImage}
+        handleImageInputChange={handleImageInputChange}
+        formError={formError}
+        handleSave={handleSave}
+        saving={saving}
+      />
 
-      {/* Edit Modal */}
-      {editing && (
-        <Dialog open={!!editing} onOpenChange={() => setEditing(null)}>
-          <DialogContent className="max-w-2xl bg-white overflow-y-auto h-[calc(100vh-5rem)]">
-            <DialogHeader>
-              <DialogTitle>Edit Listing</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">Title</label>
-                <Input
-                  value={editing.title}
-                  onChange={(e) => setEditing({ ...editing, title: e.target.value })}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">Description</label>
-                <textarea
-                  value={editing.description}
-                  onChange={(e) => setEditing({ ...editing, description: e.target.value })}
-                  className="w-full border rounded-lg px-3 py-2"
-                  rows={4}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2">Price (₦)</label>
-                  <Input
-                    type="number"
-                    value={editing.price}
-                    onChange={(e) => setEditing({ ...editing, price: Number(e.target.value) })}
-                  />
-                </div>
-                {/* <div>
-                  <label className="block text-sm font-medium mb-2">Stock</label>
-                  <Input
-                    type="number"
-                    value={editing.stock}
-                    onChange={(e) => setEditing({ ...editing, stock: Number(e.target.value) })}
-                  />
-                </div> */}
-              </div>
-              <div className="grid grid-cols-2 gap-4 ">
-                <div className="bg-white">
-                  <label className="block text-sm font-medium mb-2">Condition</label>
-                  <Input
-                    value={editing.condition || ""}
-                    onChange={(e) => setEditing({ ...editing, condition: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">Location</label>
-                  <Input
-                    value={editing.location || ""}
-                    onChange={(e) => setEditing({ ...editing, location: e.target.value })}
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4 ">
-                <div>
-                  <label className="block text-sm font-medium mb-2">Status</label>
-                  <Select value={editing.status} onValueChange={(value) => setEditing({ ...editing, status: value as 'active' | 'inactive' | 'pending' | 'sold' })}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="bg-white">
-                      <SelectItem value="active">Active</SelectItem>
-                      <SelectItem value="inactive">Inactive</SelectItem>
-                      <SelectItem value="pending">Pending</SelectItem>
-                      <SelectItem value="sold">Sold</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                                 <div >
-                   <label className="block text-sm font-medium mb-2 ">Category</label>
-                   <Select  value={editing.category} onValueChange={(value) => setEditing({ ...editing, category: value })}>
-                     <SelectTrigger>
-                       <SelectValue />
-                     </SelectTrigger>
-                     <SelectContent className="bg-white">
-                       {categories.map((cat) => (
-                         <SelectItem key={cat.id} value={cat.name}>
-                           {cat.name}
-                         </SelectItem>
-                       ))}
-                     </SelectContent>
-                   </Select>
-                 </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">Images</label>
-                <div className="space-y-3">
-                  <div className="flex flex-wrap gap-3">
-                    {imagePreviews.map((src, index) => (
-                      <div key={index} className="relative w-24 h-24">
-                        <Image
-                          src={src}
-                          alt={editing.title}
-                          fill
-                          className="object-cover rounded-md border"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => removeImageAt(index)}
-                          className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs"
-                        >
-                          ×
-                        </button>
-                        <div className="absolute bottom-1 left-1 flex gap-1">
-                          {index > 0 && (
-                            <button
-                              type="button"
-                              onClick={() => moveImage(index, index - 1)}
-                              className="px-1 py-0.5 text-[10px] bg-white/80 rounded"
-                            >
-                              ↑
-                            </button>
-                          )}
-                          {index < imagePreviews.length - 1 && (
-                            <button
-                              type="button"
-                              onClick={() => moveImage(index, index + 1)}
-                              className="px-1 py-0.5 text-[10px] bg-white/80 rounded"
-                            >
-                              ↓
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Add Images</label>
-                    <Input
-                      type="file"
-                      accept="image/jpeg,image/png,image/webp"
-                      multiple
-                      onChange={handleImageInputChange}
-                    />
-                    <p className="text-xs text-gray-500 mt-1">JPG, PNG, WEBP. Max ~2MB per image. Images will be compressed before upload if needed.</p>
-                  </div>
-                </div>
-              </div>
-              {formError && (
-                <p className="text-sm text-red-600">{formError}</p>
-              )}
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setEditing(null)}>
-                  Cancel
-                </Button>
-                <Button onClick={handleSave} disabled={saving}>
-                  {saving ? "Saving..." : "Save Changes"}
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
-
-      {/* Promotion Modal */}
-      {showPromoteModal && (
-        <Dialog open={showPromoteModal} onOpenChange={setShowPromoteModal}>
-          <DialogContent className="max-w-2xl bg-white">
-            <DialogHeader>
-              <DialogTitle>Promote Selected Products</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <p className="text-sm text-gray-600 mb-3">
-                  Promoting {promoteListings.length} selected product{promoteListings.length > 1 ? 's' : ''}
-                </p>
-                
-                <div className="max-h-32 overflow-y-auto border rounded-lg p-3 bg-gray-50">
-                  {promoteListings.map(listingId => {
-                    const listing = listings.find(l => l.id === listingId);
-                    return listing ? (
-                      <div key={listingId} className="flex items-center gap-2 py-1">
-                        <span className="text-sm font-medium">{listing.title}</span>
-                        <span className="text-sm text-gray-500">₦{listing.price.toLocaleString()}</span>
-                      </div>
-                    ) : null;
-                  })}
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2">Promotion Plan</label>
-                <Select value={promotePlan} onValueChange={setPromotePlan}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choose a promotion plan" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-white">
-                    {promotionPlans.map((plan) => (
-                      <SelectItem key={plan.type} value={plan.type}>
-                        <div>
-                          <div className="font-medium">{plan.name}</div>
-                          <div className="text-sm text-gray-500">₦{plan.price}/day - {plan.description}</div>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2">Duration (days)</label>
-                <Input
-                  type="number"
-                  placeholder="Duration in days"
-                  value={promoteDuration}
-                  onChange={(e) => setPromoteDuration(Number(e.target.value))}
-                  min="1"
-                  max="365"
-                />
-              </div>
-
-              {promotePlan && promoteDuration > 0 && (
-                <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                  <h4 className="font-medium text-blue-900 mb-2">Cost Breakdown</h4>
-                  <div className="space-y-1 text-sm text-blue-800">
-                    <p>Price per day: ₦{promotionPlans.find(p => p.type === promotePlan)?.price}</p>
-                    <p>Duration: {promoteDuration} days</p>
-                    <p>Products: {promoteListings.length}</p>
-                    <p className="text-lg font-semibold border-t pt-2">
-                      Total Cost: ₦{calculatePromotionCost().toLocaleString()}
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setShowPromoteModal(false)}>
-                  Cancel
-                </Button>
-                <Button 
-                  onClick={createPromotionAds}
-                  disabled={!promotePlan || promoteDuration <= 0}
-                  className="bg-blue-600 hover:bg-blue-700"
-                >
-                  Create Promotion Ads
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
+      <PromoteListingModal
+        showPromoteModal={showPromoteModal}
+        setShowPromoteModal={setShowPromoteModal}
+        promoteListings={promoteListings}
+        listings={listings}
+        promotePlan={promotePlan}
+        setPromotePlan={setPromotePlan}
+        promotionPlans={promotionPlans}
+        promoteDuration={promoteDuration}
+        setPromoteDuration={setPromoteDuration}
+        calculatePromotionCost={calculatePromotionCost}
+        createPromotionAds={createPromotionAds}
+      />
     </div>
   );
 }

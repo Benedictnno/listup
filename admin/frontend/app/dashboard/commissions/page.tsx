@@ -11,14 +11,13 @@ interface Commission {
   paymentReference?: string;
   paidAt?: string;
   createdAt: string;
-  user: {
-    id: string;
+  referrer: {
     name: string;
     email: string;
-    phone?: string;
-    vendorProfile?: {
-      storeName: string;
-    } | null;
+  };
+  referredUser: {
+    name: string;
+    storeName: string;
   };
 }
 
@@ -166,11 +165,10 @@ export default function AdminCommissionsPage() {
               <button
                 key={status}
                 onClick={() => setFilter(status as any)}
-                className={`px-3 py-1 rounded border text-sm ${
-                  filter === status
+                className={`px-3 py-1 rounded border text-sm ${filter === status
                     ? "bg-gray-900 text-white border-gray-900"
                     : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
-                }`}
+                  }`}
               >
                 {status === "all" ? "All" : status}
               </button>
@@ -190,7 +188,10 @@ export default function AdminCommissionsPage() {
             <thead className="bg-gray-50 border-b">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Vendor
+                  Referrer
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  Referred Vendor
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                   Amount
@@ -211,13 +212,14 @@ export default function AdminCommissionsPage() {
                 <tr key={commission.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4">
                     <div>
-                      <p className="font-medium text-gray-900">{commission.user.name}</p>
-                      <p className="text-sm text-gray-500">{commission.user.email}</p>
-                      {commission.user.vendorProfile?.storeName && (
-                        <p className="text-xs text-gray-400">
-                          {commission.user.vendorProfile.storeName}
-                        </p>
-                      )}
+                      <p className="font-medium text-gray-900">{commission.referrer.name}</p>
+                      <p className="text-sm text-gray-500">{commission.referrer.email}</p>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div>
+                      <p className="font-medium text-gray-900">{commission.referredUser.name}</p>
+                      <p className="text-xs text-gray-500">{commission.referredUser.storeName}</p>
                     </div>
                   </td>
                   <td className="px-6 py-4 font-semibold">
@@ -225,13 +227,12 @@ export default function AdminCommissionsPage() {
                   </td>
                   <td className="px-6 py-4">
                     <span
-                      className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                        commission.status === "SUCCESS"
+                      className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${commission.status === "SUCCESS"
                           ? "bg-green-100 text-green-800"
                           : commission.status === "PENDING"
-                          ? "bg-yellow-100 text-yellow-800"
-                          : "bg-red-100 text-red-800"
-                      }`}
+                            ? "bg-yellow-100 text-yellow-800"
+                            : "bg-red-100 text-red-800"
+                        }`}
                     >
                       {commission.status}
                     </span>

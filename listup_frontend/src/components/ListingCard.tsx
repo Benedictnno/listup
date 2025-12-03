@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Package, MapPin } from "lucide-react";
+import VerifiedBadge from "./VerifiedBadge";
 
 interface Listing {
   id: string;
@@ -17,6 +18,7 @@ interface Listing {
   };
   seller?: {
     name: string;
+    isKYCVerified?: boolean;
   };
 }
 
@@ -25,8 +27,8 @@ interface ListingCardProps {
 }
 
 export default function ListingCard({ listing }: ListingCardProps) {
-  const mainImage = listing.images && listing.images.length > 0 
-    ? listing.images[0] 
+  const mainImage = listing.images && listing.images.length > 0
+    ? listing.images[0]
     : null;
 
   return (
@@ -65,19 +67,19 @@ export default function ListingCard({ listing }: ListingCardProps) {
 
           {/* Meta information - stack on mobile */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-sm text-gray-500 gap-2">
-              <div className="flex items-center gap-2 text-sm min-w-0">
-                {listing.location && (
-                  <div className="flex items-center gap-1 min-w-0">
-                    <MapPin className="h-4 w-4 flex-shrink-0" />
-                    <span className="text-sm truncate block min-w-0">{listing.location}</span>
-                  </div>
-                )}
-                {listing.condition && (
-                  <span className="px-2 py-0.5 bg-gray-100 rounded-full text-xs flex-shrink-0">
-                    {listing.condition}
-                  </span>
-                )}
-              </div>
+            <div className="flex items-center gap-2 text-sm min-w-0">
+              {listing.location && (
+                <div className="flex items-center gap-1 min-w-0">
+                  <MapPin className="h-4 w-4 flex-shrink-0" />
+                  <span className="text-sm truncate block min-w-0">{listing.location}</span>
+                </div>
+              )}
+              {listing.condition && (
+                <span className="px-2 py-0.5 bg-gray-100 rounded-full text-xs flex-shrink-0">
+                  {listing.condition}
+                </span>
+              )}
+            </div>
 
             {/* Category and Seller - place below on small screens */}
             <div className="flex items-center justify-end gap-3 text-xs text-gray-500 flex-wrap">
@@ -87,7 +89,10 @@ export default function ListingCard({ listing }: ListingCardProps) {
                 </span>
               )}
               {listing.seller && (
-                <span className="truncate">by {listing.seller.name}</span>
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <span className="truncate text-gray-500">by {listing.seller.name}</span>
+                  {listing.seller.isKYCVerified && <VerifiedBadge size="sm" />}
+                </div>
               )}
             </div>
           </div>

@@ -1,9 +1,8 @@
 // API functions for Next.js App Router with cookie-based auth
 // Works for both client and server components
 
-// Use environment variable with proper fallback for production
-const API_BASE_URL = "https://api.listup.ng/api"
-// process.env.NEXT_PUBLIC_API_URL ||
+// Use environment variable with proper fallback
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://api.listup.ng/api";
 // Define proper types for the API
 interface CreateListingPayload {
   title: string;
@@ -41,22 +40,22 @@ export async function fetchListings() {
     }
 
     const data = await response.json();
-    
+
     if (!data) {
       throw new Error('No data received from API');
     }
-    
+
     return data;
   } catch (error: unknown) {
     console.error("Error fetching listings:", error);
-    
+
     if (error instanceof Error) {
       if (error.message.includes('fetch') || error.message.includes('ECONNREFUSED')) {
         throw new Error("Backend server is not running. Please start the backend server.");
       }
       throw new Error(error.message || "Failed to fetch listings");
     }
-    
+
     throw new Error("Failed to fetch listings");
   }
 }
@@ -70,9 +69,9 @@ export async function fetchListingById(id: string) {
       headers: {
         // 💡 CRITICAL FIX: Impersonate a browser to bypass anti-scraping checks
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-        
+
         // 'Content-Type' is not needed for a GET request, but won't hurt
-        'Content-Type': 'application/json', 
+        'Content-Type': 'application/json',
         'Referer': 'https://listup.ng/',
       },
       cache: 'no-store', // Disable caching for dynamic data
@@ -83,7 +82,7 @@ export async function fetchListingById(id: string) {
         throw new Error('Listing not found');
       }
       // This will now likely show the correct status text (e.g., "Forbidden")
-      throw new Error(`Failed to fetch listing: ${response.statusText}`); 
+      throw new Error(`Failed to fetch listing: ${response.statusText}`);
     }
 
     const data = await response.json();
@@ -113,7 +112,7 @@ export async function fetchListingsWithFilters(params: {
     if (params.limit) query.set('limit', String(params.limit));
 
     const url = `${API_BASE_URL}/listings${query.toString() ? `?${query.toString()}` : ''}`;
-    
+
     const res = await fetch(url, {
       method: 'GET',
       headers: {
@@ -121,7 +120,7 @@ export async function fetchListingsWithFilters(params: {
       },
       credentials: 'include',
     });
-    
+
     if (!res.ok) throw new Error('Failed to fetch listings');
     const data = await res.json();
     return data;
@@ -140,7 +139,7 @@ export async function fetchVendorListings(vendorId: string | undefined) {
       },
       credentials: 'include',
     });
-    
+
     if (!res.ok) {
       throw new Error("Failed to fetch listings");
     }
@@ -233,11 +232,11 @@ export async function updateListing(listingId: string, listingData: UpdateListin
       body: JSON.stringify(listingData),
       credentials: 'include',
     });
-    
+
     if (!res.ok) {
       throw new Error("Failed to update listing");
     }
-    
+
     return res.json();
   } catch (error: unknown) {
     console.error("Error updating listing:", error);
@@ -255,11 +254,11 @@ export async function deleteListing(listingId: string) {
       },
       credentials: 'include',
     });
-    
+
     if (!res.ok) {
       throw new Error("Failed to delete listing");
     }
-   
+
     return res.json();
   } catch (error: unknown) {
     console.error("Error deleting listing:", error);

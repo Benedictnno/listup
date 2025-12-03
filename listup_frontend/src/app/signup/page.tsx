@@ -219,10 +219,10 @@ function SignupContent() {
     setField(field, value);
     if (fieldErrors[field]) clearFieldError(field);
 
-     if (field === "referralCode") {
-       // Simple badge toggle: show discount badge if code is non-empty
-       setHasReferralDiscount(Boolean(value.trim()));
-     }
+    if (field === "referralCode") {
+      // Simple badge toggle: show discount badge if code is non-empty
+      setHasReferralDiscount(Boolean(value.trim()));
+    }
   };
 
   const handleNext = (e: React.FormEvent) => {
@@ -352,7 +352,7 @@ function SignupContent() {
             message={error}
             rawError={error}
             retryCount={retryCount}
-            // onRetry={handleRetry}
+          // onRetry={handleRetry}
           />
         )}
 
@@ -381,13 +381,12 @@ function SignupContent() {
                 onChange={(e) => handleFieldChange("name", e.target.value)}
                 placeholder="John Doe"
                 required
-                className={`w-full p-3 rounded-xl transition-colors border ${
-                  getFieldError("name")
+                className={`w-full p-3 rounded-xl transition-colors border ${getFieldError("name")
                     ? "border-red-300 bg-red-50"
                     : isFieldValid("name")
-                    ? "border-green-300 bg-green-50"
-                    : "border-slate-300"
-                } focus:outline-none focus:ring-2 focus:ring-lime-200`}
+                      ? "border-green-300 bg-green-50"
+                      : "border-slate-300"
+                  } focus:outline-none focus:ring-2 focus:ring-lime-200`}
               />
               {getFieldError("name") && (
                 <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
@@ -406,13 +405,12 @@ function SignupContent() {
                 onChange={(e) => handleFieldChange("email", e.target.value)}
                 placeholder="you@example.com"
                 required
-                className={`w-full p-3 rounded-xl transition-colors border ${
-                  getFieldError("email")
+                className={`w-full p-3 rounded-xl transition-colors border ${getFieldError("email")
                     ? "border-red-300 bg-red-50"
                     : isFieldValid("email")
-                    ? "border-green-300 bg-green-50"
-                    : "border-slate-300"
-                } focus:outline-none focus:ring-2 focus:ring-lime-200`}
+                      ? "border-green-300 bg-green-50"
+                      : "border-slate-300"
+                  } focus:outline-none focus:ring-2 focus:ring-lime-200`}
               />
               {getFieldError("email") && (
                 <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
@@ -430,13 +428,12 @@ function SignupContent() {
                 value={form.phone}
                 onChange={(e) => handleFieldChange("phone", e.target.value)}
                 placeholder="08012345678"
-                className={`w-full p-3 rounded-xl transition-colors border ${
-                  getFieldError("phone")
+                className={`w-full p-3 rounded-xl transition-colors border ${getFieldError("phone")
                     ? "border-red-300 bg-red-50"
                     : form.phone?.trim() && !getFieldError("phone")
-                    ? "border-green-300 bg-green-50"
-                    : "border-slate-300"
-                } focus:outline-none focus:ring-2 focus:ring-lime-200`}
+                      ? "border-green-300 bg-green-50"
+                      : "border-slate-300"
+                  } focus:outline-none focus:ring-2 focus:ring-lime-200`}
               />
               {getFieldError("phone") && (
                 <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
@@ -447,7 +444,7 @@ function SignupContent() {
               <p className="mt-1 text-xs text-slate-500">Optional - for account recovery and notifications</p>
             </div>
 
-          
+
 
             {/* Password */}
             <div>
@@ -459,13 +456,12 @@ function SignupContent() {
                   onChange={(e) => handleFieldChange("password", e.target.value)}
                   placeholder="••••••••"
                   required
-                  className={`w-full p-3 pr-12 rounded-xl transition-colors border ${
-                    getFieldError("password")
+                  className={`w-full p-3 pr-12 rounded-xl transition-colors border ${getFieldError("password")
                       ? "border-red-300 bg-red-50"
                       : isFieldValid("password")
-                      ? "border-green-300 bg-green-50"
-                      : "border-slate-300"
-                  } focus:outline-none focus:ring-2 focus:ring-lime-200`}
+                        ? "border-green-300 bg-green-50"
+                        : "border-slate-300"
+                    } focus:outline-none focus:ring-2 focus:ring-lime-200`}
                 />
                 <button
                   type="button"
@@ -544,7 +540,7 @@ function SignupContent() {
               <p className="text-sm text-lime-600 mt-1">Complete your store information to start selling</p>
             </div>
 
-  {/* Referral Code (optional) */}
+            {/* Referral Code (optional) */}
             <div>
               <label className="block text-sm font-medium mb-1 text-slate-700 flex items-center gap-2">
                 Referral Code
@@ -574,13 +570,12 @@ function SignupContent() {
                 onChange={(e) => handleFieldChange("storeName", e.target.value)}
                 placeholder="Bob's Fashion Hub"
                 required
-                className={`w-full p-3 rounded-xl transition-colors border ${
-                  getFieldError("storeName")
+                className={`w-full p-3 rounded-xl transition-colors border ${getFieldError("storeName")
                     ? "border-red-300 bg-red-50"
                     : isFieldValid("storeName")
-                    ? "border-green-300 bg-green-50"
-                    : "border-slate-300"
-                } focus:outline-none focus:ring-2 focus:ring-lime-200`}
+                      ? "border-green-300 bg-green-50"
+                      : "border-slate-300"
+                  } focus:outline-none focus:ring-2 focus:ring-lime-200`}
               />
               {getFieldError("storeName") && (
                 <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
@@ -606,13 +601,12 @@ function SignupContent() {
                   value={form.storeAddress}
                   onChange={(e) => handleFieldChange("storeAddress", e.target.value)}
                   required
-                  className={`w-full p-3 rounded-xl transition-colors border ${
-                    getFieldError("storeAddress")
+                  className={`w-full p-3 rounded-xl transition-colors border ${getFieldError("storeAddress")
                       ? "border-red-300 bg-red-50"
                       : isFieldValid("storeAddress")
-                      ? "border-green-300 bg-green-50"
-                      : "border-slate-300"
-                  } focus:outline-none focus:ring-2 focus:ring-lime-200`}
+                        ? "border-green-300 bg-green-50"
+                        : "border-slate-300"
+                    } focus:outline-none focus:ring-2 focus:ring-lime-200`}
                 >
                   {addresses.map((a) => (
                     <option key={a.id} value={a.name}>
@@ -641,13 +635,12 @@ function SignupContent() {
                 onChange={(e) => handleFieldChange("businessCategory", e.target.value)}
                 placeholder="Food / Electronics / Fashion"
                 required
-                className={`w-full p-3 rounded-xl transition-colors border ${
-                  getFieldError("businessCategory")
+                className={`w-full p-3 rounded-xl transition-colors border ${getFieldError("businessCategory")
                     ? "border-red-300 bg-red-50"
                     : isFieldValid("businessCategory")
-                    ? "border-green-300 bg-green-50"
-                    : "border-slate-300"
-                } focus:outline-none focus:ring-2 focus:ring-lime-200`}
+                      ? "border-green-300 bg-green-50"
+                      : "border-slate-300"
+                  } focus:outline-none focus:ring-2 focus:ring-lime-200`}
               />
               {getFieldError("businessCategory") && (
                 <p className="mt-1 text-xs text-red-600 flex items-center gap-1">

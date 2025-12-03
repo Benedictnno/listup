@@ -3,8 +3,14 @@ const prisma = require('../lib/prisma');
 
 const isAuthenticated = async (req, res, next) => {
   try {
-    const token = req.header('Authorization')?.replace('Bearer ', '');
-    
+    // Try to get token from cookies first (cookie-based auth), then fall back to Authorization header
+    let token = req.cookies?.token;
+
+    if (!token) {
+      // Fall back to Authorization header for backward compatibility
+      token = req.header('Authorization')?.replace('Bearer ', '');
+    }
+
     if (!token) {
       return res.status(401).json({
         success: false,
@@ -13,7 +19,7 @@ const isAuthenticated = async (req, res, next) => {
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    
+
     // Verify user exists
     const user = await prisma.user.findUnique({
       where: { id: decoded.id },

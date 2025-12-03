@@ -3,24 +3,27 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { 
-  LayoutDashboard, 
-  Users, 
-  ShoppingBag, 
-  Tag, 
-  Settings, 
-  BarChart3, 
-  LogOut, 
-  ChevronRight, 
-  Menu, 
+import {
+  LayoutDashboard,
+  Users,
+  ShoppingBag,
+  Tag,
+  Settings,
+  BarChart3,
+  LogOut,
+  ChevronRight,
+  Menu,
   MapPinHouse,
   CircleFadingPlus,
   TicketSlash,
   X,
-  Megaphone
+  Megaphone,
+  ShieldCheck,
+  Banknote,
+  Share2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import Button  from '@/components/ui/button';
+import Button from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -59,14 +62,29 @@ export default function Sidebar({ open, setOpen }: SidebarProps) {
       icon: <Tag className="h-5 w-5" />,
     },
     {
+      title: 'KYC',
+      href: '/dashboard/kyc',
+      icon: <ShieldCheck className="h-5 w-5" />,
+    },
+    {
       title: 'Listings',
       href: '/dashboard/listings',
       icon: <ShoppingBag className="h-5 w-5" />,
     },
-     {
+    {
       title: 'Advertisements',
       href: '/dashboard/advertisements',
       icon: <Megaphone className="h-5 w-5" />,
+    },
+    {
+      title: 'Commissions',
+      href: '/dashboard/commissions',
+      icon: <Banknote className="h-5 w-5" />,
+    },
+    {
+      title: 'Referrals',
+      href: '/dashboard/referrals',
+      icon: <Share2 className="h-5 w-5" />,
     },
     {
       title: 'Analytics',
@@ -83,7 +101,7 @@ export default function Sidebar({ open, setOpen }: SidebarProps) {
       href: '/dashboard/categories',
       icon: <CircleFadingPlus className="h-5 w-5" />,
     },
-   
+
     {
       title: 'Settings',
       href: '/settings',
@@ -103,7 +121,7 @@ export default function Sidebar({ open, setOpen }: SidebarProps) {
     <>
       {/* Mobile overlay */}
       {open && (
-        <div 
+        <div
           className="fixed inset-0 z-40 bg-black/50 lg:hidden"
           onClick={() => setOpen(false)}
         />
@@ -134,9 +152,9 @@ export default function Sidebar({ open, setOpen }: SidebarProps) {
                 </div>
                 <span className="text-xl font-semibold text-gray-800">ListUp Admin</span>
               </div>
-              <Button 
-                variant="ghost" 
-                size="sm" 
+              <Button
+                variant="ghost"
+                size="sm"
                 className="ml-auto lg:hidden hover:bg-gray-100"
                 onClick={() => setOpen(false)}
               >
@@ -163,8 +181,8 @@ export default function Sidebar({ open, setOpen }: SidebarProps) {
                           href={item.href}
                           className={cn(
                             "flex items-center h-10 px-3 py-2 rounded-md text-sm font-medium transition-colors",
-                            isActive(item.href) 
-                              ? "bg-gray-100 text-lime-600" 
+                            isActive(item.href)
+                              ? "bg-gray-100 text-lime-600"
                               : "text-gray-700 hover:bg-gray-100 hover:text-lime-600",
                             !open && "lg:justify-center"
                           )}
@@ -185,11 +203,11 @@ export default function Sidebar({ open, setOpen }: SidebarProps) {
                             {open && <span className="ml-3">{item.title}</span>}
                           </span>
                           {open && item.submenu && item.submenu.length > 0 && (
-                            <ChevronRight 
+                            <ChevronRight
                               className={cn(
                                 "ml-auto h-4 w-4 transition-transform",
                                 expandedItem === item.title && "transform rotate-90"
-                              )} 
+                              )}
                             />
                           )}
                         </Link>
@@ -236,9 +254,9 @@ export default function Sidebar({ open, setOpen }: SidebarProps) {
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button 
-                  variant="ghost" 
-                  size={open ? "md" : "sm"} 
+                <Button
+                  variant="ghost"
+                  size={open ? "md" : "sm"}
                   className={cn(
                     "w-full text-red-500 hover:text-red-600 hover:bg-red-50",
                     !open && "w-auto"

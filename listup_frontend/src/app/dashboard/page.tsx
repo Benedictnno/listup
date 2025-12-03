@@ -42,14 +42,14 @@ export default function DashboardOverview() {
   const [loading, setLoading] = useState(true);
   const { user } = useAuthStore();
   const router = useRouter();
-  
+
   // Additional protection at page level
   useEffect(() => {
     if (user === null) {
       router.push("/login");
       return;
     }
-    
+
     if (user.role !== "VENDOR") {
       router.push("/");
       return;
@@ -62,7 +62,7 @@ export default function DashboardOverview() {
   useEffect(() => {
     async function loadDashboardData() {
       if (!vendorId) return;
-      
+
       try {
         // Fetch listings data
         const listings = await fetchVendorListings(vendorId);
@@ -150,9 +150,8 @@ export default function DashboardOverview() {
   return (
     <div className="space-y-6">
       <KYCStatusBanner
-        // Backend enforces 3 listings before KYC, so approximate here
-        isKYCVerified={false}
-        listingLimit={3}
+        isKYCVerified={user?.isKYCVerified}
+        listingLimit={user?.listingLimit}
         currentListingsCount={data?.totalListings || 0}
       />
       {/* Welcome Section */}
@@ -243,7 +242,7 @@ export default function DashboardOverview() {
                   </Button>
                 </Link>
               </div>
-              
+
               {data?.latestListings && data.latestListings.length > 0 ? (
                 <div className="space-y-3">
                   {data.latestListings.map((listing) => (
@@ -266,11 +265,10 @@ export default function DashboardOverview() {
                         <p className="text-sm text-gray-500">₦{listing.price.toLocaleString()}</p>
                       </div>
                       <div className="text-right">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          listing.status === 'active' ? 'bg-green-100 text-green-800' :
-                          listing.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-gray-100 text-gray-800'
-                        }`}>
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${listing.status === 'active' ? 'bg-green-100 text-green-800' :
+                            listing.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                              'bg-gray-100 text-gray-800'
+                          }`}>
                           {listing.status}
                         </span>
                       </div>

@@ -5,6 +5,7 @@ const cors = require('cors');
 const morgan = require('morgan');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const cookieParser = require('cookie-parser');
 
 const authRoutes = require('./routes/auth');
 const vendorRoutes = require('./routes/vendors');
@@ -15,6 +16,7 @@ const addressesRoutes = require('./routes/addresses');
 const categoriesRoutes = require('./routes/categories');
 const advertisementsRoutes = require('./routes/advertisements');
 const uploadsRoutes = require('./routes/uploads');
+const kycRoutes = require('./routes/kyc');
 
 const app = express();
 const PORT = process.env.ADMIN_PORT || 4001; // Changed port to avoid conflict
@@ -40,7 +42,7 @@ const corsOptions = {
     'http://listup.ng',
     'https://listup.ng',
     'http://www.listup.ng',
-    'https://www.listup.ng',  
+    'https://www.listup.ng',
     'listup-admin.vercel.app'
   ],
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
@@ -51,6 +53,9 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
+// Cookie parsing middleware
+app.use(cookieParser());
+
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
@@ -60,8 +65,8 @@ app.use(morgan('combined'));
 
 // Health check endpoint
 app.get('/health', (req, res) => {
-  res.json({ 
-    status: 'OK', 
+  res.json({
+    status: 'OK',
     timestamp: new Date().toISOString(),
     service: 'ListUp Admin Backend'
   });
@@ -77,12 +82,14 @@ app.use('/api/addresses', addressesRoutes);
 app.use('/api/categories', categoriesRoutes);
 app.use('/api/advertisements', advertisementsRoutes);
 app.use('/api/uploads', uploadsRoutes);
+app.use('/api/kyc', kycRoutes);
+app.use('/api/referrals', require('./routes/referrals'));
 
 
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error('Error:', err);
-  
+
   if (err.name === 'ValidationError') {
     return res.status(400).json({
       success: false,
@@ -90,14 +97,14 @@ app.use((err, req, res, next) => {
       errors: err.errors
     });
   }
-  
+
   if (err.name === 'UnauthorizedError') {
     return res.status(401).json({
       success: false,
       message: 'Unauthorized access'
     });
   }
-  
+
   res.status(500).json({
     success: false,
     message: 'Internal server error',

@@ -25,6 +25,12 @@ export default function KYCSubmitPage() {
   const [otherSocial, setOtherSocial] = useState("");
   const [referralCode, setReferralCode] = useState("");
 
+  // CAC and document fields
+  const [cacNumber, setCacNumber] = useState("");
+  const [documentFile, setDocumentFile] = useState<File | null>(null);
+  const [documentType, setDocumentType] = useState<"CAC_CERTIFICATE" | "STUDENT_PORTAL">("CAC_CERTIFICATE");
+  const [documentPreview, setDocumentPreview] = useState<string>("");
+
   const [fee, setFee] = useState<number | null>(null);
   const [originalFee] = useState<number>(5000);
   const [discountedFee] = useState<number>(3000);
@@ -36,12 +42,47 @@ export default function KYCSubmitPage() {
   const [successMessage, setSuccessMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [checkingKYC, setCheckingKYC] = useState(true);
 
   useEffect(() => {
     // Only vendors can access this page
     if (user && user.role !== "VENDOR") {
       router.push("/dashboard");
     }
+  }, [user, router]);
+
+  useEffect(() => {
+    // Check if user already has a KYC submission
+    async function checkExistingKYC() {
+      if (!user) return;
+
+      try {
+        setCheckingKYC(true);
+        const res = await api.get("/kyc/status");
+        if (res.data?.success && res.data.data.kyc) {
+          const kyc = res.data.data.kyc;
+
+          // Only allow resubmission if KYC was rejected
+          if (kyc.status === "REJECTED") {
+            // Stay on page to resubmit
+            return;
+          } else if (kyc.status === "APPROVED" || kyc.status === "INTERVIEW_COMPLETED") {
+            // Ready for payment
+            router.push("/kyc/payment");
+          } else {
+            // Pending or other status -> Go to dashboard
+            router.push("/dashboard");
+          }
+        }
+      } catch (error) {
+        console.error("Error checking KYC status", error);
+        // Allow access if there's an error checking status
+      } finally {
+        setCheckingKYC(false);
+      }
+    }
+
+    checkExistingKYC();
   }, [user, router]);
 
   useEffect(() => {
@@ -57,6 +98,40 @@ export default function KYCSubmitPage() {
       !!twitterHandle.trim() ||
       !!otherSocial.trim()
     );
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) {
+      setDocumentFile(null);
+      setDocumentPreview("");
+      return;
+    }
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      setErrorMessage("Please upload an image file (JPG, PNG, etc.)");
+      setFieldErrors({ document: "Only image files are allowed" });
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setErrorMessage("File size must be less than 5MB");
+      setFieldErrors({ document: "File size must be less than 5MB" });
+      return;
+    }
+
+    setDocumentFile(file);
+    setFieldErrors({});
+    setErrorMessage("");
+
+    // Create preview
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setDocumentPreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleReferralValidate = async () => {
@@ -118,6 +193,17 @@ export default function KYCSubmitPage() {
         payload.referralCode = referralCode.trim();
       }
 
+      // Add CAC number if provided
+      if (cacNumber.trim()) {
+        payload.cacNumber = cacNumber.trim();
+      }
+
+      // Add document if uploaded
+      if (documentFile && documentPreview) {
+        payload.documentType = documentType;
+        payload.documentUrl = documentPreview; // Base64 encoded image
+      }
+
       const res = await api.post("/kyc/submit", payload);
 
       if (res.data?.success) {
@@ -126,7 +212,7 @@ export default function KYCSubmitPage() {
         );
         // Optionally redirect to payment page after a short delay
         setTimeout(() => {
-          router.push("/kyc/payment");
+          router.push("/dashboard");
         }, 1500);
       } else {
         setErrorMessage(res.data?.message || "Failed to submit KYC");
@@ -150,6 +236,14 @@ export default function KYCSubmitPage() {
   const displayFee = fee ?? originalFee;
   const hasDiscount = referralValid === true && displayFee < originalFee;
   const savings = hasDiscount ? originalFee - displayFee : 0;
+
+  if (checkingKYC) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-900">
+        <Loader2 className="w-8 h-8 animate-spin text-lime-500" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-900 p-4">
@@ -255,6 +349,95 @@ export default function KYCSubmitPage() {
               <p className="mt-1 text-xs text-slate-500">
                 At least one of the fields above is required.
               </p>
+            </div>
+          </div>
+
+          {/* CAC Number and Document Upload */}
+          <div className="rounded-xl border border-slate-200 p-4 bg-slate-50 space-y-4">
+            <h2 className="text-sm font-semibold text-slate-800">Business Verification (Optional)</h2>
+
+            <div>
+              <label className="block text-sm font-medium mb-1 text-slate-700">
+                CAC Number
+              </label>
+              <input
+                type="text"
+                value={cacNumber}
+                onChange={(e) => setCacNumber(e.target.value.toUpperCase())}
+                placeholder="e.g. RC123456"
+                className="w-full p-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-lime-200"
+              />
+              <p className="mt-1 text-xs text-slate-500">
+                Enter your Corporate Affairs Commission registration number if you have one
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2 text-slate-700">
+                Verification Document
+              </label>
+
+              <div className="space-y-3">
+                {/* Document Type Selection */}
+                <div className="flex gap-4">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      value="CAC_CERTIFICATE"
+                      checked={documentType === "CAC_CERTIFICATE"}
+                      onChange={(e) => setDocumentType(e.target.value as "CAC_CERTIFICATE")}
+                      className="w-4 h-4 text-lime-500"
+                    />
+                    <span className="text-sm">CAC Certificate</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      value="STUDENT_PORTAL"
+                      checked={documentType === "STUDENT_PORTAL"}
+                      onChange={(e) => setDocumentType(e.target.value as "STUDENT_PORTAL")}
+                      className="w-4 h-4 text-lime-500"
+                    />
+                    <span className="text-sm">Student Portal Screenshot</span>
+                  </label>
+                </div>
+
+                {/* File Upload */}
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileChange}
+                  className="w-full p-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-lime-200 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-lime-50 file:text-lime-700 hover:file:bg-lime-100"
+                />
+
+                {documentFile && (
+                  <div className="text-xs text-green-700 flex items-center gap-1">
+                    <CheckCircle2 className="w-3 h-3" />
+                    {documentFile.name} ({(documentFile.size / 1024 / 1024).toFixed(2)} MB)
+                  </div>
+                )}
+
+                {documentPreview && (
+                  <div className="mt-2">
+                    <img
+                      src={documentPreview}
+                      alt="Document preview"
+                      className="max-w-xs rounded-lg border border-slate-200"
+                    />
+                  </div>
+                )}
+
+                {fieldErrors.document && (
+                  <p className="text-xs text-red-600 flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" />
+                    {fieldErrors.document}
+                  </p>
+                )}
+
+                <p className="text-xs text-slate-500">
+                  Upload a clear image of your {documentType === "CAC_CERTIFICATE" ? "CAC certificate" : "student portal showing your business/products"}. Max size: 5MB
+                </p>
+              </div>
             </div>
           </div>
 

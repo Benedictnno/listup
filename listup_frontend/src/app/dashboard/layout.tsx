@@ -15,6 +15,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
 
   const vendorName = safeLocalStorage.getItem("name") || "Vendor";
+  const storeName = safeLocalStorage.getItem("storeName") || vendorName;
+  const vendorEmail = safeLocalStorage.getItem("email") || "";
 
   const handleLogout = () => {
     safeLocalStorage.clear();
@@ -34,7 +36,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <div className="flex h-screen bg-gray-50">
         {/* Mobile Overlay */}
         {isOpen && (
-          <div 
+          <div
             className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
             onClick={() => setIsOpen(false)}
           />
@@ -62,15 +64,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <div className="p-4 border-b">
             <div className={cn("flex items-center space-x-3", !isOpen && "lg:justify-center")}>
               <div className="w-10 h-10 rounded-full bg-lime-500 flex items-center justify-center text-white font-semibold">
-                {vendorName.charAt(0).toUpperCase()}
+                {storeName.charAt(0).toUpperCase()}
               </div>
               {isOpen && (
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-gray-900 truncate">{vendorName}</p>
-                  <div className="flex items-center gap-1">
-                    <Crown size={12} className="text-yellow-500" />
-                    <span className="text-xs text-gray-500">Verified Vendor</span>
-                  </div>
+                  <p className="font-medium text-gray-900 truncate">{storeName}</p>
+                  <p className="text-xs text-gray-500 truncate">{vendorEmail}</p>
                 </div>
               )}
             </div>
@@ -132,7 +131,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               >
                 <FiMenu size={22} />
               </button>
-              
+
               {/* Desktop Collapse Button */}
               <button
                 onClick={() => setIsOpen(!isOpen)}
@@ -140,14 +139,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               >
                 <FiMenu size={22} />
               </button>
-              
+
               <h1 className="font-bold text-lg"><Link href="/dashboard">Dashboard</Link></h1>
             </div>
 
             <div className="flex items-center space-x-4">
               {/* Post New Listing Button */}
-              <Link 
-                href="/dashboard/create-list" 
+              <Link
+                href="/dashboard/create-list"
                 className="bg-lime-600 text-white px-4 py-2 rounded-lg hover:bg-lime-700 transition-colors font-medium"
               >
                 Post New Listing
@@ -161,8 +160,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         {/* Click outside to close dropdowns */}
         {showProfileDropdown && (
-          <div 
-            className="fixed inset-0 z-40" 
+          <div
+            className="fixed inset-0 z-40"
             onClick={() => setShowProfileDropdown(false)}
           />
         )}

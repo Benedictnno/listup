@@ -1,4 +1,4 @@
-import { Mail, Phone, Store, Eye, CheckCircle, XCircle } from "lucide-react";
+import { Mail, Phone, Store, Eye, Ban } from "lucide-react";
 import { Vendor } from "@/components/vendors/types";
 import { StatusBadge } from "@/components/vendors/StatusBadge";
 
@@ -6,16 +6,14 @@ interface VendorItemProps {
   vendor: Vendor;
   actionLoadingId: string | null;
   onView: () => void;
-  onApprove: () => void;
-  onReject: (reason: string) => void;
+  onSuspend?: () => void;
 }
 
 export default function VendorItem({
   vendor,
   actionLoadingId,
   onView,
-  onApprove,
-  onReject,
+  onSuspend,
 }: VendorItemProps) {
   return (
     <div className="p-4 md:p-6 hover:bg-muted/50 transition-colors">
@@ -51,7 +49,7 @@ export default function VendorItem({
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2">
           <StatusBadge status={vendor.vendorProfile.verificationStatus} />
           <button
             onClick={onView}
@@ -59,26 +57,17 @@ export default function VendorItem({
           >
             <Eye className="w-4 h-4" /> View
           </button>
+          {onSuspend && (
+            <button
+              onClick={onSuspend}
+              disabled={actionLoadingId === vendor.id}
+              className="inline-flex items-center gap-1 px-3 py-1.5 border border-orange-300 bg-orange-50 text-orange-700 rounded-md hover:bg-orange-100 disabled:opacity-50"
+            >
+              <Ban className="w-4 h-4" />
+              {actionLoadingId === vendor.id ? "Processing..." : "Suspend"}
+            </button>
+          )}
         </div>
-      </div>
-
-      <div className="mt-4 flex flex-wrap items-center gap-2">
-        <button
-          onClick={onApprove}
-          disabled={actionLoadingId === vendor.id}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50"
-        >
-          <CheckCircle className="w-4 h-4" />
-          {actionLoadingId === vendor.id ? "Approving..." : "Approve"}
-        </button>
-        <button
-          onClick={() => onReject(prompt("Enter rejection reason:") || "")}
-          disabled={actionLoadingId === vendor.id}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50"
-        >
-          <XCircle className="w-4 h-4" />
-          {actionLoadingId === vendor.id ? "Rejecting..." : "Reject"}
-        </button>
       </div>
     </div>
   );

@@ -432,3 +432,217 @@ exports.getVendorListingsByStore = async (req, res) => {
 };
 
 
+
+
+// Admin-only endpoints
+
+// Get all listings for admin (with vendor info, filters, pagination)
+exports.getAllListingsAdmin = async (req, res, next) => {
+    try {
+        const {
+            limit = 20,
+            page = 1,
+            status,
+            categoryId,
+            vendorId,
+            search,
+            sortBy = 'createdAt',
+            sortOrder = 'desc'
+        } = req.query;
+
+        const take = Math.min(parseInt(limit), 100);
+        const skip = (Math.max(parseInt(page), 1) - 1) * take;
+
+        // Build filters
+        const filters = {};
+        if (status) {
+            if (status === 'active') filters.isActive = true;
+            else if (status === 'inactive') filters.isActive = false;
+        }
+        if (categoryId) filters.categoryId = categoryId;
+        if (vendorId) filters.sellerId = vendorId;
+        if (search) {
+            filters.OR = [
+                { title: { contains: search, mode: 'insensitive' } },
+                { description: { contains: search, mode: 'insensitive' } }
+            ];
+        }
+
+        // Build sort
+        const orderBy = {};
+        if (sortBy === 'price') orderBy.price = sortOrder;
+        else if (sortBy === 'title') orderBy.title = sortOrder;
+        else orderBy.createdAt = sortOrder;
+
+        const [items, total] = await Promise.all([
+            prisma.listing.findMany({
+                where: filters,
+                orderBy,
+                skip,
+                take,
+                select: {
+                    id: true,
+                    title: true,
+                    description: true,
+                    price: true,
+                    images: true,
+                    location: true,
+                    condition: true,
+                    isActive: true,
+                    createdAt: true,
+                    updatedAt: true,
+                    category: {
+                        select: { id: true, name: true, slug: true }
+                    },
+                    seller: {
+                        select: {
+                            id: true,
+                            name: true,
+                            email: true,
+                            vendorProfile: {
+                                select: {
+                                    storeName: true,
+                                    storeAddress: true
+                                }
+                            }
+                        }
+                    }
+                }
+            }),
+            prisma.listing.count({ where: filters })
+        ]);
+
+        res.json({
+            success: true,
+            data: {
+                items,
+                pagination: {
+                    total,
+                    page: Number(page),
+                    pages: Math.ceil(total / take),
+                    limit: take
+                }
+            }
+        });
+    } catch (err) {
+        next(err);
+    }
+};
+
+// Update any listing (admin bypass ownership check)
+exports.updateListingAdmin = async (req, res, next) => {
+    try {
+        const exists = await prisma.listing.findUnique({
+            where: { id: req.params.id }
+        });
+
+        if (!exists) {
+            return res.status(404).json({
+                success: false,
+                message: 'Listing not found'
+            });
+        }
+
+        const listing = await prisma.listing.update({
+            where: { id: req.params.id },
+            data: {
+                ...req.body,
+                updatedAt: new Date()
+            },
+            include: {
+                category: {
+                    select: { id: true, name: true, slug: true }
+                },
+                seller: {
+                    select: {
+                        id: true,
+                        name: true,
+                        vendorProfile: {
+                            select: { storeName: true }
+                        }
+                    }
+                }
+            }
+        });
+
+        res.json({
+            success: true,
+            data: listing
+        });
+    } catch (e) {
+        next(e);
+    }
+};
+
+// Delete any listing (admin bypass ownership check)
+exports.deleteListingAdmin = async (req, res, next) => {
+    try {
+        const exists = await prisma.listing.findUnique({
+            where: { id: req.params.id }
+        });
+
+        if (!exists) {
+            return res.status(404).json({
+                success: false,
+                message: 'Listing not found'
+            });
+        }
+
+        await prisma.listing.delete({
+            where: { id: req.params.id }
+        });
+
+        res.json({
+            success: true,
+            message: 'Listing deleted successfully'
+        });
+    } catch (e) {
+        next(e);
+    }
+};
+
+// Bulk actions on listings
+exports.bulkActionAdmin = async (req, res, next) => {
+    try {
+        const { listingIds, action } = req.body;
+
+        if (!listingIds || !Array.isArray(listingIds) || listingIds.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'listingIds array is required'
+            });
+        }
+
+        if (!['activate', 'deactivate', 'delete'].includes(action)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid action. Must be: activate, deactivate, or delete'
+            });
+        }
+
+        let result;
+        if (action === 'activate') {
+            result = await prisma.listing.updateMany({
+                where: { id: { in: listingIds } },
+                data: { isActive: true, updatedAt: new Date() }
+            });
+        } else if (action === 'deactivate') {
+            result = await prisma.listing.updateMany({
+                where: { id: { in: listingIds } },
+                data: { isActive: false, updatedAt: new Date() }
+            });
+        } else if (action === 'delete') {
+            result = await prisma.listing.deleteMany({
+                where: { id: { in: listingIds } }
+            });
+        }
+
+        res.json({
+            success: true,
+            message: `Successfully ${action}d ${result.count} listing(s)`,
+            count: result.count
+        });
+    } catch (e) {
+        next(e);
+    }
+};

@@ -1,15 +1,21 @@
-const router = require('express').Router();
-const { auth, allow } = require('../middleware/auth');
-const KYCCtrl = require('../controllers/kyc.controller');
-const { generalLimiter } = require('../middleware/rateLimiter');
+const express = require('express');
+const router = express.Router();
+const { auth } = require('../middleware/auth');
+const kycController = require('../controllers/kyc.controller');
 
-// Vendor routes
-router.post('/submit', generalLimiter, auth, allow('VENDOR'), KYCCtrl.submitKYC);
-router.get('/status', generalLimiter, auth, allow('VENDOR'), KYCCtrl.getKYCStatus);
+// Submit KYC
+router.post('/submit', auth, kycController.submitKYC);
 
-// Admin routes
-router.get('/admin/submissions', generalLimiter, auth, allow('ADMIN'), KYCCtrl.getAllKYCSubmissions);
-router.patch('/admin/:id/status', generalLimiter, auth, allow('ADMIN'), KYCCtrl.updateKYCStatus);
-router.post('/admin/:id/payment', generalLimiter, auth, allow('ADMIN'), KYCCtrl.processKYCPayment);
+// Get user's KYC status
+router.get('/status', auth, kycController.getKYCStatus);
+
+// Admin: Get all KYC submissions
+router.get('/admin/submissions', auth, kycController.getAllKYCSubmissions);
+
+// Admin: Update KYC status
+router.patch('/admin/:id/status', auth, kycController.updateKYCStatus);
+
+// Admin: Mark payment received (triggers commission logic)
+router.post('/admin/:id/payment', auth, kycController.processKYCPayment);
 
 module.exports = router;
