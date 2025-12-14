@@ -19,3 +19,4 @@ router.patch('/admin/:id/status', auth, kycController.updateKYCStatus);
 router.post('/admin/:id/payment', auth, kycController.processKYCPayment);
 
 module.exports = router;
+ 

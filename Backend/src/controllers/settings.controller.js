@@ -88,28 +88,37 @@ exports.updateStoreSettings = async (req, res, next) => {
       });
     }
 
-    // Update or create business hours
+    // Update or create business hours and natural media in parallel
+    const updates = [];
+
     if (businessHours) {
-      await prisma.businessHours.upsert({
-        where: { vendorProfileId: vendorProfile.id },
-        update: businessHours,
-        create: {
-          ...businessHours,
-          vendorProfileId: vendorProfile.id
-        }
-      });
+      updates.push(
+        prisma.businessHours.upsert({
+          where: { vendorProfileId: vendorProfile.id },
+          update: businessHours,
+          create: {
+            ...businessHours,
+            vendorProfileId: vendorProfile.id
+          }
+        })
+      );
     }
 
-    // Update or create social media
     if (socialMedia) {
-      await prisma.socialMedia.upsert({
-        where: { vendorProfileId: vendorProfile.id },
-        update: socialMedia,
-        create: {
-          ...socialMedia,
-          vendorProfileId: vendorProfile.id
-        }
-      });
+      updates.push(
+        prisma.socialMedia.upsert({
+          where: { vendorProfileId: vendorProfile.id },
+          update: socialMedia,
+          create: {
+            ...socialMedia,
+            vendorProfileId: vendorProfile.id
+          }
+        })
+      );
+    }
+
+    if (updates.length > 0) {
+      await Promise.all(updates);
     }
 
     // Get updated data
@@ -412,7 +421,7 @@ exports.updateStorePreferences = async (req, res, next) => {
 exports.uploadProfileImage = async (req, res, next) => {
   try {
     const userId = req.user.id;
-    
+
     // This would typically handle file upload to cloud storage
     // For now, we'll assume the image URL is passed in the request
     const { imageUrl } = req.body;
@@ -480,7 +489,7 @@ exports.uploadStoreImage = async (req, res, next) => {
 
     // Update the appropriate image field
     const updateData = imageType === 'logo' ? { logo: imageUrl } : { coverImage: imageUrl };
-    
+
     const updatedProfile = await prisma.vendorProfile.update({
       where: { id: vendorProfile.id },
       data: updateData

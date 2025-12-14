@@ -26,13 +26,11 @@ const app = express();
 const corsOptions = {
     origin: [
         // ListUp domain variations
-        'http://listup.ng',
         'https://listup.ng',
-        'http://www.listup.ng',
         'https://www.listup.ng',
         'https://api.listup.ng',
         'https://www.listup.ng',
-        'listup-admin.vercel.app',
+        'https://listup-admin.vercel.app',
         'http://localhost:3000', // Local development
         'http://localhost:3001', // Local development
         'https://listup-three.vercel.app', // Old Vercel project

@@ -5,44 +5,10 @@ import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, Search, Users, Gift, Wallet, Calendar, User, Mail, Phone } from "lucide-react";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4001/api";
+import referralsService, { ReferralRecord, AdminReferralResponse, ReferralUse } from "@/services/referralsService";
 
-interface ReferralUse {
-  id: string;
-  vendorId: string;
-  vendorName: string | null;
-  vendorEmail: string | null;
-  vendorPhone: string | null;
-  storeName: string | null;
-  status: "PENDING" | "COMPLETED" | "CANCELLED";
-  commission: number;
-  commissionPaid: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
+// Local types replaced by imports
 
-interface ReferralRecord {
-  id: string;
-  code: string;
-  isActive: boolean;
-  totalReferrals: number;
-  successfulReferrals: number;
-  totalEarnings: number;
-  createdAt: string;
-  user: {
-    id: string;
-    name: string;
-    email: string;
-  };
-  referredVendors: ReferralUse[];
-}
-
-interface AdminReferralResponse {
-  total: number;
-  page: number;
-  limit: number;
-  referrals: ReferralRecord[];
-}
 
 function statusChip(status: string) {
   const map: Record<string, string> = {
@@ -80,26 +46,9 @@ export default function AdminReferralsPage() {
     try {
       setLoading(true);
       setError("");
-      const token = localStorage.getItem("token");
 
-      const res = await fetch(
-        `${API_URL}/referrals/admin/all?page=${page}&limit=${limit}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      const data = await referralsService.getAll({ page, limit });
 
-      if (!res.ok) {
-        setError("Failed to load referrals");
-        setRecords([]);
-        return;
-      }
-
-      const json = await res.json();
-      const data: AdminReferralResponse = json.data;
       setRecords(data.referrals || []);
       setTotal(data.total || 0);
       setTotalPages(Math.max(1, Math.ceil((data.total || 0) / (data.limit || limit))));
@@ -149,22 +98,8 @@ export default function AdminReferralsPage() {
     try {
       setActionLoadingId(id);
       setError("");
-      const token = localStorage.getItem("token");
 
-      const res = await fetch(`${API_URL}/referrals/admin/${id}/active`, {
-        method: "PATCH",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ isActive: !current }),
-      });
-
-      if (!res.ok) {
-        setError("Failed to update referral status");
-        return;
-      }
-
+      await referralsService.toggleActive(id, !current);
       await fetchReferrals();
     } catch (e) {
       console.error("toggle referral active error", e);
@@ -377,11 +312,10 @@ export default function AdminReferralsPage() {
                               handleToggleActive(r.id, r.isActive);
                             }}
                             disabled={actionLoadingId === r.id}
-                            className={`inline-flex items-center px-3 py-1 rounded-md border text-[11px] font-medium ${
-                              r.isActive
-                                ? "bg-red-50 text-red-700 hover:bg-red-100"
-                                : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
-                            }`}
+                            className={`inline-flex items-center px-3 py-1 rounded-md border text-[11px] font-medium ${r.isActive
+                              ? "bg-red-50 text-red-700 hover:bg-red-100"
+                              : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                              }`}
                           >
                             {actionLoadingId === r.id ? (
                               <Loader2 className="w-3 h-3 mr-1 animate-spin" />

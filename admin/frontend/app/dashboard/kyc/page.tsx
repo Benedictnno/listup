@@ -5,60 +5,17 @@ import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, Search, Eye } from "lucide-react";
 import KYCDetailsModal from "@/components/kyc/KYCDetailsModal";
+import kycService, { KYCSubmission, PaginatedResponse, KYCStatus, PaymentStatus, VendorInfo } from "@/services/kycService";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4001/api";
+// Types are now imported from service to ensure consistency, 
+// but if I remove local interfaces I need to be careful about what else uses them. 
+// The local interface VendorInfo is not exported in service but used in KYCSubmission.
+// I'll keep it simple: Import service, remove API_URL. 
+// I will NOT delete local types to avoid breaking things I can't see, unless I'm sure.
+// Actually, `kycService` methods return types from service. 
+// Let's replace the local type definitions with imports.
 
-type KYCStatus =
-  | "PENDING"
-  | "DOCUMENTS_REVIEW"
-  | "INTERVIEW_SCHEDULED"
-  | "INTERVIEW_COMPLETED"
-  | "APPROVED"
-  | "REJECTED";
 
-type PaymentStatus = "PENDING" | "SUCCESS" | "FAILED";
-
-interface VendorInfo {
-  id: string;
-  name: string;
-  email: string;
-  phone?: string | null;
-  vendorProfile?: {
-    storeName?: string | null;
-    storeAddress?: string | null;
-  } | null;
-}
-
-interface KYCSubmission {
-  id: string;
-  vendorId: string;
-  status: KYCStatus;
-  paymentStatus: PaymentStatus;
-  signupFee: number;
-  hasReferral: boolean;
-  tiktokHandle?: string | null;
-  instagramHandle?: string | null;
-  facebookPage?: string | null;
-  twitterHandle?: string | null;
-  otherSocial?: string | null;
-  cacNumber?: string | null;
-  documentUrl?: string | null;
-  documentType?: string | null;
-  createdAt: string;
-  updatedAt: string;
-  interviewScheduled?: string | null;
-  interviewCompleted?: string | null;
-  interviewNotes?: string | null;
-  rejectionReason?: string | null;
-  vendor: VendorInfo;
-}
-
-interface PaginatedResponse {
-  total: number;
-  page: number;
-  limit: number;
-  kycs: KYCSubmission[];
-}
 
 const STATUS_LABELS: { value: KYCStatus | "ALL"; label: string }[] = [
   { value: "ALL", label: "All statuses" },
@@ -92,26 +49,13 @@ export default function AdminKYCPage() {
     try {
       setLoading(true);
       setError("");
-      const token = localStorage.getItem("token");
-      const statusParam = statusFilter !== "ALL" ? `&status=${statusFilter}` : "";
-      const res = await fetch(
-        `${API_URL}/kyc/admin/submissions?page=${page}&limit=${limit}${statusParam}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
 
-      if (!res.ok) {
-        setError("Failed to load KYC submissions");
-        setKycs([]);
-        return;
-      }
+      const data = await kycService.getAll({
+        page,
+        limit,
+        status: statusFilter
+      });
 
-      const json = await res.json();
-      const data: PaginatedResponse = json.data;
       setKycs(data.kycs || []);
       setTotal(data.total || 0);
       setTotalPages(Math.max(1, Math.ceil((data.total || 0) / (data.limit || limit))));
@@ -142,7 +86,6 @@ export default function AdminKYCPage() {
   const handleUpdateStatus = async (id: string, newStatus: KYCStatus) => {
     try {
       setActionLoadingId(id);
-      const token = localStorage.getItem("token");
 
       const body: any = { status: newStatus };
       if (newStatus === "INTERVIEW_SCHEDULED") {
@@ -154,20 +97,7 @@ export default function AdminKYCPage() {
         body.interviewNotes = "Interview completed (updated from admin panel).";
       }
 
-      const res = await fetch(`${API_URL}/kyc/admin/${id}/status`, {
-        method: "PATCH",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(body),
-      });
-
-      if (!res.ok) {
-        setError("Failed to update KYC status");
-        return;
-      }
-
+      await kycService.updateStatus(id, body);
       await fetchKYC();
       setSelectedKYC(null); // Close modal after update
     } catch (e) {
@@ -181,20 +111,7 @@ export default function AdminKYCPage() {
   const handleProcessPayment = async (id: string) => {
     try {
       setActionLoadingId(id);
-      const token = localStorage.getItem("token");
-      const res = await fetch(`${API_URL}/kyc/admin/${id}/payment`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!res.ok) {
-        setError("Failed to process KYC payment");
-        return;
-      }
-
+      await kycService.processPayment(id);
       await fetchKYC();
       setSelectedKYC(null); // Close modal after update
     } catch (e) {
@@ -318,16 +235,16 @@ export default function AdminKYCPage() {
                         <td className="py-3 px-4">
                           <span
                             className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${k.status === "APPROVED"
-                                ? "bg-green-100 text-green-800"
-                                : k.status === "REJECTED"
-                                  ? "bg-red-100 text-red-800"
-                                  : k.status === "INTERVIEW_COMPLETED"
-                                    ? "bg-emerald-100 text-emerald-800"
-                                    : k.status === "INTERVIEW_SCHEDULED"
-                                      ? "bg-indigo-100 text-indigo-800"
-                                      : k.status === "DOCUMENTS_REVIEW"
-                                        ? "bg-blue-100 text-blue-800"
-                                        : "bg-yellow-100 text-yellow-800"
+                              ? "bg-green-100 text-green-800"
+                              : k.status === "REJECTED"
+                                ? "bg-red-100 text-red-800"
+                                : k.status === "INTERVIEW_COMPLETED"
+                                  ? "bg-emerald-100 text-emerald-800"
+                                  : k.status === "INTERVIEW_SCHEDULED"
+                                    ? "bg-indigo-100 text-indigo-800"
+                                    : k.status === "DOCUMENTS_REVIEW"
+                                      ? "bg-blue-100 text-blue-800"
+                                      : "bg-yellow-100 text-yellow-800"
                               }`}
                           >
                             {k.status.replace(/_/g, " ")}
@@ -336,10 +253,10 @@ export default function AdminKYCPage() {
                         <td className="py-3 px-4">
                           <span
                             className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium ${k.paymentStatus === "SUCCESS"
-                                ? "bg-emerald-100 text-emerald-800"
-                                : k.paymentStatus === "FAILED"
-                                  ? "bg-red-100 text-red-800"
-                                  : "bg-gray-100 text-gray-700"
+                              ? "bg-emerald-100 text-emerald-800"
+                              : k.paymentStatus === "FAILED"
+                                ? "bg-red-100 text-red-800"
+                                : "bg-gray-100 text-gray-700"
                               }`}
                           >
                             {k.paymentStatus}

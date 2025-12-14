@@ -7,7 +7,7 @@ export interface Vendor {
   vendorProfile: {
     id: string;
     storeName: string;
-    storeAddress: string;
+    storeAddress?: string;
     businessCategory: string;
     coverImage?: string;
     logo?: string;

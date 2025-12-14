@@ -4,12 +4,10 @@ import { useMemo, useState, useEffect } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import Button  from "@/components/ui/button";
+import Button from "@/components/ui/button";
 import { Users, Search, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
-import axios from "axios";
+import usersService from "@/services/usersService";
 import { toast } from "react-hot-toast";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001/api';
 
 interface UserRow {
   id: string;
@@ -29,25 +27,22 @@ export default function UsersPage() {
   const [totalUsers, setTotalUsers] = useState(0);
   const limit = 20;
 
-  useEffect(() => {
-    fetchUsers();
-  }, [page]);
-
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
-      const response = await axios.get(
-        `${API_URL}/users?page=${page}&limit=${limit}&role=USER&sortBy=createdAt&sortOrder=desc`,
-        {
-          headers: { Authorization: `Bearer ${token}` }
-        }
-      );
+      const data = await usersService.getAll({
+        page,
+        limit,
+        role: 'USER',
+        sortBy: 'createdAt',
+        sortOrder: 'desc',
+        search: query
+      });
 
-      const data = response.data.data || response.data;
-      setUsers(Array.isArray(data.users) ? data.users : Array.isArray(data) ? data : []);
-      setTotalPages(data.totalPages || Math.ceil((data.total || 0) / limit));
-      setTotalUsers(data.total || 0);
+      const usersList = data.users || (Array.isArray(data) ? data : []);
+      setUsers(usersList);
+      setTotalPages(data.pagination?.pages || data.totalPages || Math.ceil((data.total || usersList.length) / limit));
+      setTotalUsers(data.pagination?.total || data.total || usersList.length);
     } catch (error) {
       console.error('Error fetching users:', error);
       toast.error('Failed to load users');
@@ -57,12 +52,20 @@ export default function UsersPage() {
     }
   };
 
-  const filtered = useMemo(() => {
-    return users.filter((u) => {
-      const matchesQuery = (u.name + u.email).toLowerCase().includes(query.toLowerCase());
-      return matchesQuery;
-    });
-  }, [query, users]);
+  // Debounced search effect
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setPage(1); // Reset to page 1 on search
+      fetchUsers();
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [query]);
+
+  // Pagination effect
+  useEffect(() => {
+    fetchUsers();
+  }, [page]);
+
 
   return (
     <DashboardLayout>
@@ -84,7 +87,7 @@ export default function UsersPage() {
             <CardTitle className="text-base flex items-center justify-between">
               <span>Search</span>
               <span className="text-sm font-normal text-muted-foreground">
-                Showing {filtered.length} of {totalUsers} users
+                Showing {users.length} of {totalUsers} users
               </span>
             </CardTitle>
           </CardHeader>
@@ -100,7 +103,7 @@ export default function UsersPage() {
           <div className="flex justify-center items-center h-64">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
-        ) : filtered.length === 0 ? (
+        ) : users.length === 0 ? (
           <Card>
             <CardContent className="py-12 text-center">
               <p className="text-muted-foreground">No users found</p>
@@ -120,7 +123,7 @@ export default function UsersPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filtered.map((u) => (
+                  {users.map((u) => (
                     <tr key={u.id} className="border-b hover:bg-muted/50">
                       <td className="py-3 px-4 font-medium">{u.name}</td>
                       <td className="py-3 px-4">{u.email}</td>

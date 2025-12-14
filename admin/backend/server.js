@@ -124,6 +124,7 @@ app.listen(PORT, () => {
   console.log(`🚀 Admin backend server running on port ${PORT}`);
   console.log(`📊 Health check: http://localhost:${PORT}/health`);
   console.log(`🔐 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`🔑 JWT Secret starts with: ${process.env.JWT_SECRET ? process.env.JWT_SECRET.substring(0, 5) : 'MISSING'}...`);
 });
 
 module.exports = app;

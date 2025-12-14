@@ -11,6 +11,7 @@ import VendorDetailsModal from "@/components/vendors/VendorDetailsModal";
 import { StatusBadge } from "@/components/vendors/StatusBadge";
 import useAuth from "@/hooks/useAuth";
 import { XCircle, User, Mail, Phone, Store, MapPin, Calendar } from "lucide-react";
+import vendorsService from "@/services/vendorsService";
 
 export default function VendorsPage() {
   // State variables
@@ -29,7 +30,6 @@ export default function VendorsPage() {
 
   const { user } = useAuth();
   const router = useRouter();
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001/api';
 
   // Force authentication for testing
   // useEffect(() => {
@@ -52,30 +52,18 @@ export default function VendorsPage() {
     try {
       setLoading(true);
       setError("");
-      const token = localStorage.getItem("token");
 
-      const statusParam = statusFilter !== "ALL" ? `&status=${statusFilter}` : "";
-      const response = await fetch(
-        `${API_URL}/vendors?page=${page}&limit=${limit}${statusParam}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      );
+      const response = await vendorsService.getAll({
+        page,
+        limit,
+        status: statusFilter !== "ALL" ? statusFilter : undefined
+      });
 
-      if (response.ok) {
-        const data = await response.json();
-        const vendorsData = data.data?.vendors || data.data || [];
-        setVendors(Array.isArray(vendorsData) ? vendorsData : []);
-        setTotalPages(data.data?.totalPages || Math.ceil((data.data?.total || 0) / limit));
-        setTotalVendors(data.data?.total || vendorsData.length);
-      } else {
-        setError("Failed to load vendors");
-        setVendors([]);
-      }
-    } catch (err) {
+      setVendors(response.vendors || []);
+      setTotalPages(response.pagination?.pages || 1);
+      setTotalVendors(response.pagination?.total || 0);
+
+    } catch (err: any) {
       setError("Failed to load vendors");
       setVendors([]);
       console.error("Vendors error:", err);
@@ -87,21 +75,8 @@ export default function VendorsPage() {
   const handleSuspend = async (vendorId: string) => {
     try {
       setActionLoading(vendorId);
-      const token = localStorage.getItem("token");
-
-      const response = await fetch(`${API_URL}/vendors/${vendorId}/suspend`, {
-        method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        await fetchVendors(); // Refresh the list
-      } else {
-        setError("Failed to suspend vendor");
-      }
+      await vendorsService.suspend(vendorId);
+      await fetchVendors(); // Refresh the list
     } catch (err) {
       setError("Failed to suspend vendor");
     } finally {

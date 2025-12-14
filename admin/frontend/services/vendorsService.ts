@@ -67,8 +67,14 @@ const vendorsService = {
     return response.data.data.vendor;
   },
 
+
   reject: async (id: string, reason: string): Promise<Vendor> => {
     const response = await api.patch(`/vendors/${id}/reject`, { reason });
+    return response.data.data.vendor;
+  },
+
+  suspend: async (id: string): Promise<Vendor> => {
+    const response = await api.patch(`/vendors/${id}/suspend`);
     return response.data.data.vendor;
   },
 

@@ -76,12 +76,12 @@ router.get('/admin/commissions', auth, async (req, res) => {
         const formattedCommissions = commissions.map(comm => ({
             id: comm.id,
             referrer: {
-                name: comm.referral.user.name,
-                email: comm.referral.user.email
+                name: comm.referral?.user?.name || 'Unknown',
+                email: comm.referral?.user?.email || 'N/A'
             },
             referredUser: {
-                name: comm.vendor.name,
-                storeName: comm.vendor.vendorProfile?.storeName || 'N/A'
+                name: comm.vendor?.name || 'Unknown',
+                storeName: comm.vendor?.vendorProfile?.storeName || 'N/A'
             },
             amount: comm.commission || 1000, // Default if null
             status: comm.status || 'PENDING', // Default if null

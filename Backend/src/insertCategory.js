@@ -1,7 +1,7 @@
 const { MongoClient } = require("mongodb");
 
 async function insertCategories() {
-  const uri = "mongodb+srv://benedictnnaoma0:cskWPAkSzyIFopeP@cluster0.rzd3qql.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"; // Replace with your MongoDB URI
+  const uri = process.env.MOGODB_URI// Replace with your MongoDB URI
   const client = new MongoClient(uri);
 
   const categories = [

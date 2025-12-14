@@ -5,13 +5,17 @@ const isAuthenticated = async (req, res, next) => {
   try {
     // Try to get token from cookies first (cookie-based auth), then fall back to Authorization header
     let token = req.cookies?.token;
+    if (token) console.log(`[Auth Debug] Token from Cookie: ${token.substring(0, 20)}...`);
 
     if (!token) {
       // Fall back to Authorization header for backward compatibility
-      token = req.header('Authorization')?.replace('Bearer ', '');
+      const authHeader = req.header('Authorization');
+      if (authHeader) console.log(`[Auth Debug] Auth Header: ${authHeader.substring(0, 20)}...`);
+      token = authHeader?.replace('Bearer ', '');
     }
 
     if (!token) {
+      console.log(`[Auth Debug] No token found in cookies or header. Path: ${req.path}`);
       return res.status(401).json({
         success: false,
         message: 'No token provided, authorization denied'

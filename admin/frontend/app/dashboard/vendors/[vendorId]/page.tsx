@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Vendor } from "@/components/vendors/types";
+import vendorsService from "@/services/vendorsService";
 import { StatusBadge } from "@/components/vendors/StatusBadge";
 import { ArrowLeft, CheckCircle, XCircle, Store, Mail, Phone, MapPin, Calendar } from "lucide-react";
 
@@ -18,21 +19,13 @@ export default function VendorDetailsPage() {
   const [error, setError] = useState<string>("");
   const [actionLoading, setActionLoading] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001/api';
-
   useEffect(() => {
     if (!vendorId) return;
     const fetchVendor = async () => {
       try {
         setLoading(true);
-        const token = localStorage.getItem("admin_token") || localStorage.getItem("token") || "";
-        const res = await fetch(`${API_URL}/vendors/${vendorId}`, {
-          headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-        });
-
-        if (!res.ok) throw new Error("Failed to load vendor");
-        const data = await res.json();
-        setVendor(data.data.vendor || data.vendor || data);
+        const data = await vendorsService.getById(vendorId);
+        setVendor(data);
         setError("");
       } catch (e: Error | unknown) {
         const errorMessage = e instanceof Error ? e.message : "Failed to load vendor";
@@ -48,18 +41,8 @@ export default function VendorDetailsPage() {
     if (!vendorId) return;
     try {
       setActionLoading(true);
-      const token = localStorage.getItem("admin_token") || localStorage.getItem("token") || "";
-      const res = await fetch(`${API_URL}/vendors/${vendorId}/approve`, {
-        method: "PATCH",
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      });
-      if (!res.ok) throw new Error("Failed to approve vendor");
-      const refetch = await fetch(`${API_URL}/vendors/${vendorId}`, { headers: { Authorization: `Bearer ${token}` } });
-
-      if (refetch.ok) {
-        const data = await refetch.json();
-        setVendor(data.data.vendor || data.vendor || data);
-      }
+      const data = await vendorsService.approve(vendorId);
+      setVendor(data);
       setError("");
     } catch (e: Error | unknown) {
       const errorMessage = e instanceof Error ? e.message : "Failed to approve vendor";
@@ -73,19 +56,8 @@ export default function VendorDetailsPage() {
     if (!vendorId) return;
     try {
       setActionLoading(true);
-      const token = localStorage.getItem("admin_token") || localStorage.getItem("token") || "";
-      const res = await fetch(`${API_URL}/vendors/${vendorId}/reject`, {
-        method: "PATCH",
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ reason: rejectReason }),
-      });
-      if (!res.ok) throw new Error("Failed to reject vendor");
-      const refetch = await fetch(`${API_URL}/vendors/${vendorId}`, { headers: { Authorization: `Bearer ${token}` } });
-
-      if (refetch.ok) {
-        const data = await refetch.json();
-        setVendor(data.data.vendor || data.vendor || data);
-      }
+      const data = await vendorsService.reject(vendorId, rejectReason);
+      setVendor(data);
       setError("");
     } catch (e: Error | unknown) {
       const errorMessage = e instanceof Error ? e.message : "Failed to reject vendor";
@@ -148,12 +120,12 @@ export default function VendorDetailsPage() {
           <div className="p-4 md:p-6 border-b flex items-center gap-4">
             <div className="h-12 w-12 rounded-md bg-primary/10 flex items-center justify-center">
               {vendor.vendorProfile.logo ? (
-                <Image 
-                  src={vendor.vendorProfile.logo} 
-                  alt={vendor.vendorProfile.storeName} 
-                  width={48} 
-                  height={48} 
-                  className="w-full h-full object-cover rounded-md" 
+                <Image
+                  src={vendor.vendorProfile.logo}
+                  alt={vendor.vendorProfile.storeName}
+                  width={48}
+                  height={48}
+                  className="w-full h-full object-cover rounded-md"
                 />
               ) : (
                 <Store className="w-6 h-6 text-primary" />

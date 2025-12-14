@@ -12,19 +12,20 @@ export default function AdminLogin() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  
-  const { login } = useAuth();
+
+  const { login, isAuthenticated, user } = useAuth();
   const router = useRouter();
 
   // Run once to bootstrap auth from localStorage
 
   // Redirect when user becomes available
+  // Redirect when user becomes available
   useEffect(() => {
-    const token =  localStorage.getItem("token") ;
-    if (token) {
+    // Check redux state instead of localStorage
+    if (isAuthenticated && user) {
       router.push("/dashboard");
     }
-  }, [login, router]);
+  }, [isAuthenticated, user, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
