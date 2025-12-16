@@ -15,6 +15,11 @@ type Seller = {
   name: string;
   phone?: string | null;
   isKYCVerified?: boolean;
+  profileImage?: string;
+  vendorProfile?: {
+    storeName?: string;
+    logo?: string;
+  };
 };
 
 type Listing = {
@@ -183,11 +188,29 @@ export default function ListingDetails({ listing }: { listing: Listing }) {
               href={`/vendors/${listing.seller.id}`}
               className="mt-1 block text-green-600 hover:text-green-700 font-medium cursor-pointer hover:underline transition-colors"
             >
-              <div className="flex items-center gap-2">
-                <span>{listing.seller.name}</span>
-                {listing.seller.isKYCVerified && <VerifiedBadge size="sm" />}
+              <div className="flex items-center gap-3">
+                <div className="relative w-10 h-10 rounded-full overflow-hidden bg-gray-200 flex-shrink-0">
+                  {(listing.seller.vendorProfile?.logo || listing.seller.profileImage) ? (
+                    <Image
+                      src={listing.seller.vendorProfile?.logo || listing.seller.profileImage || ''}
+                      alt={listing.seller.vendorProfile?.storeName || listing.seller.name}
+                      fill
+                      className="object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-lime-100 text-lime-700 font-bold">
+                      {(listing.seller.vendorProfile?.storeName || listing.seller.name).charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold">{listing.seller.vendorProfile?.storeName || listing.seller.name}</span>
+                    {listing.seller.isKYCVerified && <VerifiedBadge size="sm" />}
+                  </div>
+                  <div className="text-xs text-green-600 hover:text-green-700 font-medium">View Store →</div>
+                </div>
               </div>
-              <span className="text-xs ml-2">→ View Store</span>
             </Link>
             <div className="flex gap-2 mt-3">
               {showPhone ? <button className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-xl shadow hover:bg-green-700" onClick={() => setShowPhone(false)}>

@@ -17,7 +17,7 @@ try {
 }
 
 async function addToGoogleSheet(vendorName, storeName, email, phone, notes) {
-  const spreadsheetId = "1bpxf7Q4snJ37bdUZQ8t3Ll8QiWWghh4AHG9TNM7bieg";
+  const spreadsheetId = process.env.GOOGLE_SHEET_ID;
   const range = "Sheet1!A1"; // ✅ safer and simpler
 
   const values = [[vendorName, storeName, email, phone, notes]];

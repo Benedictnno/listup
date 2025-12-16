@@ -19,6 +19,11 @@ interface Listing {
   seller?: {
     name: string;
     isKYCVerified?: boolean;
+    profileImage?: string;
+    vendorProfile?: {
+      storeName?: string;
+      logo?: string;
+    };
   };
 }
 
@@ -30,6 +35,7 @@ export default function ListingCard({ listing }: ListingCardProps) {
   const mainImage = listing.images && listing.images.length > 0
     ? listing.images[0]
     : null;
+  console.log(listing);
 
   return (
     <Link href={`/listings/${listing.id}`} className="group">
@@ -90,7 +96,23 @@ export default function ListingCard({ listing }: ListingCardProps) {
               )}
               {listing.seller && (
                 <div className="flex items-center gap-1.5 min-w-0">
-                  <span className="truncate text-gray-500">by {listing.seller.name}</span>
+                  <div className="relative w-5 h-5 rounded-full overflow-hidden bg-gray-200 flex-shrink-0">
+                    {(listing.seller.vendorProfile?.logo || listing.seller.profileImage) ? (
+                      <Image
+                        src={listing.seller.vendorProfile?.logo || listing.seller.profileImage || ''}
+                        alt={listing.seller.vendorProfile?.storeName || listing.seller.name}
+                        fill
+                        className="object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-lime-100 text-lime-700 text-[10px] font-bold">
+                        {(listing.seller.vendorProfile?.storeName || listing.seller.name).charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                  </div>
+                  <span className="truncate text-gray-500 text-xs">
+                    {listing.seller.vendorProfile?.storeName || listing.seller.name}
+                  </span>
                   {listing.seller.isKYCVerified && <VerifiedBadge size="sm" />}
                 </div>
               )}

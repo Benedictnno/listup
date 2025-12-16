@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Image from "next/image";
-import { ArrowLeft, MapPin, Store, Package, Star, Phone, MessageSquare } from "lucide-react";
+import { ArrowLeft, MapPin, Store, Package, Star, Phone, MessageSquare, Send } from "lucide-react";
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,7 @@ import { getVendorListings, Vendor, VendorListing, VendorListingsResponse } from
 export default function VendorProfilePage() {
   const params = useParams();
   const vendorId = params.vendorId as string;
-  
+
   const [vendor, setVendor] = useState<Vendor | null>(null);
   const [listings, setListings] = useState<VendorListing[]>([]);
   const [pagination, setPagination] = useState({
@@ -30,12 +30,12 @@ export default function VendorProfilePage() {
   }, [vendorId, pagination.page]);
 
   console.log(vendor);
-  
+
   const fetchVendorListings = async () => {
     try {
       setLoading(true);
       const data = await getVendorListings(vendorId, pagination.page, pagination.limit);
-      
+
       if (data.success) {
         setVendor(data.data.vendor);
         setListings(data.data.listings);
@@ -122,14 +122,30 @@ export default function VendorProfilePage() {
               <div className="absolute inset-0 bg-black bg-opacity-30"></div>
             </div>
           )}
-          
+
           {/* Vendor Info */}
           <div className="p-6">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between">
               <div className="mb-4 md:mb-0">
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                  {vendor.storeName || vendor.name}
-                </h1>
+                <div className="flex items-center gap-4 mb-2">
+                  <div className="relative w-16 h-16 rounded-full overflow-hidden bg-gray-200 border border-gray-100 shadow-sm flex-shrink-0">
+                    {(vendor.logo || vendor.profileImage) ? (
+                      <Image
+                        src={vendor.logo || vendor.profileImage || ''}
+                        alt={vendor.storeName || vendor.name}
+                        fill
+                        className="object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-green-100 text-green-700 text-2xl font-bold">
+                        {(vendor.storeName || vendor.name).charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                  </div>
+                  <h1 className="text-3xl font-bold text-gray-900">
+                    {vendor.storeName || vendor.name}
+                  </h1>
+                </div>
                 <p className="text-lg text-gray-600 mb-4">
                   {vendor.businessCategory && (
                     <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
@@ -145,28 +161,48 @@ export default function VendorProfilePage() {
                   </p>
                 )}
               </div>
-              
+
               <div className="flex flex-col sm:flex-row gap-3">
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   className="flex items-center gap-2"
                   onClick={() => setShowPhone(!showPhone)}
                 >
                   <Phone className="w-4 h-4" />
                   {showPhone ? 'Hide Contact' : 'Show Contact'}
                 </Button>
-                <Button className="bg-green-600 hover:bg-green-700 flex items-center gap-2">
-                  <MessageSquare className="w-4 h-4" />
+                <Button
+                  className="bg-green-600 hover:bg-green-700 flex items-center gap-2"
+                  onClick={() => {
+                    const raw = (vendor.phone || "").replace(/[^0-9]/g, "");
+                    if (!raw) {
+                      alert("Vendor has no WhatsApp number available.");
+                      return;
+                    }
+                    let phone = raw;
+                    if (phone.length === 11 && phone.startsWith("0")) {
+                      phone = `234${phone.slice(1)}`;
+                    }
+
+                    const text = encodeURIComponent(`Hi ${vendor.storeName || vendor.name}, I found your store on Listup.ng and I'm interested in your products.`);
+                    const url = `https://wa.me/${phone}?text=${text}`;
+                    window.open(url, '_blank');
+                  }}
+                >
+                  <Send className="w-4 h-4" />
                   Start Chat
                 </Button>
               </div>
             </div>
-            
+
             {/* Contact Info (Hidden by default) */}
             {showPhone && (
               <div className="mt-4 p-4 bg-gray-50 rounded-lg">
                 <h3 className="font-semibold text-gray-900 mb-2">Contact Information</h3>
-                <p className="text-gray-600">Contact details will be displayed here when available.</p>
+                <p className="text-gray-600 text-lg font-medium flex items-center gap-2">
+                  <Phone className="w-5 h-5 text-green-600" />
+                  {vendor.phone || "No contact number available"}
+                </p>
               </div>
             )}
           </div>
@@ -248,7 +284,7 @@ export default function VendorProfilePage() {
                     >
                       Previous
                     </Button>
-                    
+
                     {Array.from({ length: pagination.pages }, (_, i) => i + 1).map((pageNum) => (
                       <Button
                         key={pageNum}
@@ -259,7 +295,7 @@ export default function VendorProfilePage() {
                         {pageNum}
                       </Button>
                     ))}
-                    
+
                     <Button
                       variant="outline"
                       onClick={() => handlePageChange(pagination.page + 1)}

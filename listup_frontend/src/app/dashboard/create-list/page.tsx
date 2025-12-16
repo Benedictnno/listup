@@ -15,6 +15,7 @@ import { useRouter } from "next/navigation";
 export default function CreateListing() {
   const { user } = useAuthStore();
   const router = useRouter();
+  console.log(user);
   
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -56,10 +57,7 @@ export default function CreateListing() {
 
   const conditions = [
     "New",
-    "Like New", 
-    "Excellent",
-    "Good",
-    "Fair",
+    "Like New",
     "Used"
   ];
 

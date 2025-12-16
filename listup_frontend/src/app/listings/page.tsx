@@ -290,8 +290,6 @@ function ListingsPageContent() {
       );
     }
 
-
-
     // Price range filter (from global store)
     if (minPrice !== null) {
       const validMinPrice = Math.max(minPrice, 10); // Ensure minimum is at least 10

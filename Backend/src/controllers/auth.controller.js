@@ -15,7 +15,6 @@ exports.getMe = async (req, res) => {
     if (!token) {
       return res.status(401).json({ success: false, message: "No token provided" });
     }
-console.log("Cookie token:", token);
     // Verify JWT
     const decoded = verify(token);
     if (!decoded || !decoded.id) {

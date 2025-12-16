@@ -52,6 +52,8 @@ export const useAuthStore = create<AuthState>((set) => ({
         }
 
         const userData = response.data.data;
+        console.log(userData);
+        
         const user: User = {
           id: userData.id,
           name: userData.name,

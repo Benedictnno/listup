@@ -7,6 +7,9 @@ export interface Vendor {
   storeAddress?: string;
   businessCategory?: string;
   coverImage?: string;
+  logo?: string;
+  profileImage?: string;
+  phone?: string;
 }
 
 export interface VendorListing {
