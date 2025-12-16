@@ -9,6 +9,7 @@ import { trackListingView, trackListingSave, trackListingMessageClick } from "@/
 import { useAuthStore } from "@/store/authStore";
 import LoginPromptDialog from "@/components/LoginPromptDialog";
 import { copyToClipboard } from "@/utils/copyText";
+import { SectionEyebrow } from "@/utils/helpers";
 
 type Seller = {
   id: string;
@@ -118,7 +119,7 @@ export default function ListingDetails({ listing }: { listing: Listing }) {
           </div>
 
           {/* Thumbnail Gallery */}
-          <div className="flex gap-3 mt-4">
+          {/* <div className="flex gap-3 mt-4">
             {listing.images.map((img, idx) => (
               <button key={idx} onClick={() => setSelectedImage(img)} className={`rounded-lg overflow-hidden border-2 ${selectedImage === img ? 'border-green-600' : 'border-transparent'}`}>
                 <Image
@@ -130,9 +131,11 @@ export default function ListingDetails({ listing }: { listing: Listing }) {
                 />
               </button>
             ))}
-          </div>
+          </div> */}
 
           <div className="my-2">
+            {/* <VerifiedBadge seller={listing.seller} /> */}
+            {/* <LocationMarkerIcon className="w-5 h-5 text-gray-600" /> */}
             {listing.location}
           </div>
           <div>
@@ -152,7 +155,8 @@ export default function ListingDetails({ listing }: { listing: Listing }) {
               <p className="text-3xl font-bold text-green-600 mt-2">
                 ₦ {listing.price.toLocaleString()}
               </p>
-              <span className="text-sm text-gray-500">{listing.condition}</span>
+              <SectionEyebrow > <span className="text-sm text-gray-500">{listing.condition}</span> </SectionEyebrow>
+              {/* <span className="text-sm text-gray-500">{listing.condition}</span> */}
             </div>
             <div className="ml-4">
               <button

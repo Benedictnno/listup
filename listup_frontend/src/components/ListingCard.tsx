@@ -38,10 +38,10 @@ export default function ListingCard({ listing }: ListingCardProps) {
   console.log(listing);
 
   return (
-    <Link href={`/listings/${listing.id}`} className="group">
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-200">
+    <Link href={`/listings/${listing.id}`} className="group block break-inside-avoid mb-6">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-200 h-full flex flex-col">
         {/* Image */}
-        <div className="aspect-square relative overflow-hidden bg-gray-100">
+        <div className="aspect-[4/3] relative overflow-hidden bg-gray-100">
           {mainImage ? (
             <Image
               src={mainImage}
@@ -52,6 +52,13 @@ export default function ListingCard({ listing }: ListingCardProps) {
           ) : (
             <div className="w-full h-full flex items-center justify-center">
               <Package className="h-12 w-12 text-gray-300" />
+            </div>
+          )}
+          {listing.condition && (
+            <div className="absolute top-2 right-2 z-10">
+              <span className="px-2 py-1 bg-white/90 backdrop-blur-sm text-gray-700 text-xs font-medium rounded-md shadow-sm border border-gray-100">
+                {listing.condition}
+              </span>
             </div>
           )}
         </div>
@@ -79,11 +86,6 @@ export default function ListingCard({ listing }: ListingCardProps) {
                   <MapPin className="h-4 w-4 flex-shrink-0" />
                   <span className="text-sm truncate block min-w-0">{listing.location}</span>
                 </div>
-              )}
-              {listing.condition && (
-                <span className="px-2 py-0.5 bg-gray-100 rounded-full text-xs flex-shrink-0">
-                  {listing.condition}
-                </span>
               )}
             </div>
 

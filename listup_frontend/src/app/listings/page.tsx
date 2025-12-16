@@ -11,7 +11,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { useFilterStore } from "@/store/useFilterStore";
 import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
-import { useIntersectionObserver } from "@/hooks/useIntersectionObserver";
 import OutsideAd from "@/components/OutsideAd";
 
 interface Listing {
@@ -63,34 +62,34 @@ function PriceFilterSection({
   toggleOpen,
 }: PriceFilterSectionProps) {
   return (
-        <>
-        {/* Enhanced Filter Section */}
-        <div className="mb-6 bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
-          {/* Filter Header */}
-          <div className="bg-gradient-to-r from-lime-50 to-emerald-50 px-6 py-4 border-b border-gray-100">
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-lime-100 rounded-lg flex items-center justify-center">
-                  <Filter size={18} className="text-lime-600" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900">Price Range Filter</h3>
-                  {/* <p className="text-sm text-gray-600">Set your budget range to find the perfect items</p> */}
-                </div>
+    <>
+      {/* Enhanced Filter Section */}
+      <div className="mb-6 bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+        {/* Filter Header */}
+        <div className="bg-gradient-to-r from-lime-50 to-emerald-50 px-6 py-4 border-b border-gray-100">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-lime-100 rounded-lg flex items-center justify-center">
+                <Filter size={18} className="text-lime-600" />
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={toggleOpen}
-                className="whitespace-nowrap"
-              >
-                {isOpen ? 'Hide filters' : 'Show filters'}
-              </Button>
+              <div>
+                <h3 className="font-semibold text-gray-900">Price Range Filter</h3>
+                {/* <p className="text-sm text-gray-600">Set your budget range to find the perfect items</p> */}
+              </div>
             </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={toggleOpen}
+              className="whitespace-nowrap"
+            >
+              {isOpen ? 'Hide filters' : 'Show filters'}
+            </Button>
           </div>
+        </div>
 
-          {/* Filter Controls */}
-          {isOpen && (
+        {/* Filter Controls */}
+        {isOpen && (
           <div className="p-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
               {/* Min Price */}
@@ -166,7 +165,7 @@ function PriceFilterSection({
                   <X size={16} className="mr-2" />
                   Clear All
                 </Button>
-                
+
                 {hasActiveFilters() && (
                   <div className="text-center">
                     <div className="inline-flex items-center gap-2 px-3 py-1 bg-lime-100 text-lime-800 text-xs font-medium rounded-full">
@@ -191,9 +190,9 @@ function PriceFilterSection({
                   </div>
                 </div>
                 <div className="mt-3 w-full bg-gray-200 rounded-full h-2">
-                  <div 
+                  <div
                     className="bg-gradient-to-r from-lime-500 to-emerald-500 h-2 rounded-full transition-all duration-300"
-                    style={{ 
+                    style={{
                       width: `${maxPrice ? ((maxPrice - (minPrice || 10)) / (maxPrice * 2)) * 100 : 50}%`,
                       marginLeft: `${minPrice ? ((minPrice - 10) / (maxPrice || 1000)) * 100 : 0}%`
                     }}
@@ -202,24 +201,24 @@ function PriceFilterSection({
               </div>
             )}
           </div>
-          )}
-        </div>
-        </>
+        )}
+      </div>
+    </>
   );
 }
 
 function ListingsPageContent() {
   const searchParams = useSearchParams();
   const { search, minPrice, maxPrice, setSearch } = useFilterStore();
-  
+
   // Use infinite scroll hook with proper error handling
-  const { 
+  const {
     listings = [], // Default to empty array if undefined
-    loading, 
-    error, 
-    hasMore, 
-    loadMore, 
-    refresh 
+    loading,
+    error,
+    hasMore,
+    loadMore,
+    refresh
   } = useInfiniteScroll(1, 20);
 
   // Initialize with empty array and proper typing
@@ -236,12 +235,23 @@ function ListingsPageContent() {
   });
   const [isPriceFilterOpen, setIsPriceFilterOpen] = useState(false);
 
-  // Intersection observer for infinite scroll
-  const loadMoreRef = useIntersectionObserver(() => {
-    if (hasMore && !loading) {
-      loadMore();
-    }
-  }, { threshold: 0.1, rootMargin: '100px' });
+  // Scroll listener for infinite scroll
+  useEffect(() => {
+    const handleScroll = () => {
+      const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
+      // Trigger when user is within 500px of the bottom
+      if (scrollHeight - scrollTop - clientHeight < 500) {
+        if (hasMore && !loading) {
+          loadMore();
+        }
+      }
+    };
+
+    // Debounce/Throttle could be added here for performance if needed, 
+    // but React's batching + browser handling is usually sufficient for this simple logic
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [hasMore, loading, loadMore]);
 
   // Handle URL query parameters for search
   useEffect(() => {
@@ -276,7 +286,7 @@ function ListingsPageContent() {
       setFilteredListings([]);
       return;
     }
-    
+
     let filtered = [...listings];
 
     // Search filter (from global store)
@@ -303,7 +313,7 @@ function ListingsPageContent() {
     filtered.sort((a, b) => {
       let aValue: string | number;
       let bValue: string | number;
-      
+
       if (filters.sortBy === 'price') {
         aValue = a.price;
         bValue = b.price;
@@ -318,7 +328,7 @@ function ListingsPageContent() {
           bValue = bValue.toLowerCase();
         }
       }
-      
+
       if (filters.sortOrder === 'asc') {
         return aValue > bValue ? 1 : -1;
       } else {
@@ -428,14 +438,14 @@ function ListingsPageContent() {
             <div className="flex items-center gap-2 text-sm text-gray-600">
               <Filter size={16} />
               Filters
-                             {hasActiveFilters() && (
-                 <Badge variant="secondary" className="ml-2">
-                   {[search, minPrice, maxPrice]
-                     .filter(v => v !== '' && v !== null).length}
-                 </Badge>
-               )}
+              {hasActiveFilters() && (
+                <Badge variant="secondary" className="ml-2">
+                  {[search, minPrice, maxPrice]
+                    .filter(v => v !== '' && v !== null).length}
+                </Badge>
+              )}
             </div>
-            
+
             {hasActiveFilters() && (
               <Button
                 variant="ghost"
@@ -469,9 +479,9 @@ function ListingsPageContent() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setFilters(prev => ({ 
-                ...prev, 
-                sortOrder: prev.sortOrder === 'asc' ? 'desc' : 'asc' 
+              onClick={() => setFilters(prev => ({
+                ...prev,
+                sortOrder: prev.sortOrder === 'asc' ? 'desc' : 'asc'
               }))}
               className="px-3"
               aria-label={`Sort ${filters.sortOrder === 'asc' ? 'descending' : 'ascending'}`}
@@ -501,7 +511,7 @@ function ListingsPageContent() {
               </span>
             )}
           </div>
-          
+
           {/* Active Filters Display */}
           {hasActiveFilters() && (
             <div className="flex items-center gap-2 text-sm">
@@ -511,17 +521,17 @@ function ListingsPageContent() {
                   Search: &quot;{search}&quot;
                 </Badge>
               )}
-                             {(minPrice !== null || maxPrice !== null) && (
-                 <Badge variant="secondary" className="text-xs">
-                   Price: ₦{minPrice || 10} - ₦{maxPrice || '∞'}
-                 </Badge>
-               )}
+              {(minPrice !== null || maxPrice !== null) && (
+                <Badge variant="secondary" className="text-xs">
+                  Price: ₦{minPrice || 10} - ₦{maxPrice || '∞'}
+                </Badge>
+              )}
             </div>
           )}
         </div>
 
-        {/* Listings Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {/* Listings Masonry Layout */}
+        <div className="columns-2 md:columns-3 lg:columns-4 gap-6 space-y-6">
           {filteredListings?.map((listing) => (
             <ListingCard key={listing.id} listing={listing} />
           ))}
@@ -529,20 +539,12 @@ function ListingsPageContent() {
 
         {/* Infinite Scroll Trigger and Loading States */}
         {hasMore && (
-          <div ref={loadMoreRef} className="flex justify-center py-8">
-            {loading ? (
+          <div className="flex justify-center py-8 min-h-[100px]">
+            {loading && (
               <div className="flex items-center gap-2 text-gray-600">
                 <Loader2 className="h-5 w-5 animate-spin" />
                 <span>Loading more listings...</span>
               </div>
-            ) : (
-              <Button 
-                onClick={loadMore} 
-                variant="outline"
-                className="bg-white hover:bg-gray-50"
-              >
-                Load More
-              </Button>
             )}
           </div>
         )}
@@ -574,24 +576,24 @@ function ListingsPageContent() {
             <div className="space-y-3">
               <p className="text-sm text-gray-500">Try:</p>
               <div className="flex flex-wrap justify-center gap-2">
-                                 <Button 
-                   variant="outline" 
-                   size="sm"
-                   onClick={() => setSearch('')}
-                 >
-                   Clear search
-                 </Button>
-                
-                                 <Button 
-                   variant="outline" 
-                   size="sm"
-                   onClick={() => {
-                     useFilterStore.getState().setMinPrice(10);
-                     useFilterStore.getState().setMaxPrice(null);
-                   }}
-                 >
-                   Clear price range
-                 </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSearch('')}
+                >
+                  Clear search
+                </Button>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    useFilterStore.getState().setMinPrice(10);
+                    useFilterStore.getState().setMaxPrice(null);
+                  }}
+                >
+                  Clear price range
+                </Button>
                 <Button variant="outline" onClick={clearFilters}>
                   Clear all filters
                 </Button>
@@ -608,7 +610,7 @@ export default function ListingsPage() {
   return (
     <Suspense fallback={<div>Loading...</div>}>
       <ListingsPageContent />
-      <OutsideAd/>
+      <OutsideAd />
     </Suspense>
   );
 }

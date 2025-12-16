@@ -27,6 +27,7 @@ exports.getAll = async (req, res, next) => {
           price: true,
           images: true,
           location: true,
+          condition: true,
           createdAt: true,
           category: {
             select: { id: true, name: true, slug: true }
@@ -90,8 +91,10 @@ exports.search = async (req, res, next) => {
           id: true,
           title: true,
           price: true,
+          price: true,
           images: true,
           location: true,
+          condition: true,
           createdAt: true,
           category: {
             select: { id: true, name: true, slug: true }
