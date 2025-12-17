@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import axios from 'axios';
 import Button from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/useToast';
+import { api } from '@/services/api';
 
 interface Advertisement {
   id: string;
@@ -30,20 +30,13 @@ export default function AdvertisementsPage() {
   const [filter, setFilter] = useState<'all' | 'active' | 'expired'>('all');
   const router = useRouter();
   const toast = useToast();
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001/api';
 
   const fetchAdvertisements = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
       const statusParam = filter !== 'all' ? `?status=${filter}` : '';
-      
-      const response = await axios.get(
-        `${API_URL}/advertisements${statusParam}`,
-        {
-          headers: { Authorization: `Bearer ${token}` }
-        }
-      );
+
+      const response = await api.get(`/advertisements${statusParam}`);
 
       setAdvertisements(response.data.data.advertisements);
     } catch (error) {
@@ -64,13 +57,7 @@ export default function AdvertisementsPage() {
     }
 
     try {
-      const token = localStorage.getItem('token');
-      await axios.delete(
-        `${API_URL}/advertisements/${id}`,
-        {
-          headers: { Authorization: `Bearer ${token}` }
-        }
-      );
+      await api.delete(`/advertisements/${id}`);
 
       toast.success('Advertisement deleted successfully');
       fetchAdvertisements();
@@ -82,13 +69,9 @@ export default function AdvertisementsPage() {
 
   const toggleActive = async (id: string, currentStatus: boolean) => {
     try {
-      const token = localStorage.getItem('token');
-      await axios.put(
-        `${API_URL}/advertisements/${id}`,
-        { isActive: !currentStatus },
-        {
-          headers: { Authorization: `Bearer ${token}` }
-        }
+      await api.put(
+        `/advertisements/${id}`,
+        { isActive: !currentStatus }
       );
 
       toast.success(`Advertisement ${!currentStatus ? 'activated' : 'deactivated'} successfully`);
@@ -159,11 +142,10 @@ export default function AdvertisementsPage() {
                       <CardTitle className="flex items-center gap-2">
                         {ad.title}
                         <span
-                          className={`text-xs px-2 py-1 rounded ${
-                            isCurrentlyActive
+                          className={`text-xs px-2 py-1 rounded ${isCurrentlyActive
                               ? 'bg-green-100 text-green-800'
                               : 'bg-gray-100 text-gray-800'
-                          }`}
+                            }`}
                         >
                           {isCurrentlyActive ? 'Active' : 'Inactive'}
                         </span>

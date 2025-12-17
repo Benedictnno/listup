@@ -14,9 +14,12 @@ interface ValidationError {
   value?: string;
 }
 
+import { useFeatureFlag } from "@/context/FeatureFlagContext";
+
 export default function KYCSubmitPage() {
   const router = useRouter();
   const { user } = useAuthStore();
+  const { isEnabled } = useFeatureFlag();
 
   const [tiktokHandle, setTiktokHandle] = useState("");
   const [instagramHandle, setInstagramHandle] = useState("");
@@ -442,48 +445,50 @@ export default function KYCSubmitPage() {
           </div>
 
           {/* Referral Code Section */}
-          <div className="rounded-xl border border-slate-200 p-4 bg-slate-50">
-            <h2 className="text-sm font-semibold text-slate-800 mb-2 flex items-center gap-2">
-              <Link2 className="w-4 h-4" />
-              Referral Code (Optional)
-            </h2>
-            <div className="flex flex-col md:flex-row gap-2 items-stretch md:items-center">
-              <input
-                type="text"
-                value={referralCode}
-                onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
-                placeholder="e.g. BOB-A3F2E1"
-                className="flex-1 p-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-lime-200 text-sm tracking-wide"
-              />
-              <button
-                type="button"
-                onClick={handleReferralValidate}
-                disabled={referralChecking || !referralCode.trim()}
-                className="inline-flex items-center justify-center px-4 py-2 rounded-xl bg-lime-500 text-slate-900 text-sm font-semibold disabled:opacity-50"
-              >
-                {referralChecking ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Checking...
-                  </>
-                ) : (
-                  "Validate"
-                )}
-              </button>
+          {isEnabled('referral_system') && (
+            <div className="rounded-xl border border-slate-200 p-4 bg-slate-50">
+              <h2 className="text-sm font-semibold text-slate-800 mb-2 flex items-center gap-2">
+                <Link2 className="w-4 h-4" />
+                Referral Code (Optional)
+              </h2>
+              <div className="flex flex-col md:flex-row gap-2 items-stretch md:items-center">
+                <input
+                  type="text"
+                  value={referralCode}
+                  onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
+                  placeholder="e.g. BOB-A3F2E1"
+                  className="flex-1 p-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-lime-200 text-sm tracking-wide"
+                />
+                <button
+                  type="button"
+                  onClick={handleReferralValidate}
+                  disabled={referralChecking || !referralCode.trim()}
+                  className="inline-flex items-center justify-center px-4 py-2 rounded-xl bg-lime-500 text-slate-900 text-sm font-semibold disabled:opacity-50"
+                >
+                  {referralChecking ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Checking...
+                    </>
+                  ) : (
+                    "Validate"
+                  )}
+                </button>
+              </div>
+              {referralValid === true && (
+                <p className="mt-2 text-xs text-green-700 flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3" />
+                  Referral code applied! You save ₦{savings.toLocaleString()}.
+                </p>
+              )}
+              {referralValid === false && referralError && (
+                <p className="mt-2 text-xs text-red-600 flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3" />
+                  {referralError}
+                </p>
+              )}
             </div>
-            {referralValid === true && (
-              <p className="mt-2 text-xs text-green-700 flex items-center gap-1">
-                <CheckCircle2 className="w-3 h-3" />
-                Referral code applied! You save ₦{savings.toLocaleString()}.
-              </p>
-            )}
-            {referralValid === false && referralError && (
-              <p className="mt-2 text-xs text-red-600 flex items-center gap-1">
-                <AlertCircle className="w-3 h-3" />
-                {referralError}
-              </p>
-            )}
-          </div>
+          )}
 
           {/* Fee Display */}
           <div className="rounded-xl border border-slate-200 p-4 bg-white flex items-center justify-between">

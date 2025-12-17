@@ -50,12 +50,22 @@ interface MyCodeResponse {
   stats: ReferralStats;
 }
 
+import { useFeatureFlag } from "@/context/FeatureFlagContext";
+
 export default function ReferralDashboardPage() {
   const { user } = useAuthStore();
   const router = useRouter();
+  const { isEnabled } = useFeatureFlag();
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>("");
+
+  useEffect(() => {
+    if (!isEnabled('referral_system')) {
+      router.push("/dashboard");
+      return;
+    }
+  }, [isEnabled, router]);
 
   const [referralData, setReferralData] = useState<MyCodeResponse | null>(null);
   const [stats, setStats] = useState<ReferralStats | null>(null);
@@ -405,8 +415,8 @@ export default function ReferralDashboardPage() {
                     r.status === "COMPLETED"
                       ? "bg-emerald-100 text-emerald-800"
                       : r.status === "PENDING"
-                      ? "bg-amber-100 text-amber-800"
-                      : "bg-slate-100 text-slate-700";
+                        ? "bg-amber-100 text-amber-800"
+                        : "bg-slate-100 text-slate-700";
 
                   return (
                     <tr key={r.id} className="border-b border-slate-100 last:border-0">
@@ -442,11 +452,10 @@ export default function ReferralDashboardPage() {
                       </td>
                       <td className="py-2 px-3 align-top">
                         <span
-                          className={`inline-flex px-2.5 py-0.5 rounded-full text-[11px] font-medium ${
-                            r.commissionPaid
+                          className={`inline-flex px-2.5 py-0.5 rounded-full text-[11px] font-medium ${r.commissionPaid
                               ? "bg-emerald-100 text-emerald-800"
                               : "bg-slate-100 text-slate-600"
-                          }`}
+                            }`}
                         >
                           {r.commissionPaid ? "PAID" : "PENDING"}
                         </span>

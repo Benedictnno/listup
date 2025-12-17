@@ -84,6 +84,7 @@ app.use('/api/advertisements', advertisementsRoutes);
 app.use('/api/uploads', uploadsRoutes);
 app.use('/api/kyc', kycRoutes);
 app.use('/api/referrals', require('./routes/referrals'));
+app.use('/api/features', require('./routes/features'));
 
 
 // Error handling middleware

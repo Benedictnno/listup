@@ -162,14 +162,61 @@ router.post('/verify', auth, async (req, res) => {
             });
         }
 
-        // Update vendor profile to verified
-        await prisma.vendorProfile.update({
-            where: { id: vendor.vendorProfile.id },
-            data: {
-                isVerified: true,
-                verifiedAt: new Date(),
-                verificationStatus: 'APPROVED'
+        // Update all related records in a transaction
+        await prisma.$transaction(async (tx) => {
+            // 1. Update Vendor Profile
+            await tx.vendorProfile.update({
+                where: { id: vendor.vendorProfile.id },
+                data: {
+                    isVerified: true,
+                    verifiedAt: new Date(),
+                    verificationStatus: 'APPROVED'
+                }
+            });
+
+            // 2. Update Vendor KYC Record
+            // Check if KYC record exists first
+            const existingKyc = await tx.vendorKYC.findUnique({
+                where: { vendorId: userId }
+            });
+
+            if (existingKyc) {
+                await tx.vendorKYC.update({
+                    where: { vendorId: userId },
+                    data: {
+                        paymentStatus: 'SUCCESS',
+                        paymentReference: paymentData.reference,
+                        paidAt: new Date(paymentData.paid_at),
+                        status: 'APPROVED', // Ensure status is approved
+                        validUntil: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year validity
+                        hasReferral: paymentData.metadata.hasReferral || false
+                    }
+                });
+            } else {
+                // If for some reason KYC record doesn't exist (legacy), create it
+                await tx.vendorKYC.create({
+                    data: {
+                        vendorId: userId,
+                        paymentStatus: 'SUCCESS',
+                        paymentReference: paymentData.reference,
+                        paidAt: new Date(paymentData.paid_at),
+                        status: 'APPROVED',
+                        validUntil: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+                        hasReferral: paymentData.metadata.hasReferral || false,
+                        signupFee: paymentData.amount / 100
+                    }
+                });
             }
+
+            // 3. Update User Record (Critical for some checks)
+            await tx.user.update({
+                where: { id: userId },
+                data: {
+                    isKYCVerified: true,
+                    kycCompletedAt: new Date(),
+                    listingLimit: -1 // Unlimited listings
+                }
+            });
         });
 
         // Send verification complete email

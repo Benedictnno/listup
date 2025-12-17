@@ -10,7 +10,10 @@ import Link from "next/link";
 import { safeLocalStorage } from "@/utils/helpers";
 import ProtectedRoute from "@/components/ProtectedRoute";
 
+import { useFeatureFlag } from "@/context/FeatureFlagContext";
+
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const { isEnabled } = useFeatureFlag();
   const [isOpen, setIsOpen] = useState(false); // Start closed on mobile
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
 
@@ -26,8 +29,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const quickActions = [
     { icon: <ShoppingBag size={20} />, label: "My Products", href: "/dashboard/vendor-listing", color: "bg-green-500" },
     { icon: <CiBoxList size={20} />, label: "Add Listing", href: "/dashboard/create-list", color: "bg-lime-500" },
-    { icon: <AiOutlineRise size={20} />, label: "Create Ad", href: "/dashboard/promote", color: "bg-blue-500" },
-    { icon: <Gift size={20} />, label: "Earn Referrals", href: "/dashboard/referrals", color: "bg-purple-500" },
+    ...(isEnabled('Paid_Listing_Promotion') ?  [{ icon: <AiOutlineRise size={20} />, label: "Create Ad", href: "/dashboard/promote", color: "bg-blue-500" }] : []),
+    ...(isEnabled('referral_system') ? [{ icon: <Gift size={20} />, label: "Earn Referrals", href: "/dashboard/referrals", color: "bg-purple-500" }] : []),
     { icon: <FiSettings size={20} />, label: "Settings", href: "/dashboard/settings", color: "bg-orange-500" },
   ];
 

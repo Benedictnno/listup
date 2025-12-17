@@ -66,9 +66,9 @@ const kycService = {
         if (params?.status && params.status !== "ALL") {
             queryParams.status = params.status;
         }
-        // Search was client side in original component, so we don't pass search param unless backend supports it.
-        // The previous component filtered client-side. We will keep it client side for now to minimize risk,
-        // or passing it if I'm sure backend handles it. The original code didn't pass search to backend.
+        if (params?.search) {
+            queryParams.search = params.search;
+        }
 
         const response = await api.get('/kyc/admin/submissions', { params: queryParams });
         return response.data.data;

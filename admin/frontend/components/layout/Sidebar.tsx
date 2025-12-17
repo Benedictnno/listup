@@ -1,4 +1,4 @@
-'use client';
+ 'use client';
 
 import { useState } from 'react';
 import Link from 'next/link';
@@ -106,6 +106,10 @@ export default function Sidebar({ open, setOpen }: SidebarProps) {
       title: 'Settings',
       href: '/settings',
       icon: <Settings className="h-5 w-5" />,
+      submenu: [
+        { title: 'General', href: '/settings' },
+        { title: 'Feature Flags', href: '/settings/features' }
+      ]
     },
   ];
 

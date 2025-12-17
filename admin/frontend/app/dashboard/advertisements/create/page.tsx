@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
-import axios from 'axios';
+import { api } from '@/services/api';
 import Button from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -56,15 +56,15 @@ export default function CreateAdvertisementPage() {
         toast.error('Please select an image file');
         return;
       }
-      
+
       // Validate file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
         toast.error('Image size must be less than 5MB');
         return;
       }
-      
+
       setSelectedFile(file);
-      
+
       // Create preview
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -94,20 +94,15 @@ export default function CreateAdvertisementPage() {
   const uploadToCloudinary = async (file: File): Promise<string> => {
     setIsUploading(true);
     try {
-      const token = localStorage.getItem('token');
       const formData = new FormData();
       formData.append('image', file);
 
-      const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001/api'}/uploads/image`,
-        formData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'multipart/form-data',
-          },
-        }
-      );
+      // Using api service automatically handles auth headers
+      const response = await api.post('/uploads/image', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
 
       return response.data.url;
     } catch (error: any) {
@@ -128,27 +123,21 @@ export default function CreateAdvertisementPage() {
         return;
       }
 
-      const token = localStorage.getItem('token');
-      
+
+
       // Prepare payload - only include targetUrl if it has a value
       const payload: any = {
         title: data.title,
         imageUrl: data.imageUrl,
         duration: data.duration,
       };
-      
+
       // Only add targetUrl if it's not empty
       if (data.targetUrl && data.targetUrl.trim()) {
         payload.targetUrl = data.targetUrl.trim();
       }
 
-      await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001/api'}/advertisements`,
-        payload,
-        {
-          headers: { Authorization: `Bearer ${token}` }
-        }
-      );
+      await api.post('/advertisements', payload);
 
       toast.success('Advertisement created successfully');
       router.push('/dashboard/advertisements');
@@ -189,7 +178,7 @@ export default function CreateAdvertisementPage() {
               <label className="text-sm font-medium">
                 Advertisement Image <span className="text-red-500">*</span>
               </label>
-              
+
               {/* Upload Mode Toggle */}
               <div className="flex gap-2 mb-3">
                 <button
@@ -199,11 +188,10 @@ export default function CreateAdvertisementPage() {
                     setValue('imageUrl', '');
                     setImagePreview('');
                   }}
-                  className={`flex-1 py-2 px-4 rounded-lg border transition-colors ${
-                    uploadMode === 'file'
-                      ? 'bg-lime-500 text-white border-lime-500'
-                      : 'bg-white text-gray-700 border-gray-300 hover:border-lime-500'
-                  }`}
+                  className={`flex-1 py-2 px-4 rounded-lg border transition-colors ${uploadMode === 'file'
+                    ? 'bg-lime-500 text-white border-lime-500'
+                    : 'bg-white text-gray-700 border-gray-300 hover:border-lime-500'
+                    }`}
                 >
                   <Upload className="inline-block w-4 h-4 mr-2" />
                   Upload File
@@ -215,11 +203,10 @@ export default function CreateAdvertisementPage() {
                     setSelectedFile(null);
                     setImagePreview('');
                   }}
-                  className={`flex-1 py-2 px-4 rounded-lg border transition-colors ${
-                    uploadMode === 'url'
-                      ? 'bg-lime-500 text-white border-lime-500'
-                      : 'bg-white text-gray-700 border-gray-300 hover:border-lime-500'
-                  }`}
+                  className={`flex-1 py-2 px-4 rounded-lg border transition-colors ${uploadMode === 'url'
+                    ? 'bg-lime-500 text-white border-lime-500'
+                    : 'bg-white text-gray-700 border-gray-300 hover:border-lime-500'
+                    }`}
                 >
                   Image URL
                 </button>
@@ -250,7 +237,7 @@ export default function CreateAdvertisementPage() {
                       </p>
                     </label>
                   </div>
-                  
+
                   {/* Upload Button */}
                   {selectedFile && (
                     <Button
@@ -274,7 +261,7 @@ export default function CreateAdvertisementPage() {
                       )}
                     </Button>
                   )}
-                  
+
                   {!selectedFile && !watch('imageUrl') && (
                     <p className="text-sm text-red-500">Please select an image file</p>
                   )}
@@ -304,7 +291,7 @@ export default function CreateAdvertisementPage() {
                   </p>
                 </div>
               )}
-              
+
               {/* Image Preview */}
               {imagePreview && (
                 <div className="mt-4">
@@ -377,8 +364,8 @@ export default function CreateAdvertisementPage() {
             </div>
 
             <div className="flex gap-2 pt-4">
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 disabled={isLoading || isUploading || !watch('imageUrl')}
               >
                 {isLoading ? (

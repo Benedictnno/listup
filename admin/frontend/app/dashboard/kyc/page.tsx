@@ -38,12 +38,21 @@ export default function AdminKYCPage() {
   const [search, setSearch] = useState("");
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
   const [selectedKYC, setSelectedKYC] = useState<KYCSubmission | null>(null);
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const limit = 20;
+
+  // Debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [search]);
 
   useEffect(() => {
     fetchKYC();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, statusFilter]);
+  }, [page, statusFilter, debouncedSearch]);
 
   const fetchKYC = async () => {
     try {
@@ -53,7 +62,8 @@ export default function AdminKYCPage() {
       const data = await kycService.getAll({
         page,
         limit,
-        status: statusFilter
+        status: statusFilter,
+        search: debouncedSearch
       });
 
       setKycs(data.kycs || []);
@@ -68,20 +78,8 @@ export default function AdminKYCPage() {
     }
   };
 
-  const filtered = useMemo(() => {
-    if (!search.trim()) return kycs;
-    const q = search.toLowerCase();
-    return kycs.filter((k) => {
-      const v = k.vendor;
-      const storeName = v.vendorProfile?.storeName || "";
-      return (
-        v.name.toLowerCase().includes(q) ||
-        v.email.toLowerCase().includes(q) ||
-        (v.phone || "").toLowerCase().includes(q) ||
-        storeName.toLowerCase().includes(q)
-      );
-    });
-  }, [kycs, search]);
+  // Removed client-side filtering, using kycs directly
+  const filtered = kycs;
 
   const handleUpdateStatus = async (id: string, newStatus: KYCStatus) => {
     try {

@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useRouter } from "next/navigation";
 import api from "@/utils/axios";
 import { safeLocalStorage } from "@/utils/helpers";
+import { useFeatureFlag } from "@/context/FeatureFlagContext";
 
 type AdPlan = {
   type: string;
@@ -51,6 +52,7 @@ export default function AdsPage() {
   const [storeId, setStoreId] = useState<string>("");
   const [productId, setProductId] = useState<string>("");
   const [duration, setDuration] = useState<number>(7);
+  const { isEnabled } = useFeatureFlag();
 
 
 
@@ -132,6 +134,13 @@ export default function AdsPage() {
 
     fetchData();
   }, []);
+
+   useEffect(() => {
+      if (!isEnabled('Paid_Listing_Promotion')) {
+        router.push("/dashboard");
+        return;
+      }
+    }, [isEnabled, router]);
 
   const handleCreateAd = async () => {
     try {

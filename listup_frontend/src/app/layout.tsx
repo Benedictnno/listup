@@ -4,6 +4,7 @@ import "./globals.css";
 import NavBar from "@/components/NavBar";
 import Footer from "@/components/Footer";
 import AuthProvider from "@/components/AuthProvider";
+import { FeatureFlagProvider } from "@/context/FeatureFlagContext";
 import { Analytics } from "@vercel/analytics/next"
 import { SpeedInsights } from "@vercel/speed-insights/next"
 
@@ -28,18 +29,20 @@ export default function RootLayout({
         {/* Google Fonts CDN */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link 
-          href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Roboto+Mono:wght@400;500;600;700&display=swap" 
-          rel="stylesheet" 
+        <link
+          href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Roboto+Mono:wght@400;500;600;700&display=swap"
+          rel="stylesheet"
         />
       </head>
       <body className="antialiased">
         <AuthProvider>
-          <NavBar />
-          {children}
-          <Analytics />
-          <SpeedInsights/>
-          <Footer />
+          <FeatureFlagProvider>
+            <NavBar />
+            {children}
+            <Analytics />
+            <SpeedInsights />
+            <Footer />
+          </FeatureFlagProvider>
         </AuthProvider>
       </body>
     </html>

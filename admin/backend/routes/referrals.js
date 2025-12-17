@@ -15,7 +15,12 @@ router.get('/admin/commissions', auth, async (req, res) => {
         const where = {};
 
         if (status && status !== 'ALL') {
-            where.status = status;
+            // Map frontend status to Prisma enum if needed
+            if (status === 'SUCCESS') {
+                where.status = 'COMPLETED';
+            } else {
+                where.status = status;
+            }
         }
 
         if (search) {
@@ -84,7 +89,7 @@ router.get('/admin/commissions', auth, async (req, res) => {
                 storeName: comm.vendor?.vendorProfile?.storeName || 'N/A'
             },
             amount: comm.commission || 1000, // Default if null
-            status: comm.status || 'PENDING', // Default if null
+            status: comm.status || 'PENDING',
             createdAt: comm.createdAt
         }));
 

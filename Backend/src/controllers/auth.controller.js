@@ -30,6 +30,8 @@ exports.getMe = async (req, res) => {
         email: true,
         role: true,
         phone: true,
+        isKYCVerified: true,
+        listingLimit: true,
         vendorProfile: {
           select: {
             storeName: true,
@@ -56,15 +58,14 @@ exports.register = async (req, res, next) => {
     // Check for validation errors
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      console.log('🔴 Validation errors:', errors.array());
-      console.log('📝 Request body:', req.body);
-      
+
+
       const errorMessages = errors.array().map(err => ({
         field: err.path,
         message: err.msg,
         value: err.value
       }));
-      
+
       return res.status(400).json({
         success: false,
         message: 'Validation failed',
@@ -72,25 +73,23 @@ exports.register = async (req, res, next) => {
       });
     }
 
-    const { 
+    const {
       name,
-      email, 
-      password, 
+      email,
+      password,
       phone,
       role = 'USER', // Default to USER if not specified
-      storeName, 
-      storeAddress, 
+      storeName,
+      storeAddress,
       businessCategory,
       referralCode,
     } = req.body;
 
-    console.log('Registration attempt for:', { email, role, name, phone: phone || 'not provided' });
-
     // Check if email already exists
-    const existingUser = await prisma.user.findUnique({ 
-      where: { email: email.toLowerCase() } 
+    const existingUser = await prisma.user.findUnique({
+      where: { email: email.toLowerCase() }
     });
-    
+
     if (existingUser) {
       return res.status(409).json({
         success: false,
@@ -100,10 +99,10 @@ exports.register = async (req, res, next) => {
 
     // Check if phone already exists (if provided)
     if (phone) {
-      const existingPhone = await prisma.user.findUnique({ 
-        where: { phone } 
+      const existingPhone = await prisma.user.findUnique({
+        where: { phone }
       });
-      
+
       if (existingPhone) {
         return res.status(409).json({
           success: false,
@@ -162,8 +161,8 @@ exports.register = async (req, res, next) => {
             },
           },
         },
-        include: { 
-          vendorProfile: true 
+        include: {
+          vendorProfile: true
         },
       });
 
@@ -237,7 +236,7 @@ exports.register = async (req, res, next) => {
     }
 
     await addToGoogleSheet(name, storeName || '', email, phone || '', role);
-    
+
     // Return success response WITHOUT token - user must verify email before logging in
     res.status(201).json({
       success: true,
@@ -255,7 +254,7 @@ exports.register = async (req, res, next) => {
 
   } catch (error) {
     console.error('Registration error:', error);
-    
+
     // Handle Prisma-specific errors
     if (error.code === 'P2002') {
       return res.status(409).json({
@@ -275,7 +274,7 @@ exports.login = async (req, res, next) => {
   try {
     // User is attached by passport local strategy
     const user = req.user;
-    
+
     if (!user) {
       return res.status(401).json({
         success: false,
@@ -293,7 +292,16 @@ exports.login = async (req, res, next) => {
         role: true,
         phone: true,
         isEmailVerified: true,
-        emailVerifiedAt: true
+        emailVerifiedAt: true,
+        isKYCVerified: true,
+        listingLimit: true,
+        vendorProfile: {
+          select: {
+            storeName: true,
+            storeAddress: true,
+            businessCategory: true,
+          },
+        },
       }
     });
 
@@ -307,20 +315,20 @@ exports.login = async (req, res, next) => {
     }
 
     // Generate JWT token
-    const token = sign({ 
-      id: fullUser.id, 
-      email: fullUser.email, 
-      name: fullUser.name, 
-      role: fullUser.role 
+    const token = sign({
+      id: fullUser.id,
+      email: fullUser.email,
+      name: fullUser.name,
+      role: fullUser.role
     });
-console.log("Signed token:", token);
+    console.log("Signed token:", token);
     res.cookie("accessToken", token, {
-    httpOnly: true,
-    secure: false,          // keep false on http://localhost, true in HTTPS prod
-    sameSite: "lax",        // good default for SPA on same site / localhost
-    // domain: not needed for localhost; omit it
-    maxAge: 7 * 24 * 60 * 60 * 1000, // example: 7 days
-  });
+      httpOnly: true,
+      secure: false,          // keep false on http://localhost, true in HTTPS prod
+      sameSite: "lax",        // good default for SPA on same site / localhost
+      // domain: not needed for localhost; omit it
+      maxAge: 7 * 24 * 60 * 60 * 1000, // example: 7 days
+    });
 
     // Return success response
     res.json({
@@ -367,7 +375,7 @@ exports.forgotPassword = async (req, res, next) => {
         message: err.msg,
         value: err.value
       }));
-      
+
       return res.status(400).json({
         success: false,
         message: 'Validation failed',
@@ -448,7 +456,7 @@ exports.verifyResetCode = async (req, res, next) => {
         message: err.msg,
         value: err.value
       }));
-      
+
       return res.status(400).json({
         success: false,
         message: 'Validation failed',
@@ -506,7 +514,7 @@ exports.resetPassword = async (req, res, next) => {
         message: err.msg,
         value: err.value
       }));
-      
+
       return res.status(400).json({
         success: false,
         message: 'Validation failed',
@@ -675,7 +683,7 @@ exports.resendVerificationEmail = async (req, res, next) => {
         message: err.msg,
         value: err.value
       }));
-      
+
       return res.status(400).json({
         success: false,
         message: 'Validation failed',

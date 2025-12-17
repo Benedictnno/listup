@@ -22,5 +22,6 @@ router.use('/analytics', generalLimiter, require('./analytics.routes'));
 router.use('/referrals', generalLimiter, require('./referral.routes'));
 router.use('/kyc', generalLimiter, require('./kyc.routes'));
 router.use('/kyc-payment', generalLimiter, require('./kyc-payment.routes'));
+router.use('/features', generalLimiter, require('./feature.routes'));
 
 module.exports = router;

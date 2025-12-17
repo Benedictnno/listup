@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { useFeatureFlag } from "@/context/FeatureFlagContext";
 import { CheckSquare, Trash2, TrendingUp } from "lucide-react";
 
 interface VendorListingBulkActionsProps {
@@ -24,6 +25,7 @@ export function VendorListingBulkActions({
     handleBulkDelete,
 }: VendorListingBulkActionsProps) {
     if (selectedCount === 0) return null;
+  const { isEnabled } = useFeatureFlag();
 
     return (
         <Card className="bg-blue-50 border-blue-200">
@@ -71,7 +73,7 @@ export function VendorListingBulkActions({
                         >
                             Deactivate All
                         </Button>
-                        <Button
+                      {isEnabled('Paid_Listing_Promotion') && <Button
                             variant="default"
                             size="sm"
                             onClick={handlePromoteProducts}
@@ -80,12 +82,14 @@ export function VendorListingBulkActions({
                         >
                             <TrendingUp size={16} className="mr-2" />
                             Promote Selected
-                        </Button>
+                        </Button>}
                         <Button
                             variant="destructive"
                             size="sm"
                             onClick={handleBulkDelete}
                             disabled={bulkLoading}
+                            className="bg-red-600 hover:bg-red-700"
+
                         >
                             <Trash2 size={16} className="mr-2" />
                             Delete All

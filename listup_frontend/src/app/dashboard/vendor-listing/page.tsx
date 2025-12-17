@@ -698,7 +698,7 @@ export default function VendorListingsPage() {
         saving={saving}
       />
 
-      <PromoteListingModal
+ {     <PromoteListingModal
         showPromoteModal={showPromoteModal}
         setShowPromoteModal={setShowPromoteModal}
         promoteListings={promoteListings}
@@ -710,7 +710,7 @@ export default function VendorListingsPage() {
         setPromoteDuration={setPromoteDuration}
         calculatePromotionCost={calculatePromotionCost}
         createPromotionAds={createPromotionAds}
-      />
+      />}
     </div>
   );
 }
