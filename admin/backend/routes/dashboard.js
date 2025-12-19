@@ -19,26 +19,26 @@ router.get('/overview', auth, async (req, res) => {
     ] = await Promise.all([
       // Total users
       prisma.user.count(),
-      
+
       // Total vendors
       prisma.user.count({
-        where: { 
+        where: {
           role: 'VENDOR',
           vendorProfile: { isNot: null }
         }
       }),
-      
+
       // Total listings
       prisma.listing.count(),
-      
+
       // Total ads
       prisma.ad.count(),
-      
+
       // Pending vendor approvals
       prisma.vendorProfile.count({
         where: { verificationStatus: 'PENDING' }
       }),
-      
+
       // Recent users (last 30 days)
       prisma.user.count({
         where: {
@@ -47,7 +47,7 @@ router.get('/overview', auth, async (req, res) => {
           }
         }
       }),
-      
+
       // Recent listings (last 30 days)
       prisma.listing.count({
         where: {
@@ -56,7 +56,7 @@ router.get('/overview', auth, async (req, res) => {
           }
         }
       }),
-      
+
       // Active ads
       prisma.ad.count({
         where: {
@@ -116,7 +116,7 @@ router.get('/recent-activity', auth, async (req, res) => {
         },
         orderBy: { createdAt: 'desc' }
       }),
-      
+
       prisma.listing.findMany({
         take,
         select: {
@@ -139,9 +139,9 @@ router.get('/recent-activity', auth, async (req, res) => {
         },
         orderBy: { createdAt: 'desc' }
       }),
-      
+
       prisma.user.findMany({
-        where: { 
+        where: {
           role: 'VENDOR',
           vendorProfile: { isNot: null }
         },
@@ -160,7 +160,7 @@ router.get('/recent-activity', auth, async (req, res) => {
         },
         orderBy: { createdAt: 'desc' }
       }),
-      
+
       prisma.ad.findMany({
         take,
         select: {
@@ -210,35 +210,52 @@ router.get('/analytics', auth, async (req, res) => {
   try {
     const { period = '30' } = req.query; // days
     const days = parseInt(period);
-    const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
+    startDate.setHours(0, 0, 0, 0);
 
-    // Get daily user registrations
-    const dailyUsers = await prisma.$queryRaw`
-      SELECT 
-        DATE(createdAt) as date,
-        COUNT(*) as count
-      FROM User 
-      WHERE createdAt >= ${startDate}
-      GROUP BY DATE(createdAt)
-      ORDER BY date ASC
-    `;
+    // Fetch daily user registrations and listings within the period
+    const [users, listings] = await Promise.all([
+      prisma.user.findMany({
+        where: { createdAt: { gte: startDate } },
+        select: { createdAt: true }
+      }),
+      prisma.listing.findMany({
+        where: { createdAt: { gte: startDate } },
+        select: { createdAt: true }
+      })
+    ]);
 
-    // Get daily listings
-    const dailyListings = await prisma.$queryRaw`
-      SELECT 
-        DATE(createdAt) as date,
-        COUNT(*) as count
-      FROM Listing 
-      WHERE createdAt >= ${startDate}
-      GROUP BY DATE(createdAt)
-      ORDER BY date ASC
-    `;
+    // Helper function to group by date
+    const groupByDate = (items) => {
+      const counts = {};
+      items.forEach(item => {
+        const date = item.createdAt.toISOString().split('T')[0];
+        counts[date] = (counts[date] || 0) + 1;
+      });
+
+      // Fill in gaps for the selected period
+      const result = [];
+      for (let i = 0; i <= days; i++) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        const dateStr = d.toISOString().split('T')[0];
+        result.push({
+          date: dateStr,
+          count: counts[dateStr] || 0
+        });
+      }
+      return result.reverse();
+    };
+
+    const dailyUsers = groupByDate(users);
+    const dailyListings = groupByDate(listings);
 
     // Get category distribution
     const categoryDistribution = await prisma.listing.groupBy({
       by: ['categoryId'],
       _count: { id: true },
-      where: { category: { isNot: null } }
+      where: { categoryId: { not: null } }
     });
 
     // Get category names
@@ -276,11 +293,9 @@ router.get('/analytics', auth, async (req, res) => {
 router.get('/health', auth, async (req, res) => {
   try {
     const [
-      dbStatus,
       userCount,
       listingCount
     ] = await Promise.all([
-      prisma.$queryRaw`SELECT 1 as status`,
       prisma.user.count(),
       prisma.listing.count()
     ]);

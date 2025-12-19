@@ -1,12 +1,8 @@
 const express = require('express');
 const prisma = require('../lib/prisma');
 const { auth } = require('../middleware/auth');
-// Try to require the email service from the main backend if structure allows, 
-// otherwise we might need to duplicate usage or check path. 
-// Based on previous file reads, the path used in previous version was:
-// require('../../../Backend/src/lib/email')
-// We will attempt to keep that, assuming the folder structure supports it locally.
-const { sendKYCEmail } = require('../../../Backend/src/lib/email');
+// Use the local email service in the admin backend
+const { sendKYCEmail } = require('../lib/email');
 
 const router = express.Router();
 

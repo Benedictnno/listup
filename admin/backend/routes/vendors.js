@@ -97,6 +97,65 @@ router.get('/', auth, async (req, res) => {
   }
 });
 
+// Get vendor statistics
+router.get(['/stats', '/stats/overview'], auth, async (req, res) => {
+  try {
+    const [
+      totalVendors,
+      pendingVendors,
+      approvedVendors,
+      rejectedVendors,
+      recentVendors,
+      totalListings
+    ] = await Promise.all([
+      prisma.user.count({
+        where: {
+          role: 'VENDOR',
+          vendorProfile: { isNot: null }
+        }
+      }),
+      prisma.vendorProfile.count({
+        where: { verificationStatus: 'PENDING' }
+      }),
+      prisma.vendorProfile.count({
+        where: { verificationStatus: 'APPROVED' }
+      }),
+      prisma.vendorProfile.count({
+        where: { verificationStatus: 'REJECTED' }
+      }),
+      prisma.user.count({
+        where: {
+          role: 'VENDOR',
+          vendorProfile: { isNot: null },
+          createdAt: {
+            gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) // Last 30 days
+          }
+        }
+      }),
+      prisma.listing.count()
+    ]);
+
+    res.json({
+      success: true,
+      data: {
+        totalVendors,
+        pendingVendors,
+        activeVendors: approvedVendors,
+        rejectedVendors,
+        newVendors: recentVendors,
+        totalListings
+      }
+    });
+
+  } catch (error) {
+    console.error('Get vendor stats error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while fetching vendor statistics'
+    });
+  }
+});
+
 // Get single vendor details
 router.get('/:vendorId', auth, async (req, res) => {
   try {
@@ -316,60 +375,5 @@ router.patch('/:vendorId/reject', auth, [
   }
 });
 
-// Get vendor statistics
-router.get('/stats/overview', auth, async (req, res) => {
-  try {
-    const [
-      totalVendors,
-      pendingVendors,
-      approvedVendors,
-      rejectedVendors,
-      recentVendors
-    ] = await Promise.all([
-      prisma.user.count({
-        where: {
-          role: 'VENDOR',
-          vendorProfile: { isNot: null }
-        }
-      }),
-      prisma.vendorProfile.count({
-        where: { verificationStatus: 'PENDING' }
-      }),
-      prisma.vendorProfile.count({
-        where: { verificationStatus: 'APPROVED' }
-      }),
-      prisma.vendorProfile.count({
-        where: { verificationStatus: 'REJECTED' }
-      }),
-      prisma.user.count({
-        where: {
-          role: 'VENDOR',
-          vendorProfile: { isNot: null },
-          createdAt: {
-            gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) // Last 30 days
-          }
-        }
-      })
-    ]);
-
-    res.json({
-      success: true,
-      data: {
-        totalVendors,
-        pendingVendors,
-        approvedVendors,
-        rejectedVendors,
-        recentVendors
-      }
-    });
-
-  } catch (error) {
-    console.error('Get vendor stats error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Server error while fetching vendor statistics'
-    });
-  }
-});
 
 module.exports = router;

@@ -5,15 +5,15 @@ export interface VendorStats {
   activeVendors: number;
   newVendors: number;
   totalListings: number;
-  topVendorsByListings: Array<{
+  topVendorsByListings?: Array<{
     name: string;
     listings: number;
   }>;
-  vendorsByCategory: Array<{
+  vendorsByCategory?: Array<{
     category: string;
     count: number;
   }>;
-  vendorGrowth: Array<{
+  vendorGrowth?: Array<{
     month: string;
     count: number;
   }>;
@@ -24,15 +24,15 @@ export interface ListingStats {
   activeListings: number;
   newListings: number;
   averagePrice: number;
-  topCategories: Array<{
+  topCategories?: Array<{
     name: string;
     count: number;
   }>;
-  listingsByStatus: Array<{
+  listingsByStatus?: Array<{
     status: string;
     count: number;
   }>;
-  listingGrowth: Array<{
+  listingGrowth?: Array<{
     month: string;
     count: number;
   }>;
@@ -43,7 +43,7 @@ export const StatsService = {
     const res = await api.get<VendorStats>('/vendors/stats/overview');
     return res.data;
   },
-  
+
   getListingStats: async () => {
     const res = await api.get<ListingStats>('/listings/stats/overview');
     return res.data;

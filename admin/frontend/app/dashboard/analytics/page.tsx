@@ -4,30 +4,8 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2 } from "lucide-react";
-import axios from "axios";
 import { toast } from "react-hot-toast";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001/api';
-
-interface VendorStats {
-  totalVendors: number;
-  activeVendors: number;
-  newVendors: number;
-  totalListings: number;
-  topVendorsByListings?: any[];
-  vendorsByCategory?: any[];
-  vendorGrowth?: any[];
-}
-
-interface ListingStats {
-  totalListings: number;
-  activeListings: number;
-  newListings: number;
-  averagePrice: number;
-  topCategories?: any[];
-  listingsByStatus?: any[];
-  listingGrowth?: any[];
-}
+import dashboardService, { VendorStats, ListingStats } from "@/services/dashboardService";
 
 export default function AnalyticsPage() {
   const [activeTab, setActiveTab] = useState("vendors");
@@ -41,41 +19,45 @@ export default function AnalyticsPage() {
       try {
         setLoading(true);
         setError(null);
-        const token = localStorage.getItem('token');
 
-        // Fetch real analytics data from API
-        const [vendorsResponse, listingsResponse] = await Promise.all([
-          axios.get(`${API_URL}/vendors/stats`, {
-            headers: { Authorization: `Bearer ${token}` }
-          }).catch(() => ({ data: null })),
-          axios.get(`${API_URL}/listings/stats`, {
-            headers: { Authorization: `Bearer ${token}` }
-          }).catch(() => ({ data: null }))
+        // Fetch real analytics data from dashboard service (uses cookie-based auth)
+        const [vendorData, listingData] = await Promise.all([
+          dashboardService.getVendorStats().catch(() => null),
+          dashboardService.getListingStats().catch(() => null)
         ]);
 
-        // Process vendor stats
-        const vendorData = vendorsResponse.data?.data || vendorsResponse.data || {};
-        setVendorStats({
-          totalVendors: vendorData.totalVendors || 0,
-          activeVendors: vendorData.activeVendors || 0,
-          newVendors: vendorData.newVendors || 0,
-          totalListings: vendorData.totalListings || 0,
-          topVendorsByListings: vendorData.topVendorsByListings || [],
-          vendorsByCategory: vendorData.vendorsByCategory || [],
-          vendorGrowth: vendorData.vendorGrowth || []
-        });
+        if (vendorData) {
+          setVendorStats({
+            totalVendors: vendorData.totalVendors || 0,
+            pendingVendors: vendorData.pendingVendors || 0,
+            activeVendors: vendorData.activeVendors || 0,
+            rejectedVendors: vendorData.rejectedVendors || 0,
+            newVendors: vendorData.newVendors || 0,
+            totalListings: vendorData.totalListings || 0,
+            topVendorsByListings: vendorData.topVendorsByListings || [],
+            vendorsByCategory: vendorData.vendorsByCategory || [],
+            vendorGrowth: vendorData.vendorGrowth || []
+          });
+        }
 
-        // Process listing stats
-        const listingData = listingsResponse.data?.data || listingsResponse.data || {};
-        setListingStats({
-          totalListings: listingData.totalListings || 0,
-          activeListings: listingData.activeListings || 0,
-          newListings: listingData.newListings || 0,
-          averagePrice: listingData.averagePrice || 0,
-          topCategories: listingData.topCategories || [],
-          listingsByStatus: listingData.listingsByStatus || [],
-          listingGrowth: listingData.listingGrowth || []
-        });
+        if (listingData) {
+          setListingStats({
+            totalListings: listingData.totalListings || 0,
+            activeListings: listingData.activeListings || 0,
+            inactiveListings: listingData.inactiveListings || 0,
+            newListings: listingData.newListings || 0,
+            averagePrice: listingData.averagePrice || 0,
+            topCategories: listingData.topCategories || listingData.categoryStats || [],
+            categoryStats: listingData.categoryStats || [],
+            listingsByStatus: listingData.listingsByStatus || [],
+            listingGrowth: listingData.listingGrowth || []
+          });
+        }
+
+        if (!vendorData && !listingData) {
+          throw new Error("Failed to load analytics data");
+        }
+
       } catch (err) {
         console.error("Failed to fetch stats:", err);
         toast.error("Failed to load analytics data");

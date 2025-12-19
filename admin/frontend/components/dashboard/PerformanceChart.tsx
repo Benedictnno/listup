@@ -1,12 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle
 } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
@@ -21,6 +21,7 @@ import {
   Legend,
   ResponsiveContainer
 } from 'recharts';
+import dashboardService from '@/services/dashboardService';
 
 interface ChartData {
   date: Date;
@@ -32,8 +33,7 @@ export default function PerformanceChart() {
   const [chartType, setChartType] = useState('line');
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001/api';
-  
+
   useEffect(() => {
     fetchAnalyticsData();
   }, [period]);
@@ -41,28 +41,16 @@ export default function PerformanceChart() {
   const fetchAnalyticsData = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem("token");
-      
-      const response = await fetch(
-        `${API_URL}/dashboard/analytics?period=${period}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      );
+      const analyticsData = await dashboardService.getAnalytics(parseInt(period));
 
-      if (response.ok) {
-        const result = await response.json();
-        
+      if (analyticsData) {
         // Format data for charts
-        const formattedData = result.data.dailyUsers.map((item: ChartData, index: number) => ({
+        const formattedData = analyticsData.dailyUsers.map((item: ChartData, index: number) => ({
           name: new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
           users: Number(item.count),
-          listings: Number(result.data.dailyListings[index]?.count || 0)
+          listings: Number(analyticsData.dailyListings[index]?.count || 0)
         }));
-        
+
         setData(formattedData);
       }
     } catch (error) {
@@ -71,7 +59,7 @@ export default function PerformanceChart() {
       setLoading(false);
     }
   };
-  
+
   return (
     <Card className="col-span-full">
       <CardHeader className="flex flex-row items-center justify-between">
@@ -102,48 +90,48 @@ export default function PerformanceChart() {
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-lime-500"></div>
           </div>
         ) : (
-        <div className="h-[350px]">
-          <ResponsiveContainer width="100%" height="100%">
-            {chartType === 'line' ? (
-              <LineChart
-                data={data}
-                margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Line 
-                  type="monotone" 
-                  dataKey="users" 
-                  stroke="#8884d8" 
-                  activeDot={{ r: 8 }} 
-                  name="Users"
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="listings" 
-                  stroke="#82ca9d" 
-                  name="Listings"
-                />
-              </LineChart>
-            ) : (
-              <BarChart
-                data={data}
-                margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Bar dataKey="users" fill="#8884d8" name="Users" />
-                <Bar dataKey="listings" fill="#82ca9d" name="Listings" />
-              </BarChart>
-            )}
-          </ResponsiveContainer>
-        </div>
+          <div className="h-[350px]">
+            <ResponsiveContainer width="100%" height="100%">
+              {chartType === 'line' ? (
+                <LineChart
+                  data={data}
+                  margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Line
+                    type="monotone"
+                    dataKey="users"
+                    stroke="#8884d8"
+                    activeDot={{ r: 8 }}
+                    name="Users"
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="listings"
+                    stroke="#82ca9d"
+                    name="Listings"
+                  />
+                </LineChart>
+              ) : (
+                <BarChart
+                  data={data}
+                  margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="users" fill="#8884d8" name="Users" />
+                  <Bar dataKey="listings" fill="#82ca9d" name="Listings" />
+                </BarChart>
+              )}
+            </ResponsiveContainer>
+          </div>
         )}
       </CardContent>
     </Card>

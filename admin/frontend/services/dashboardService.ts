@@ -76,6 +76,34 @@ export interface AnalyticsData {
   }>;
 }
 
+export interface VendorStats {
+  totalVendors: number;
+  pendingVendors: number;
+  activeVendors: number;
+  rejectedVendors: number;
+  newVendors: number;
+  totalListings: number;
+  topVendorsByListings?: any[];
+  vendorsByCategory?: any[];
+  vendorGrowth?: any[];
+}
+
+export interface ListingStats {
+  totalListings: number;
+  activeListings: number;
+  inactiveListings: number;
+  newListings: number;
+  averagePrice: number;
+  topCategories?: any[];
+  categoryStats: Array<{
+    categoryId: string;
+    count: number;
+    categoryName: string;
+  }>;
+  listingsByStatus?: any[];
+  listingGrowth?: any[];
+}
+
 const dashboardService = {
   getOverview: async (): Promise<DashboardOverview> => {
     const response = await api.get('/dashboard/overview');
@@ -93,6 +121,16 @@ const dashboardService = {
     const response = await api.get('/dashboard/analytics', {
       params: { period }
     });
+    return response.data.data;
+  },
+
+  getVendorStats: async (): Promise<VendorStats> => {
+    const response = await api.get('/vendors/stats');
+    return response.data.data;
+  },
+
+  getListingStats: async (): Promise<ListingStats> => {
+    const response = await api.get('/listings/stats');
     return response.data.data;
   },
 

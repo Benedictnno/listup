@@ -98,6 +98,71 @@ router.get('/', auth, async (req, res) => {
   }
 });
 
+// Get listing statistics
+router.get(['/stats', '/stats/overview'], auth, async (req, res) => {
+  try {
+    const [
+      totalListings,
+      activeListings,
+      inactiveListings,
+      recentListings,
+      listingsByCategory,
+      priceStats
+    ] = await Promise.all([
+      prisma.listing.count(),
+      prisma.listing.count({ where: { isActive: true } }),
+      prisma.listing.count({ where: { isActive: false } }),
+      prisma.listing.count({
+        where: {
+          createdAt: {
+            gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) // Last 30 days
+          }
+        }
+      }),
+      prisma.listing.groupBy({
+        by: ['categoryId'],
+        _count: { id: true },
+        where: { category: { isNot: null } }
+      }),
+      prisma.listing.aggregate({
+        _avg: { price: true }
+      })
+    ]);
+
+    // Get category names for the groupBy results
+    const categoryIds = listingsByCategory.map(item => item.categoryId);
+    const categories = await prisma.category.findMany({
+      where: { id: { in: categoryIds } },
+      select: { id: true, name: true }
+    });
+
+    const categoryStats = listingsByCategory.map(item => ({
+      categoryId: item.categoryId,
+      count: item._count.id,
+      categoryName: categories.find(cat => cat.id === item.categoryId)?.name || 'Unknown'
+    }));
+
+    res.json({
+      success: true,
+      data: {
+        totalListings,
+        activeListings,
+        inactiveListings,
+        newListings: recentListings,
+        averagePrice: priceStats._avg.price || 0,
+        categoryStats
+      }
+    });
+
+  } catch (error) {
+    console.error('Get listing stats error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while fetching listing statistics'
+    });
+  }
+});
+
 // Get single listing details
 router.get('/:listingId', auth, async (req, res) => {
   try {
@@ -368,64 +433,5 @@ router.delete('/:listingId', auth, async (req, res) => {
   }
 });
 
-// Get listing statistics
-router.get('/stats/overview', auth, async (req, res) => {
-  try {
-    const [
-      totalListings,
-      activeListings,
-      inactiveListings,
-      recentListings,
-      listingsByCategory
-    ] = await Promise.all([
-      prisma.listing.count(),
-      prisma.listing.count({ where: { isActive: true } }),
-      prisma.listing.count({ where: { isActive: false } }),
-      prisma.listing.count({
-        where: {
-          createdAt: {
-            gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) // Last 30 days
-          }
-        }
-      }),
-      prisma.listing.groupBy({
-        by: ['categoryId'],
-        _count: { id: true },
-        where: { category: { isNot: null } }
-      })
-    ]);
-
-    // Get category names for the groupBy results
-    const categoryIds = listingsByCategory.map(item => item.categoryId);
-    const categories = await prisma.category.findMany({
-      where: { id: { in: categoryIds } },
-      select: { id: true, name: true }
-    });
-
-    const categoryStats = listingsByCategory.map(item => ({
-      categoryId: item.categoryId,
-      count: item._count.id,
-      categoryName: categories.find(cat => cat.id === item.categoryId)?.name || 'Unknown'
-    }));
-
-    res.json({
-      success: true,
-      data: {
-        totalListings,
-        activeListings,
-        inactiveListings,
-        recentListings,
-        categoryStats
-      }
-    });
-
-  } catch (error) {
-    console.error('Get listing stats error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Server error while fetching listing statistics'
-    });
-  }
-});
 
 module.exports = router;

@@ -69,10 +69,6 @@ export interface AddressListResponse {
     total: number;
   };
 }
-  vendorId?: string;
-  createdAt?: string;
-  updatedAt?: string;
-}
 
 // API response types
 export interface PaginatedResponse<T> {
