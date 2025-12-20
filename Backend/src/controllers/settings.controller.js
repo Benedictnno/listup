@@ -18,7 +18,7 @@ exports.getUserSettings = async (req, res, next) => {
           }
         },
         userPreferences: true,
-        notificationSettings: true
+        NotificationSettings: true
       }
     });
 
@@ -47,7 +47,8 @@ exports.updateStoreSettings = async (req, res, next) => {
       storeAddress,
       website,
       businessHours,
-      socialMedia
+      socialMedia,
+      storeAnnouncement
     } = req.body;
 
     // Validate required fields
@@ -71,7 +72,8 @@ exports.updateStoreSettings = async (req, res, next) => {
           storeDescription,
           businessCategory,
           storeAddress,
-          website
+          website,
+          storeAnnouncement
         }
       });
     } else {
@@ -83,7 +85,8 @@ exports.updateStoreSettings = async (req, res, next) => {
           storeDescription,
           businessCategory,
           storeAddress,
-          website
+          website,
+          storeAnnouncement
         }
       });
     }

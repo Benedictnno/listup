@@ -1,13 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { getUserSettings, updateStoreSettings, updatePersonalInfo, updatePassword } from "@/lib/api/settings";
+import { getUserSettings, updateStoreSettings, updatePersonalInfo, updatePassword, uploadStoreImage } from "@/lib/api/settings";
+import api from "@/utils/axios";
 import {
   Store,
   User,
@@ -16,7 +18,15 @@ import {
   CheckCircle,
   AlertTriangle,
   Menu,
-  X
+  X,
+  Instagram,
+  Facebook,
+  Twitter,
+  Linkedin,
+  Clock,
+  Link as LinkIcon,
+  Copy,
+  Upload
 } from "lucide-react";
 
 export default function SettingsPage() {
@@ -27,12 +37,32 @@ export default function SettingsPage() {
   const [initialLoading, setInitialLoading] = useState(true);
 
   const [storeForm, setStoreForm] = useState({
+    storeId: "",
     storeName: "",
     storeDescription: "",
     businessCategory: "",
     storeAddress: "",
     storeEmail: "",
     storePhone: "",
+    coverImage: "",
+    logo: "",
+    website: "",
+    socialMedia: {
+      instagram: "",
+      facebook: "",
+      twitter: "",
+      linkedin: ""
+    },
+    businessHours: {
+      monday: { open: "09:00", close: "18:00", closed: false },
+      tuesday: { open: "09:00", close: "18:00", closed: false },
+      wednesday: { open: "09:00", close: "18:00", closed: false },
+      thursday: { open: "09:00", close: "18:00", closed: false },
+      friday: { open: "09:00", close: "18:00", closed: false },
+      saturday: { open: "10:00", close: "16:00", closed: false },
+      sunday: { open: "09:00", close: "18:00", closed: true }
+    },
+    storeAnnouncement: ""
   });
 
   const [personalForm, setPersonalForm] = useState({
@@ -58,12 +88,30 @@ export default function SettingsPage() {
 
         setStoreForm(prev => ({
           ...prev,
+          storeId: vendorProfile?.id || "",
           storeName: vendorProfile?.storeName || "",
           storeDescription: vendorProfile?.storeDescription || "",
           businessCategory: vendorProfile?.businessCategory || "",
           storeAddress: vendorProfile?.storeAddress || "",
           storeEmail: user?.email || "",
           storePhone: user?.phone || "",
+          coverImage: vendorProfile?.coverImage || "",
+          logo: vendorProfile?.logo || "",
+          website: vendorProfile?.website || "",
+          socialMedia: {
+            instagram: vendorProfile?.socialMedia?.instagram || "",
+            facebook: vendorProfile?.socialMedia?.facebook || "",
+            twitter: vendorProfile?.socialMedia?.twitter || "",
+            linkedin: vendorProfile?.socialMedia?.linkedin || ""
+          },
+          businessHours: vendorProfile?.businessHours
+            ? Object.fromEntries(
+              Object.entries(vendorProfile.businessHours).filter(([key]) =>
+                ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].includes(key)
+              )
+            ) as any
+            : prev.businessHours,
+          storeAnnouncement: vendorProfile?.storeAnnouncement || ""
         }));
 
         const fullName = user?.name || "";
@@ -98,11 +146,22 @@ export default function SettingsPage() {
           return;
         }
 
+        // Sanitize business hours to remove any Prisma metadata
+        const sanitizedBusinessHours = Object.fromEntries(
+          Object.entries(storeForm.businessHours).filter(([key]) =>
+            ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].includes(key)
+          )
+        ) as any;
+
         await updateStoreSettings({
           storeName,
           storeDescription,
           businessCategory,
           storeAddress,
+          website: storeForm.website,
+          socialMedia: storeForm.socialMedia,
+          businessHours: sanitizedBusinessHours,
+          storeAnnouncement: storeForm.storeAnnouncement
         } as any);
 
         setMessage({ type: 'success', text: 'Store settings updated successfully!' });
@@ -162,6 +221,44 @@ export default function SettingsPage() {
 
 
 
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'logo' | 'cover') => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setLoading(true);
+      // 1. Get signature
+      const sigData = await api.get('/uploads/cloudinary-signature').then(res => res.data);
+
+      // 2. Upload to Cloudinary
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('api_key', sigData.apiKey);
+      formData.append('timestamp', sigData.timestamp);
+      formData.append('signature', sigData.signature);
+      formData.append('folder', sigData.folder);
+
+      const cloudRes = await fetch(`https://api.cloudinary.com/v1_1/${sigData.cloudName}/image/upload`, {
+        method: 'POST',
+        body: formData
+      });
+      const cloudData = await cloudRes.json();
+
+      if (cloudData.secure_url) {
+        // 3. Update backend
+        await uploadStoreImage({ imageUrl: cloudData.secure_url, imageType: type });
+        setStoreForm(prev => ({ ...prev, [type === 'logo' ? 'logo' : 'coverImage']: cloudData.secure_url }));
+        setMessage({ type: 'success', text: `${type === 'logo' ? 'Logo' : 'Cover image'} updated successfully!` });
+      }
+    } catch (error) {
+      console.error("Upload failed", error);
+      setMessage({ type: 'error', text: 'Upload failed. Please try again.' });
+    } finally {
+      setLoading(false);
+      setTimeout(() => setMessage(null), 3000);
+    }
+  };
+
   const renderStoreSettings = () => (
     <div className="space-y-4 md:space-y-6">
       <Card>
@@ -172,6 +269,104 @@ export default function SettingsPage() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          {/* Store Link Section */}
+          <div className="p-4 bg-lime-50 rounded-lg border border-lime-100 mb-4">
+            <Label className="text-lime-800 font-semibold flex items-center gap-2 mb-2">
+              <LinkIcon size={16} />
+              Your Store Link
+            </Label>
+            <div className="flex gap-2">
+              <Input
+                readOnly
+                value={`listup.ng/stores/${storeForm.storeName.toLowerCase().replace(/\s+/g, '-') || '...'}`}
+                className="bg-white border-lime-200"
+              />
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => {
+                  const link = `listup.ng/stores/${storeForm.storeName.toLowerCase().replace(/\s+/g, '-')}`;
+                  navigator.clipboard.writeText(link);
+                  setMessage({ type: 'success', text: 'Link copied to clipboard!' });
+                  setTimeout(() => setMessage(null), 2000);
+                }}
+              >
+                <Copy size={16} />
+              </Button>
+            </div>
+            <p className="text-xs text-lime-600 mt-2">Share this link with your customers to visit your store front directly.</p>
+          </div>
+
+          {/* Store Logo & Cover Image Section */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <Label>Store Logo</Label>
+              <div className="relative h-24 w-24 rounded-full overflow-hidden bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center group mx-auto">
+                {storeForm.logo ? (
+                  <>
+                    <Image
+                      src={storeForm.logo}
+                      alt="Store Logo"
+                      fill
+                      className="object-cover"
+                    />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <Label htmlFor="logo-upload" className="cursor-pointer text-white p-1 rounded-full">
+                        <Upload size={16} />
+                      </Label>
+                    </div>
+                  </>
+                ) : (
+                  <Label htmlFor="logo-upload" className="cursor-pointer flex flex-col items-center gap-1 text-gray-500 text-[10px] text-center p-2">
+                    <Upload size={16} />
+                    <span>Logo</span>
+                  </Label>
+                )}
+                <input
+                  id="logo-upload"
+                  type="file"
+                  className="hidden"
+                  accept="image/*"
+                  onChange={(e) => handleImageUpload(e, 'logo')}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Store Cover Image</Label>
+              <div className="relative h-24 w-full rounded-lg overflow-hidden bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center group">
+                {storeForm.coverImage ? (
+                  <>
+                    <Image
+                      src={storeForm.coverImage}
+                      alt="Store Cover"
+                      fill
+                      className="object-cover"
+                    />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <Label htmlFor="cover-upload" className="cursor-pointer text-white flex items-center gap-2 bg-black/50 px-3 py-1 rounded-full text-xs">
+                        <Upload size={14} />
+                        Change
+                      </Label>
+                    </div>
+                  </>
+                ) : (
+                  <Label htmlFor="cover-upload" className="cursor-pointer flex flex-col items-center gap-1 text-gray-500 text-xs">
+                    <Upload size={20} />
+                    <span>Upload Cover Image</span>
+                  </Label>
+                )}
+                <input
+                  id="cover-upload"
+                  type="file"
+                  className="hidden"
+                  accept="image/*"
+                  onChange={(e) => handleImageUpload(e, 'cover')}
+                />
+              </div>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 gap-4">
             <div>
               <Label htmlFor="storeName">Store Name *</Label>
@@ -196,8 +391,21 @@ export default function SettingsPage() {
                   <SelectItem value="electronics">Electronics</SelectItem>
                   <SelectItem value="clothing">Clothing</SelectItem>
                   <SelectItem value="furniture">Furniture</SelectItem>
+                  <SelectItem value="beauty">Beauty & Personal Care</SelectItem>
+                  <SelectItem value="food">Food & Groceries</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+            <div>
+              <Label htmlFor="website">Website (Optional)</Label>
+              <Input
+                id="website"
+                placeholder="https://yourstore.com"
+                className="w-full"
+                value={storeForm.website}
+                onChange={(e) => setStoreForm(prev => ({ ...prev, website: e.target.value }))}
+              />
             </div>
           </div>
 
@@ -224,31 +432,161 @@ export default function SettingsPage() {
               onChange={(e) => setStoreForm(prev => ({ ...prev, storeDescription: e.target.value }))}
             />
           </div>
+          <div>
+            <Label htmlFor="storeAnnouncement">Store Announcement / Special Offer (Visible on storefront)</Label>
+            <Input
+              id="storeAnnouncement"
+              placeholder="e.g. 🔥 This Week's Bestseller: 20% off all water bottles!"
+              className="w-full"
+              value={storeForm.storeAnnouncement}
+              onChange={(e) => setStoreForm(prev => ({ ...prev, storeAnnouncement: e.target.value }))}
+            />
+          </div>
+        </CardContent>
+      </Card>
 
-          <div className="grid grid-cols-1 gap-4">
+      {/* Social Media Links */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-lg md:text-xl">
+            <LinkIcon size={20} />
+            Social Media Links
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="storeEmail">Contact Email</Label>
+              <Label htmlFor="instagram" className="flex items-center gap-2">
+                <Instagram size={16} className="text-pink-600" />
+                Instagram
+              </Label>
               <Input
-                id="storeEmail"
-                type="email"
-                placeholder="store@email.com"
-                className="w-full"
-                value={storeForm.storeEmail}
-                disabled
+                id="instagram"
+                placeholder="@username"
+                value={storeForm.socialMedia.instagram}
+                onChange={(e) => setStoreForm(prev => ({
+                  ...prev,
+                  socialMedia: { ...prev.socialMedia, instagram: e.target.value }
+                }))}
               />
-              <p className="text-xs text-gray-500 mt-1">This is your account email (read-only)</p>
             </div>
             <div>
-              <Label htmlFor="storePhone">Contact Phone</Label>
+              <Label htmlFor="facebook" className="flex items-center gap-2">
+                <Facebook size={16} className="text-blue-600" />
+                Facebook
+              </Label>
               <Input
-                id="storePhone"
-                placeholder="+234 801 234 5678"
-                className="w-full"
-                value={storeForm.storePhone}
-                disabled
+                id="facebook"
+                placeholder="facebook.com/yourstore"
+                value={storeForm.socialMedia.facebook}
+                onChange={(e) => setStoreForm(prev => ({
+                  ...prev,
+                  socialMedia: { ...prev.socialMedia, facebook: e.target.value }
+                }))}
               />
-              <p className="text-xs text-gray-500 mt-1">Update in Personal Info tab</p>
             </div>
+            <div>
+              <Label htmlFor="twitter" className="flex items-center gap-2">
+                <Twitter size={16} className="text-sky-500" />
+                Twitter (X)
+              </Label>
+              <Input
+                id="twitter"
+                placeholder="@username"
+                value={storeForm.socialMedia.twitter}
+                onChange={(e) => setStoreForm(prev => ({
+                  ...prev,
+                  socialMedia: { ...prev.socialMedia, twitter: e.target.value }
+                }))}
+              />
+            </div>
+            <div>
+              <Label htmlFor="linkedin" className="flex items-center gap-2">
+                <Linkedin size={16} className="text-blue-700" />
+                LinkedIn
+              </Label>
+              <Input
+                id="linkedin"
+                placeholder="linkedin.com/company/yourstore"
+                value={storeForm.socialMedia.linkedin}
+                onChange={(e) => setStoreForm(prev => ({
+                  ...prev,
+                  socialMedia: { ...prev.socialMedia, linkedin: e.target.value }
+                }))}
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Business Hours */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-lg md:text-xl">
+            <Clock size={20} />
+            Business Hours
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-3">
+            {Object.entries(storeForm.businessHours)
+              .filter(([day]) => ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].includes(day))
+              .map(([day, hours]: [string, any]) => (
+                <div key={day} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center gap-3 min-w-[120px]">
+                    <span className="capitalize font-medium w-24">{day}</span>
+                  </div>
+                  <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                    {hours.closed ? (
+                      <span className="text-red-500 text-sm font-medium px-3 py-1 bg-red-50 rounded border border-red-100">Closed</span>
+                    ) : (
+                      <>
+                        <Input
+                          type="time"
+                          className="w-28 h-9"
+                          value={hours.open}
+                          onChange={(e) => setStoreForm(prev => ({
+                            ...prev,
+                            businessHours: {
+                              ...prev.businessHours,
+                              [day]: { ...hours, open: e.target.value }
+                            }
+                          }))}
+                        />
+                        <span className="text-gray-400">to</span>
+                        <Input
+                          type="time"
+                          className="w-28 h-9"
+                          value={hours.close}
+                          onChange={(e) => setStoreForm(prev => ({
+                            ...prev,
+                            businessHours: {
+                              ...prev.businessHours,
+                              [day]: { ...hours, close: e.target.value }
+                            }
+                          }))}
+                        />
+                      </>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className={hours.closed ? "text-green-600" : "text-red-600"}
+                      onClick={() => setStoreForm(prev => ({
+                        ...prev,
+                        businessHours: {
+                          ...prev.businessHours,
+                          [day]: { ...hours, closed: !hours.closed }
+                        }
+                      }))}
+                    >
+                      {hours.closed ? "Open" : "Mark Closed"}
+                    </Button>
+                  </div>
+                </div>
+              ))}
           </div>
         </CardContent>
       </Card>
@@ -257,12 +595,12 @@ export default function SettingsPage() {
         <Button
           onClick={() => handleSave('Store')}
           disabled={loading}
-          className="w-full md:w-auto"
+          className="w-full md:w-auto bg-lime-600 hover:bg-lime-700"
         >
           {loading ? 'Saving...' : 'Save Store Settings'}
         </Button>
       </div>
-    </div >
+    </div>
   );
 
   const renderPersonalSettings = () => (

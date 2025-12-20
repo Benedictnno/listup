@@ -250,7 +250,7 @@ exports.getByVendorId = async (req, res) => {
 exports.getPublicVendorListings = async (req, res) => {
   try {
     const { vendorId } = req.params;
-    const { page = 1, limit = 20 } = req.query;
+    const { page = 1, limit = 20, sort = 'newest' } = req.query;
 
     const take = Math.min(parseInt(limit), 50);
     const skip = (Math.max(parseInt(page), 1) - 1) * take;
@@ -272,7 +272,12 @@ exports.getPublicVendorListings = async (req, res) => {
             storeAddress: true,
             businessCategory: true,
             coverImage: true,
-            logo: true
+            logo: true,
+            storeDescription: true,
+            businessHours: true,
+            socialMedia: true,
+            isVerified: true,
+            storeAnnouncement: true
           }
         }
       }
@@ -292,10 +297,13 @@ exports.getPublicVendorListings = async (req, res) => {
           sellerId: vendorId,
           isActive: true // Only show active listings
         },
-        orderBy: [
-          { boostScore: "desc" },
-          { createdAt: "desc" }
-        ],
+        orderBy: (() => {
+          let orders = [{ boostScore: "desc" }];
+          if (sort === "price_asc") orders.push({ price: "asc" });
+          else if (sort === "popular") orders.push({ ListingView: { _count: "desc" } });
+          else orders.push({ createdAt: "desc" });
+          return orders;
+        })(),
         skip,
         take,
         select: {
@@ -333,11 +341,13 @@ exports.getPublicVendorListings = async (req, res) => {
           storeName: vendor.vendorProfile?.storeName,
           storeAddress: vendor.vendorProfile?.storeAddress,
           businessCategory: vendor.vendorProfile?.businessCategory,
-          storeName: vendor.vendorProfile?.storeName,
-          storeAddress: vendor.vendorProfile?.storeAddress,
-          businessCategory: vendor.vendorProfile?.businessCategory,
           coverImage: vendor.vendorProfile?.coverImage,
           logo: vendor.vendorProfile?.logo,
+          storeDescription: vendor.vendorProfile?.storeDescription,
+          businessHours: vendor.vendorProfile?.businessHours,
+          socialMedia: vendor.vendorProfile?.socialMedia,
+          isVerified: vendor.vendorProfile?.isVerified,
+          storeAnnouncement: vendor.vendorProfile?.storeAnnouncement,
           phone: vendor.phone,
           profileImage: vendor.profileImage
         },
@@ -364,7 +374,7 @@ exports.getPublicVendorListings = async (req, res) => {
 exports.getVendorListingsByStore = async (req, res) => {
   try {
     const { storeName } = req.params;
-    const { page = 1, limit = 20 } = req.query;
+    const { page = 1, limit = 20, sort = 'newest' } = req.query;
 
     const take = Math.min(parseInt(limit), 50);
     const skip = (Math.max(parseInt(page), 1) - 1) * take;
@@ -391,7 +401,12 @@ exports.getVendorListingsByStore = async (req, res) => {
             storeAddress: true,
             businessCategory: true,
             coverImage: true,
-            logo: true
+            logo: true,
+            storeDescription: true,
+            businessHours: true,
+            socialMedia: true,
+            isVerified: true,
+            storeAnnouncement: true
           }
         }
       }
@@ -411,10 +426,13 @@ exports.getVendorListingsByStore = async (req, res) => {
           sellerId: vendor.id,
           isActive: true
         },
-        orderBy: [
-          { boostScore: "desc" },
-          { createdAt: "desc" }
-        ],
+        orderBy: (() => {
+          let orders = [{ boostScore: "desc" }];
+          if (sort === "price_asc") orders.push({ price: "asc" });
+          else if (sort === "popular") orders.push({ ListingView: { _count: "desc" } });
+          else orders.push({ createdAt: "desc" });
+          return orders;
+        })(),
         skip,
         take,
         select: {
@@ -452,11 +470,13 @@ exports.getVendorListingsByStore = async (req, res) => {
           storeName: vendor.vendorProfile?.storeName,
           storeAddress: vendor.vendorProfile?.storeAddress,
           businessCategory: vendor.vendorProfile?.businessCategory,
-          storeName: vendor.vendorProfile?.storeName,
-          storeAddress: vendor.vendorProfile?.storeAddress,
-          businessCategory: vendor.vendorProfile?.businessCategory,
           coverImage: vendor.vendorProfile?.coverImage,
           logo: vendor.vendorProfile?.logo,
+          storeDescription: vendor.vendorProfile?.storeDescription,
+          businessHours: vendor.vendorProfile?.businessHours,
+          socialMedia: vendor.vendorProfile?.socialMedia,
+          isVerified: vendor.vendorProfile?.isVerified,
+          storeAnnouncement: vendor.vendorProfile?.storeAnnouncement,
           phone: vendor.phone,
           profileImage: vendor.profileImage
         },

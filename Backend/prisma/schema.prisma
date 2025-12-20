@@ -114,6 +114,7 @@ model VendorProfile {
   coverImage       String?
   logo             String?
   website          String?
+  storeAnnouncement String?
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 

@@ -10,6 +10,24 @@ export interface Vendor {
   logo?: string;
   profileImage?: string;
   phone?: string;
+  storeDescription?: string;
+  businessHours?: {
+    monday: { open: string; close: string; closed: boolean };
+    tuesday: { open: string; close: string; closed: boolean };
+    wednesday: { open: string; close: string; closed: boolean };
+    thursday: { open: string; close: string; closed: boolean };
+    friday: { open: string; close: string; closed: boolean };
+    saturday: { open: string; close: string; closed: boolean };
+    sunday: { open: string; close: string; closed: boolean };
+  };
+  socialMedia?: {
+    facebook?: string;
+    twitter?: string;
+    instagram?: string;
+    linkedin?: string;
+  };
+  isVerified?: boolean;
+  storeAnnouncement?: string;
 }
 
 export interface VendorListing {
@@ -62,11 +80,12 @@ export interface StoreListingsResponse {
 export async function getVendorListings(
   vendorId: string,
   page: number = 1,
-  limit: number = 20
+  limit: number = 20,
+  sort: string = 'newest'
 ): Promise<VendorListingsResponse> {
   try {
     const response = await api.get(
-      `/listings/vendors/${vendorId}/public?page=${page}&limit=${limit}`
+      `/listings/vendors/${vendorId}/public?page=${page}&limit=${limit}&sort=${sort}`
     );
     return response.data;
   } catch (error) {
@@ -81,11 +100,12 @@ export async function getVendorListings(
 export async function getStoreListings(
   storeName: string,
   page: number = 1,
-  limit: number = 20
+  limit: number = 20,
+  sort: string = 'newest'
 ): Promise<StoreListingsResponse> {
   try {
     const response = await api.get(
-      `/listings/stores/${encodeURIComponent(storeName)}?page=${page}&limit=${limit}`
+      `/listings/stores/${encodeURIComponent(storeName)}?page=${page}&limit=${limit}&sort=${sort}`
     );
     return response.data;
   } catch (error) {

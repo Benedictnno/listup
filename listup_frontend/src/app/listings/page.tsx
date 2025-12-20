@@ -240,7 +240,7 @@ function ListingsPageContent() {
     const handleScroll = () => {
       const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
       // Trigger when user is within 500px of the bottom
-      if (scrollHeight - scrollTop - clientHeight < 500) {
+      if (scrollHeight - scrollTop - clientHeight < 400) {
         if (hasMore && !loading) {
           loadMore();
         }
