@@ -59,8 +59,8 @@ app.use((req, res, next) => {
 
 if(process.env.NODE_ENV === 'production') {
 // Cloudflare requires this to forward real IP addresses
-app.set("trust proxy", true);
-
+//app.set("trust proxy", true);
+app.set('trust proxy', 1); // trust first proxy only
 // Activate global backend protection
 app.use(cloudflareSecurity);
 }
