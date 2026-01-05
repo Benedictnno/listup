@@ -1,11 +1,21 @@
+const withPWA = require("@ducanh2912/next-pwa").default({
+  dest: "public",
+  cacheOnFrontEndNav: true,
+  aggressiveFrontEndNavCaching: true,
+  reloadOnOnline: true,
+  swMinify: true,
+  disable: process.env.NODE_ENV === "development",
+  workboxOptions: {
+    disableDevLogs: true,
+  },
+});
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
-    domains: ["cloudinary.com","res.cloudinary.com","images.unsplash.com"], // ✅ Cloudinary images usually come from here
+    domains: ["cloudinary.com", "res.cloudinary.com", "images.unsplash.com"],
   },
-  // Add trailing slash for better compatibility
   trailingSlash: false,
-  // Webpack configuration to handle native modules
   webpack: (config, { isServer }) => {
     if (!isServer) {
       config.resolve.fallback = {
@@ -18,8 +28,8 @@ const nextConfig = {
     return config;
   },
   eslint: {
-    ignoreDuringBuilds: true, // optional
+    ignoreDuringBuilds: true,
   },
 };
 
-module.exports = nextConfig;
+module.exports = withPWA(nextConfig);

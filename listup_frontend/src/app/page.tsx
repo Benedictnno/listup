@@ -20,7 +20,7 @@ import OutsideAd from "@/components/OutsideAd";
  */
 
 export default function MarketplaceLanding() {
-  const user = useAuthStore((state) => state.user);  
+  const user = useAuthStore((state) => state.user);
 
   return (
     <div className="min-h-screen w-full text-slate-800 font-montserrat realative">
@@ -47,7 +47,7 @@ export default function MarketplaceLanding() {
               smarter with our community-driven marketplace.
             </p>
 
-     
+
 
 
             <form onSubmit={(e) => {
@@ -56,32 +56,32 @@ export default function MarketplaceLanding() {
               const searchValue = searchInput?.value || '';
               window.location.href = `/listings?q=${encodeURIComponent(searchValue)}`;
             }} className="border flex rounded h-10 items-center text-white bg-white/10 overflow-hidden">
-                <Search className="h-5 w-10 ml-2" />
-                <input 
-                  type="text" 
-                  className="w-full h-full bg-transparent text-white outline-0 px-2 font-montserrat" 
-                  placeholder="Search listings..."
-                />
-                <button 
-                  type="submit" 
-                  className="h-full px-4 bg-lime-400 text-slate-900 font-medium hover:bg-lime-300 transition font-montserrat"
-                >
-                  Search
-                </button>
+              <Search className="h-5 w-10 ml-2" />
+              <input
+                type="text"
+                className="w-full h-full bg-transparent text-white outline-0 px-2 font-montserrat"
+                placeholder="Search listings..."
+              />
+              <button
+                type="submit"
+                className="h-full px-4 bg-lime-400 text-slate-900 font-medium hover:bg-lime-300 transition font-montserrat"
+              >
+                Search
+              </button>
             </form>
             <p className="mt-2 text-xs text-slate-400 font-montserrat">No fees to browse. Secure checkout on eligible items.</p>
-        {user ? null :<div className="mt-6 flex flex-wrap items-center gap-3">
-            <Link href="/signup">
-              <PrimaryButton>
-                Get Signed Up 
-              </PrimaryButton>
-            </Link>
-            <Link href={"/login"}>
-            <GhostButton>
-              Login
-            </GhostButton>
-            </Link>
-          </div>}
+            {user ? null : <div className="mt-6 flex flex-wrap items-center gap-3">
+              <Link href="/signup">
+                <PrimaryButton>
+                  Get Signed Up
+                </PrimaryButton>
+              </Link>
+              <Link href={"/login"}>
+                <GhostButton>
+                  Login
+                </GhostButton>
+              </Link>
+            </div>}
           </motion.div>
 
 
@@ -98,6 +98,7 @@ export default function MarketplaceLanding() {
                 width={500}
                 height={600}
                 className="h-72 w-full object-cover md:h-96"
+                priority={true}
               />
               <div className="absolute bottom-3 right-3 rounded-xl bg-slate-900/80 px-3 py-1.5 text-[11px] text-white backdrop-blur font-montserrat">
                 Verified Sellers Only
@@ -107,11 +108,11 @@ export default function MarketplaceLanding() {
         </div>
       </section>
 
-              {/* <AdsPage/> */}
+      {/* <AdsPage/> */}
 
-              <MiniListings/>
+      <MiniListings />
 
-    {/* <Category /> */}
+      {/* <Category /> */}
 
       {/* FEATURED STORY */}
       <section id="deals" className="bg-slate-50">
@@ -166,7 +167,7 @@ export default function MarketplaceLanding() {
               "url(https://images.unsplash.com/photo-1517816743773-6e0fd518b4a6?q=80&w=1600&auto=format&fit=crop)",
           }}
         >
-          <div className="absolute inset-0 bg-slate-900/60"/>
+          <div className="absolute inset-0 bg-slate-900/60" />
           <div className="relative flex max-sm:flex-col max-sm:p-8 z-10 mx-auto h-full max-w-7xl items-center justify-between px-4 md:px-6">
             <div >
               <h3 className="text-lg font-semibold text-white md:text-2xl font-montserrat">Discover Amazing Deals Today!</h3>
@@ -206,7 +207,7 @@ export default function MarketplaceLanding() {
           </div>
         </div>
       </section>
-<OutsideAd/>
+      <OutsideAd />
 
     </div>
   );
