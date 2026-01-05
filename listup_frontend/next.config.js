@@ -1,19 +1,27 @@
 const withPWA = require("@ducanh2912/next-pwa").default({
   dest: "public",
-  cacheOnFrontEndNav: true,
-  aggressiveFrontEndNavCaching: true,
-  reloadOnOnline: true,
-  swMinify: true,
   disable: process.env.NODE_ENV === "development",
-  workboxOptions: {
-    disableDevLogs: true,
-  },
+  register: true,
+  skipWaiting: true,
 });
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
-    domains: ["cloudinary.com", "res.cloudinary.com", "images.unsplash.com"],
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "res.cloudinary.com",
+      },
+      {
+        protocol: "https",
+        hostname: "cloudinary.com",
+      },
+      {
+        protocol: "https",
+        hostname: "images.unsplash.com",
+      },
+    ],
   },
   trailingSlash: false,
   webpack: (config, { isServer }) => {
@@ -30,6 +38,7 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  output: "standalone",
 };
 
 module.exports = withPWA(nextConfig);
