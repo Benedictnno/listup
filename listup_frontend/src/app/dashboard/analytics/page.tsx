@@ -5,15 +5,15 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Image from "next/image";
-import { 
-  LineChart, 
-  Line, 
-  XAxis, 
-  YAxis, 
-  Tooltip, 
-  CartesianGrid, 
-  ResponsiveContainer, 
-  BarChart, 
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+  ResponsiveContainer,
+  BarChart,
   Bar,
   PieChart,
   Pie,
@@ -26,12 +26,12 @@ import {
   PolarRadiusAxis,
   Radar
 } from "recharts";
-import { 
-  TrendingUp, 
-  TrendingDown, 
-  DollarSign, 
-  Users, 
-  ShoppingCart, 
+import {
+  TrendingUp,
+  TrendingDown,
+  DollarSign,
+  Users,
+  ShoppingCart,
   Download,
   RefreshCw
 } from "lucide-react";
@@ -116,10 +116,10 @@ export default function AnalyticsPage() {
           },
           topProducts: [
             { id: '1', name: 'iPhone 13 Pro', revenue: 450000, orders: 15, views: 1240, conversionRate: 1.21, image: '/placeholder.svg' },
-{ id: '2', name: 'MacBook Pro M2', revenue: 320000, orders: 8, views: 980, conversionRate: 0.82, image: '/placeholder.svg' },
-{ id: '3', name: 'Samsung Galaxy S23', revenue: 280000, orders: 12, views: 756, conversionRate: 1.59, image: '/placeholder.svg' },
-{ id: '4', name: 'iPad Air', revenue: 180000, orders: 9, views: 520, conversionRate: 1.73, image: '/placeholder.svg' },
-{ id: '5', name: 'AirPods Pro', revenue: 120000, orders: 18, views: 890, conversionRate: 2.02, image: '/placeholder.svg' }
+            { id: '2', name: 'MacBook Pro M2', revenue: 320000, orders: 8, views: 980, conversionRate: 0.82, image: '/placeholder.svg' },
+            { id: '3', name: 'Samsung Galaxy S23', revenue: 280000, orders: 12, views: 756, conversionRate: 1.59, image: '/placeholder.svg' },
+            { id: '4', name: 'iPad Air', revenue: 180000, orders: 9, views: 520, conversionRate: 1.73, image: '/placeholder.svg' },
+            { id: '5', name: 'AirPods Pro', revenue: 120000, orders: 18, views: 890, conversionRate: 2.02, image: '/placeholder.svg' }
           ],
           customerMetrics: {
             lifetimeValue: [
@@ -328,15 +328,15 @@ export default function AnalyticsPage() {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey={chartType === 'daily' ? 'date' : chartType === 'weekly' ? 'week' : 'month'} />
                 <YAxis />
-                <Tooltip 
-                  formatter={(value: number) => [formatCurrency(value), 'Revenue']}
+                <Tooltip
+                  formatter={(value: any) => [formatCurrency(value), 'Revenue']}
                   labelFormatter={(label) => `Period: ${label}`}
                 />
-                <Area 
-                  type="monotone" 
-                  dataKey="revenue" 
-                  stroke="#10B981" 
-                  fill="#10B981" 
+                <Area
+                  type="monotone"
+                  dataKey="revenue"
+                  stroke="#10B981"
+                  fill="#10B981"
                   fillOpacity={0.3}
                   strokeWidth={2}
                 />
@@ -354,14 +354,14 @@ export default function AnalyticsPage() {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey={chartType === 'daily' ? 'date' : chartType === 'weekly' ? 'week' : 'month'} />
                 <YAxis />
-                <Tooltip 
-                  formatter={(value: number) => [value, 'Orders']}
+                <Tooltip
+                  formatter={(value: any) => [value, 'Orders']}
                   labelFormatter={(label) => `Period: ${label}`}
                 />
-                <Line 
-                  type="monotone" 
-                  dataKey="orders" 
-                  stroke="#3B82F6" 
+                <Line
+                  type="monotone"
+                  dataKey="orders"
+                  stroke="#3B82F6"
                   strokeWidth={2}
                   dot={{ fill: '#3B82F6', strokeWidth: 2, r: 4 }}
                 />
@@ -380,8 +380,8 @@ export default function AnalyticsPage() {
               <div key={product.id} className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
                 <div className="flex items-center gap-3 flex-1">
                   <span className="text-lg font-bold text-gray-400 w-8">{index + 1}</span>
-                  <Image 
-                    src={product.image || '/placeholder.svg'} 
+                  <Image
+                    src={product.image || '/placeholder.svg'}
                     alt={product.name}
                     width={48}
                     height={48}
@@ -419,7 +419,7 @@ export default function AnalyticsPage() {
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={({ segment, percent }) => `${segment} (${((percent || 0) * 100).toFixed(0)}%)`}
+                  label={({ segment, percent }: any) => `${segment} (${((percent || 0) * 100).toFixed(0)}%)`}
                   outerRadius={80}
                   fill="#8884d8"
                   dataKey="value"
@@ -428,15 +428,15 @@ export default function AnalyticsPage() {
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip formatter={(value: number) => [formatCurrency(value), 'LTV']} />
+                <Tooltip formatter={(value: any) => [formatCurrency(value), 'LTV']} />
               </PieChart>
             </ResponsiveContainer>
             <div className="mt-4 space-y-2">
               {data.customerMetrics.lifetimeValue.map((segment, index) => (
                 <div key={segment.segment} className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <div 
-                      className="w-3 h-3 rounded-full" 
+                    <div
+                      className="w-3 h-3 rounded-full"
                       style={{ backgroundColor: COLORS[index % COLORS.length] }}
                     ></div>
                     <span className="text-sm text-gray-600">{segment.segment}</span>
@@ -457,11 +457,11 @@ export default function AnalyticsPage() {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="month" />
                 <YAxis />
-                <Tooltip formatter={(value: number) => [`${(value * 100).toFixed(1)}%`, 'Retention']} />
-                <Line 
-                  type="monotone" 
-                  dataKey="rate" 
-                  stroke="#8B5CF6" 
+                <Tooltip formatter={(value: any) => [`${(value * 100).toFixed(1)}%`, 'Retention']} />
+                <Line
+                  type="monotone"
+                  dataKey="rate"
+                  stroke="#8B5CF6"
                   strokeWidth={2}
                   dot={{ fill: '#8B5CF6', strokeWidth: 2, r: 4 }}
                 />
@@ -479,7 +479,7 @@ export default function AnalyticsPage() {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="age" />
                 <YAxis />
-                <Tooltip formatter={(value: number) => [value, 'Count']} />
+                <Tooltip formatter={(value: any) => [value, 'Count']} />
                 <Bar dataKey="count" fill="#F59E0B" />
               </BarChart>
             </ResponsiveContainer>
