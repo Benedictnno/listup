@@ -8,6 +8,7 @@ import { FeatureFlagProvider } from "@/context/FeatureFlagContext";
 import { Analytics } from "@vercel/analytics/next"
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import BottomNav from "@/components/BottomNav";
+import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 
 
 const montserrat = Montserrat({
@@ -34,7 +35,7 @@ export const metadata: Metadata = {
   icons: {
     icon: "/favicon.png",
     shortcut: "/favicon.png",
-    apple: "/favicon.png",
+    apple: "/icons/icon-192x192.png",
   },
 };
 
@@ -63,6 +64,7 @@ export default function RootLayout({
             <SpeedInsights />
             <Footer />
             <BottomNav />
+            <PWAInstallPrompt />
 
           </FeatureFlagProvider>
         </AuthProvider>
