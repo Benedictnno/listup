@@ -9,7 +9,7 @@ import Image from 'next/image';
 function NavBar() {
   const [open, setOpen] = React.useState(false);
   const menuRef = React.useRef<HTMLDivElement | null>(null);
-  
+
   // Use the proper auth store instead of local localStorage
   const { user, logout } = useAuthStore();
 
@@ -49,12 +49,12 @@ function NavBar() {
   }, [open]);
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-slate-200/20 bg-slate-900/90 backdrop-blur">
+    <header className="sticky top-0 z-40 w-full border-b border-slate-200/20 bg-[#0f172a] backdrop-blur">
       <div className="mx-auto flex max-w-7xl items-center text-lg justify-between px-4 py-3 md:px-6">
         <Link href="/" className="flex items-center gap-2 text-white">
           {/* <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-lime-400 text-slate-900 font-black">LU</div>
           <span className="text-sm font-semibold tracking-wide">ListUp</span> */}
-          <Image src="/images/Listup.png" alt="ListUp" width={100} height={100}/>
+          <Image src="/images/Listup.png" alt="ListUp" width={80} height={32} className="object-contain h-auto w-auto max-h-8" priority />
         </Link>
 
         <nav className="hidden items-center gap-8 text-[13px] text-white/80 md:flex">
@@ -63,7 +63,7 @@ function NavBar() {
               {n.label}
             </Link>
           ))}
-        
+
         </nav>
 
         {/* Authentication Buttons - show Dashboard for VENDOR, Saved for USER, or Login/Signup */}
@@ -78,7 +78,7 @@ function NavBar() {
                 <button className="rounded-xl px-3 py-2 text-lg font-semibold text-white/80 transition hover:text-white">Saved</button>
               </Link>
             )}
-            <button 
+            <button
               onClick={handleLogout}
               className="rounded-xl px-3 py-2 text-lg font-semibold text-white/80 transition hover:text-white"
             >
@@ -89,10 +89,10 @@ function NavBar() {
           <div className="hidden items-center gap-3 md:flex px-3 py-2">
             <Link href="/login" className="rounded-xl px-3 py-2 text-lg font-semibold text-white/80 transition hover:text-white">
               Log in
-            </Link> 
+            </Link>
             <Link href="/signup">
               <PrimaryButton>Sign up</PrimaryButton>
-            </Link> 
+            </Link>
           </div>
         )}
 
@@ -114,7 +114,7 @@ function NavBar() {
                 {n.label}
               </Link>
             ))}
-            
+
             {/* Mobile Authentication Buttons - Fixed Logic */}
             <div className="mt-2 flex items-center gap-3">
               {user ? (
@@ -129,7 +129,7 @@ function NavBar() {
                       <button className="rounded-xl px-3 py-2 text-lg font-semibold text-white/80 w-full text-left">Saved</button>
                     </Link>
                   )}
-                  <button 
+                  <button
                     onClick={handleLogout}
                     className="rounded-xl px-3 py-2 text-lg font-semibold text-white/80 transition hover:text-white"
                   >
@@ -139,13 +139,13 @@ function NavBar() {
               ) : (
                 // User is not logged in - Show Login and Signup
                 <div className="mt-2 flex gap-3 py-2">
-                  <Link 
-                    href="/login" 
-                    className="flex-1 rounded-xl px-4 py-2 text-center text-lg font-semibold text-white/80 transition hover:text-white hover:bg-white/10" 
+                  <Link
+                    href="/login"
+                    className="flex-1 rounded-xl px-4 py-2 text-center text-lg font-semibold text-white/80 transition hover:text-white hover:bg-white/10"
                     onClick={() => setOpen(false)}
                   >
                     Log in
-                  </Link> 
+                  </Link>
                   <Link href="/signup" className="flex-1" onClick={() => setOpen(false)}>
                     <PrimaryButton>Sign up</PrimaryButton>
                   </Link>

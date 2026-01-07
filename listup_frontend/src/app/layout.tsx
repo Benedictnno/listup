@@ -7,6 +7,8 @@ import AuthProvider from "@/components/AuthProvider";
 import { FeatureFlagProvider } from "@/context/FeatureFlagContext";
 import { Analytics } from "@vercel/analytics/next"
 import { SpeedInsights } from "@vercel/speed-insights/next"
+import BottomNav from "@/components/BottomNav";
+
 
 const montserrat = Montserrat({
   subsets: ["latin"],
@@ -37,7 +39,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#a3e635",
+  themeColor: "#0f172a",
 };
 
 export default function RootLayout({
@@ -54,10 +56,14 @@ export default function RootLayout({
         <AuthProvider>
           <FeatureFlagProvider>
             <NavBar />
-            {children}
+            <div className="pb-20 md:pb-0">
+              {children}
+            </div>
             <Analytics />
             <SpeedInsights />
             <Footer />
+            <BottomNav />
+
           </FeatureFlagProvider>
         </AuthProvider>
       </body>
