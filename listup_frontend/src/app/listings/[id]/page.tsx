@@ -1,40 +1,78 @@
-"use client"
+"use client";
+
+import { useState, useEffect, use } from "react";
 import ListingDetails from "@/components/ListingDetails";
 import { fetchListingById } from "@/lib/api/listing";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { Loader2 } from "lucide-react";
 
-export default async function SingleProductPage({ 
-  params 
-}: { 
-  params: Promise<{ id: string }> 
+export default function SingleProductPage({
+  params
+}: {
+  params: Promise<{ id: string }> | { id: string }
 }) {
-  try {
-    // Await the params for Next.js 15 compatibility
-    const { id } = await params;
-    
-    if (!id) {
-      notFound();
+  const [listing, setListing] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Unwrap params if it's a promise (Next.js 15 compatibility) or use directly
+  const resolvedParams = params instanceof Promise ? use(params) : params;
+  const id = resolvedParams.id;
+
+  useEffect(() => {
+    if (!id) return;
+
+    let mounted = true;
+
+    async function getListing() {
+      try {
+        setLoading(true);
+        setError(null);
+        console.log("Fetching listing with ID:", id);
+
+        const data = await fetchListingById(id);
+
+        if (!mounted) return;
+
+        if (!data) {
+          setError("not found");
+          return;
+        }
+
+        setListing(data);
+      } catch (err: any) {
+        if (!mounted) return;
+        console.error("Error in SingleProductPage:", err);
+        setError(err.message || "Failed to load listing");
+      } finally {
+        if (mounted) setLoading(false);
+      }
     }
 
-    console.log("Fetching listing with ID:", id); // Debug log
-    
-    const listing = await fetchListingById(id);
-    
-    if (!listing) {
-      notFound();
-    }
+    getListing();
 
-    return <ListingDetails listing={listing} />;
-  } catch (error: unknown) {
-    console.error("Error in SingleProductPage:", error);
-    
-    // If it's a "not found" error, show 404 page
-    if (error instanceof Error && error.message.includes("not found")) {
-      notFound();
-    }
-    
-    // For other errors, return a proper error component
+    return () => {
+      mounted = false;
+    };
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <Loader2 className="h-10 w-10 animate-spin text-lime-600 mx-auto mb-4" />
+          <p className="text-gray-600 font-montserrat">Loading listing...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error === "not found" || (error && error.includes("not found"))) {
+    notFound();
+  }
+
+  if (error) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
         <div className="text-center max-w-md mx-auto">
@@ -43,25 +81,20 @@ export default async function SingleProductPage({
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
             </svg>
           </div>
-          <h1 className="text-xl font-semibold text-gray-900 mb-2">Something went wrong</h1>
-          <p className="text-gray-600 mb-4">
+          <h1 className="text-xl font-semibold text-gray-900 mb-2 font-montserrat">Something went wrong</h1>
+          <p className="text-gray-600 mb-4 font-montserrat">
             We couldn&apos;t load this listing. Please try again later.
           </p>
-          {process.env.NODE_ENV === 'development' && (
-            <p className="text-sm text-red-600 mb-4 font-mono">
-              Error: {error instanceof Error ? error.message : 'Unknown error'}
-            </p>
-          )}
           <div className="flex gap-3 justify-center">
-            <Link 
+            <Link
               href="/listings"
-              className="px-4 py-2 bg-lime-600 text-white rounded-lg hover:bg-lime-700 transition-colors"
+              className="px-4 py-2 bg-lime-600 text-white rounded-lg hover:bg-lime-700 transition-colors font-montserrat"
             >
               Back to Listings
             </Link>
             <button
               onClick={() => window.location.reload()}
-              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-montserrat"
             >
               Try Again
             </button>
@@ -70,4 +103,8 @@ export default async function SingleProductPage({
       </div>
     );
   }
-              }
+
+  if (!listing) return null;
+
+  return <ListingDetails listing={listing} />;
+}
