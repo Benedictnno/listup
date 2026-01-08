@@ -11,8 +11,9 @@ interface SignupState {
     storeAddress?: string;
     businessCategory?: string;
     referralCode?: string;
+    whatsappOptIn?: boolean;
   };
-  setField: (field: string, value: string) => void;
+  setField: (field: string, value: string | boolean) => void;
   reset: () => void;
 }
 
@@ -27,6 +28,7 @@ export const useSignupStore = create<SignupState>((set) => ({
     storeAddress: "",
     businessCategory: "",
     referralCode: "",
+    whatsappOptIn: true,
   },
   setField: (field, value) =>
     set((state) => ({
@@ -44,6 +46,7 @@ export const useSignupStore = create<SignupState>((set) => ({
         storeAddress: "",
         businessCategory: "",
         referralCode: "",
+        whatsappOptIn: false,
       },
     }),
 }));

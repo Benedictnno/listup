@@ -83,6 +83,7 @@ exports.register = async (req, res, next) => {
       storeAddress,
       businessCategory,
       referralCode,
+      whatsappOptIn,
     } = req.body;
 
     // Check if email already exists
@@ -121,6 +122,7 @@ exports.register = async (req, res, next) => {
       password: hashedPassword,
       phone: phone ? phone.trim() : null,
       role: role.toUpperCase(),
+      whatsappOptIn: !!whatsappOptIn,
     };
 
     // If referral code was provided, validate it before creating the user
@@ -233,6 +235,19 @@ exports.register = async (req, res, next) => {
     } catch (emailError) {
       console.error('Failed to send verification email:', emailError);
       // Continue registration even if email fails
+    }
+
+    // Send WhatsApp welcome message if opted in
+    if (user.whatsappOptIn) {
+      try {
+        const whatsappService = require('../services/whatsappService');
+        // sending async, not awaiting to keep response fast
+        whatsappService.sendWelcomeMessage(user).catch(err =>
+          console.error("Failed to send WhatsApp welcome:", err.message)
+        );
+      } catch (waError) {
+        console.error("WhatsApp service error:", waError);
+      }
     }
 
     await addToGoogleSheet(name, storeName || '', email, phone || '', role);

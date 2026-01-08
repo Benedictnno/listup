@@ -41,6 +41,7 @@ type payloadType = {
   storeName?: string;
   storeAddress?: string;
   businessCategory?: string;
+  whatsappOptIn?: boolean;
 }
 
 function SignupContent() {
@@ -258,6 +259,7 @@ function SignupContent() {
         email: String(form.email || "").trim(),
         password: form.password,
         role: form.role,
+        whatsappOptIn: form.whatsappOptIn,
       };
       if (String(form.phone || "").trim()) payload.phone = String(form.phone).trim();
       if (form.role === "VENDOR") {
@@ -444,9 +446,8 @@ function SignupContent() {
                   {getFieldError("phone")}
                 </p>
               )}
-              <p className="mt-1 text-xs text-slate-500">Optional - for account recovery and notifications</p>
+            
             </div>
-
 
 
             {/* Password */}
@@ -496,13 +497,32 @@ function SignupContent() {
               </select>
             </div>
 
+            {/* WhatsApp Opt-in */}
+            <div className="flex items-start gap-3 p-3 bg-green-50 rounded-xl border border-green-100">
+              <div className="flex h-5 w-5 items-center justify-center">
+                <input
+                  id="whatsapp-optin"
+                  type="checkbox"
+                  checked={form.whatsappOptIn}
+                
+                  onChange={(e) => handleFieldChange("whatsappOptIn", e.target.checked)}
+                  className="h-4 w-4 rounded border-slate-300 text-lime-600 focus:ring-lime-200"
+                />
+              </div>
+              <label htmlFor="whatsapp-optin" className="text-sm text-slate-700 cursor-pointer select-none">
+                <span className="font-medium text-slate-900">Get updates on WhatsApp</span>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Receive updates, special offers, and support via WhatsApp.
+                </p>
+              </label>
+            </div>
+
             {/* Tips */}
             <div className="p-3 bg-blue-50 rounded-lg border border-blue-200 text-xs text-blue-700">
               <p className="font-medium mb-1">💡 Account creation tips:</p>
               <ul className="space-y-1">
                 <li>• Use your real name as it appears on official documents</li>
                 <li>• Choose a strong password with at least 6 characters</li>
-                <li>• Phone number is optional but recommended for account recovery</li>
                 <li>• Vendor accounts require additional store information</li>
               </ul>
             </div>
