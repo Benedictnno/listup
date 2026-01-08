@@ -18,12 +18,21 @@ const WhatsAppService = {
             return;
         }
 
-        // Ensure phone number has country code, default to Nigeria (+234) if missing
-        // Simple format check (this should be robust in production)
-        let phone = user.phone;
-        if (!phone.startsWith('+')) {
-            phone = `+${phone}`;
+        // Format phone number to E.164 (assuming Nigeria +234 if missing)
+        let phone = user.phone.replace(/\D/g, ''); // Remove all non-digits
+
+        // If it starts with 0 and is 11 digits (e.g., 08012345678), remove leading 0 and add 234
+        if (phone.startsWith('0') && phone.length === 11) {
+            phone = '234' + phone.substring(1);
         }
+        // If it's 10 digits (e.g., 8012345678), add 234
+        else if (phone.length === 10) {
+            phone = '234' + phone;
+        }
+        // If it already starts with 234, leave it (assuming it's correct)
+
+        // Ensure + prefix
+        phone = '+' + phone;
 
         const messageBody = `Hi ${user.name}! 👋 Welcome to ListUp Marketplace.\n\n` +
             `We're excited to have you on board. You'll receive updates on your orders and special offers here.\n\n` +
