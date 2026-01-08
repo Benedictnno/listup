@@ -219,11 +219,11 @@ function SignupContent() {
   /* -------------------------
      Handlers
      ------------------------- */
-  const handleFieldChange = (field: string, value: string) => {
+  const handleFieldChange = (field: string, value: string | boolean) => {
     setField(field, value);
     if (fieldErrors[field]) clearFieldError(field);
 
-    if (field === "referralCode") {
+    if (field === "referralCode" && typeof value === "string") {
       // Simple badge toggle: show discount badge if code is non-empty
       setHasReferralDiscount(Boolean(value.trim()));
     }
@@ -446,7 +446,7 @@ function SignupContent() {
                   {getFieldError("phone")}
                 </p>
               )}
-            
+
             </div>
 
 
@@ -504,7 +504,7 @@ function SignupContent() {
                   id="whatsapp-optin"
                   type="checkbox"
                   checked={form.whatsappOptIn}
-                
+
                   onChange={(e) => handleFieldChange("whatsappOptIn", e.target.checked)}
                   className="h-4 w-4 rounded border-slate-300 text-lime-600 focus:ring-lime-200"
                 />
