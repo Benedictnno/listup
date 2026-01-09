@@ -21,7 +21,9 @@ const cookieParser = require('cookie-parser');
 require('./config/passport'); // init strategies
 
 const app = express();
-
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok' });
+});
 // CORS configuration
 const corsOptions = {
     origin: [
@@ -71,9 +73,6 @@ app.use(express.json({ limit: '2mb' }));
 app.use(morgan('dev'));
 app.use(passport.initialize());
 
-app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'ok' });
-});
 app.use('/api', routes);
 
 app.use(error.notFound);
