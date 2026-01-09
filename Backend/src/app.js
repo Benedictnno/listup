@@ -71,6 +71,9 @@ app.use(express.json({ limit: '2mb' }));
 app.use(morgan('dev'));
 app.use(passport.initialize());
 
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok' });
+});
 app.use('/api', routes);
 
 app.use(error.notFound);
