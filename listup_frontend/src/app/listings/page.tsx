@@ -374,13 +374,13 @@ function ListingsPageContent() {
             </svg>
           </div>
           <h1 className="text-2xl font-bold text-gray-900 mb-3">
-            Failed to Load Listings
+            Refresh to Load Listings
           </h1>
           <p className="text-gray-600 mb-6">
             {error}
           </p>
           <Button onClick={refresh} className="bg-lime-500 hover:bg-lime-600">
-            Try Again
+            Refresh again
           </Button>
         </div>
       </div>
