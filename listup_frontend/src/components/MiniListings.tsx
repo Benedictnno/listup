@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import ListingCard from "@/components/ListingCard";
 import { fetchListings } from "@/lib/api/listing";
@@ -21,29 +21,35 @@ export default function MiniListings() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    let mounted = true;
-    async function load() {
-      try {
-        setLoading(true);
-        const data = await fetchListings();
-        if (!mounted) return;
-        // Backend returns paging shape: { items, total, page, pages }
-        let items = Array.isArray(data?.items) ? data.items : Array.isArray(data) ? data : [];
-        // take first 12 listings
-        // fetchListings returns parsed JSON (likely an array or {data}) — handle common shapes
-        // const items = Array.isArray(data) ? data : data?.data || data?.listings || [];
-
-        setListings( items.slice(-12));
-      } catch (err: unknown) {
-        setError(err instanceof Error ? err.message : "Failed to load listings");
-      } finally {
-        if (mounted) setLoading(false);
-      }
+  const loadListings = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await fetchListings();
+      // Backend returns paging shape: { items, total, page, pages }
+      let items = Array.isArray(data?.items) ? data.items : Array.isArray(data) ? data : [];
+      setListings(items.slice(-12));
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to load listings");
+    } finally {
+      setLoading(false);
     }
-    load();
-    return () => { mounted = false; };
   }, []);
+
+  useEffect(() => {
+    loadListings();
+  }, [loadListings]);
+
+  if (error) {
+    return (
+      <section className="bg-slate-50">
+        <div className="mx-auto max-w-7xl px-4 py-12 md:px-6 flex items-center justify-between">
+          <div className="text-sm text-red-600">experience network issues please try again</div>
+          <button onClick={loadListings} className="text-sm font-medium text-lime-600 hover:underline border border-lime-800 px-2 py-1 rounded cursor-pointer">Retry</button>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="bg-slate-50">

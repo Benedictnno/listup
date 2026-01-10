@@ -421,8 +421,8 @@ function ListingsPageContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto px-4 py-8">
+    <div className="min-h-screen bg-gray-50 flex flex-col ">
+      <div className="container mx-auto px-4 py-8 max-w-7xl">
         {/* Header */}
         <div className="mb-8">
           <SearchBar />
@@ -531,7 +531,7 @@ function ListingsPageContent() {
         </div>
 
         {/* Listings Masonry Layout */}
-        <div className="columns-2 md:columns-3 lg:columns-4 gap-6 space-y-6">
+        <div className="columns-2 md:columns-3 lg:columns-5 gap-6 space-y-6">
           {filteredListings?.map((listing) => (
             <ListingCard key={listing.id} listing={listing} />
           ))}
