@@ -80,6 +80,16 @@ If you didn't request this, please ignore this email.
           <p>Hi ${userName || 'there'},</p>
           <p>Thank you for signing up! To complete your registration and access all features, please verify your email address by clicking the button below:</p>
           <a href="${verificationLink}" class="button">Verify Email Address</a>
+          
+          <!-- WhatsApp Click-to-Chat Section -->
+          <div style="background: #ecfccb; padding: 20px; border-radius: 12px; margin: 30px 0; border: 1px solid #d9f99d;">
+            <h3 style="color: #3f6212; margin-top: 0;">Stay Updated on WhatsApp! 📱</h3>
+            <p style="color: #4d7c0f; margin-bottom: 20px;">Get real-time updates on your orders and exclusive offers.</p>
+            <a href="https://wa.me/${process.env.TWILIO_WHATSAPP_NUMBER?.replace('whatsapp:', '') || '2349160000000'}?text=START" style="display: inline-block; background: #25D366; color: white; padding: 12px 24px; border-radius: 50px; text-decoration: none; font-weight: bold;">
+              Connect on WhatsApp
+            </a>
+          </div>
+
           <p style="margin-top: 30px; font-size: 14px; color: #6b7280;">Or copy and paste this link into your browser:</p>
           <p class="link">${verificationLink}</p>
           <p><strong>This link expires in 24 hours.</strong></p>
