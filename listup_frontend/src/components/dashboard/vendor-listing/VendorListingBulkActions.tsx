@@ -24,8 +24,8 @@ export function VendorListingBulkActions({
     handlePromoteProducts,
     handleBulkDelete,
 }: VendorListingBulkActionsProps) {
+    const { isEnabled } = useFeatureFlag();
     if (selectedCount === 0) return null;
-  const { isEnabled } = useFeatureFlag();
 
     return (
         <Card className="bg-blue-50 border-blue-200">
@@ -73,7 +73,7 @@ export function VendorListingBulkActions({
                         >
                             Deactivate All
                         </Button>
-                      {isEnabled('Paid_Listing_Promotion') && <Button
+                        {isEnabled('Paid_Listing_Promotion') && <Button
                             variant="default"
                             size="sm"
                             onClick={handlePromoteProducts}

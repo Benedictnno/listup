@@ -443,8 +443,8 @@ export default function VendorProfilePage() {
             ) : (
               <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {listings.map((listing) => (
-                  <Link href={`/listings/${listing.id}`}>
-                    <div key={listing.id} className="group flex flex-col items-stretch">
+                  <Link href={`/listings/${listing.id}`} key={listing.id}>
+                    <div className="group flex flex-col items-stretch">
                       <div className="relative aspect-[4/5] rounded-[2rem] overflow-hidden bg-slate-100 mb-4 shadow-sm group-hover:shadow-xl transition-all duration-500">
                         <Image
                           src={listing.images[0] || '/placeholder.svg'}
