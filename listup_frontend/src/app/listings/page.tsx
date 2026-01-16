@@ -238,9 +238,13 @@ function ListingsPageContent() {
   // Scroll listener for infinite scroll
   useEffect(() => {
     const handleScroll = () => {
-      const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
-      // Trigger when user is within 500px of the bottom
-      if (scrollHeight - scrollTop - clientHeight < 1200) {
+      // Robust scroll calculation for mobile/PWA compatibility
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
+      const scrollHeight = document.documentElement.scrollHeight || document.body.scrollHeight || 0;
+      const clientHeight = document.documentElement.clientHeight || window.innerHeight || 0;
+
+      // Trigger when user is within 800px of the bottom
+      if (scrollHeight - scrollTop - clientHeight < 800) {
         if (hasMore && !loading) {
           loadMore();
         }
