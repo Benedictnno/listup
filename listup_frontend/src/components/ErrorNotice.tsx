@@ -10,9 +10,9 @@ interface Props {
   onRetry?: () => void;
 }
 
-export default function ErrorNotice({ message, rawError, retryCount = 0, onRetry }: Props) {
+export default function ErrorNotice({ message, retryCount = 0 }: Props) {
   const lower = message ? message.toLowerCase() : "";
-console.log(lower);
+  console.log(lower);
 
   return (
     <div className="mb-4 p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm">
@@ -27,10 +27,10 @@ console.log(lower);
               <ul className="space-y-1">
                 <li>• Check if your email address is spelled correctly</li>
                 <li>• Make sure you're using the email you registered with</li>
-              <ul className="space-y-1">
-                <li>• Check if Caps Lock is turned off</li>
-                <li>• Make sure you're using the correct password</li>
-              </ul>
+                <ul className="space-y-1">
+                  <li>• Check if Caps Lock is turned off</li>
+                  <li>• Make sure you're using the correct password</li>
+                </ul>
               </ul>
             </div>
           )}

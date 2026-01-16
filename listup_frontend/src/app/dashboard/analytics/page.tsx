@@ -5,27 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Image from "next/image";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  Tooltip,
-  CartesianGrid,
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  PieChart,
-  Pie,
-  Cell,
-  AreaChart,
-  Area,
-  RadarChart,
-  PolarGrid,
-  PolarAngleAxis,
-  PolarRadiusAxis,
-  Radar
-} from "recharts";
+import dynamic from 'next/dynamic';
 import {
   TrendingUp,
   TrendingDown,
@@ -36,6 +16,21 @@ import {
   RefreshCw
 } from "lucide-react";
 
+// Dynamic imports for heavy chart components
+const SalesCharts = dynamic(() => import('@/components/dashboard/analytics/SalesCharts'), {
+  loading: () => <div className="h-[300px] w-full bg-gray-100 animate-pulse rounded-lg" />,
+  ssr: false
+});
+
+const CustomerCharts = dynamic(() => import('@/components/dashboard/analytics/CustomerCharts'), {
+  loading: () => <div className="h-[250px] w-full bg-gray-100 animate-pulse rounded-lg" />,
+  ssr: false
+});
+
+const PerformanceRadar = dynamic(() => import('@/components/dashboard/analytics/PerformanceRadar'), {
+  loading: () => <div className="h-[300px] w-full bg-gray-100 animate-pulse rounded-lg" />,
+  ssr: false
+});
 
 interface AnalyticsData {
   overview: {
@@ -305,71 +300,13 @@ export default function AnalyticsPage() {
         </Card>
       </div>
 
-      {/* Sales Performance Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Revenue Chart */}
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold">Revenue Performance</h3>
-              <Select value={chartType} onValueChange={setChartType}>
-                <SelectTrigger className="w-24">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="daily">Daily</SelectItem>
-                  <SelectItem value="weekly">Weekly</SelectItem>
-                  <SelectItem value="monthly">Monthly</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <ResponsiveContainer width="100%" height={300}>
-              <AreaChart data={currentChartData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey={chartType === 'daily' ? 'date' : chartType === 'weekly' ? 'week' : 'month'} />
-                <YAxis />
-                <Tooltip
-                  formatter={(value: any) => [formatCurrency(value), 'Revenue']}
-                  labelFormatter={(label) => `Period: ${label}`}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="revenue"
-                  stroke="#10B981"
-                  fill="#10B981"
-                  fillOpacity={0.3}
-                  strokeWidth={2}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        {/* Orders Chart */}
-        <Card>
-          <CardContent className="p-6">
-            <h3 className="text-lg font-semibold mb-4">Orders Performance</h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={currentChartData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey={chartType === 'daily' ? 'date' : chartType === 'weekly' ? 'week' : 'month'} />
-                <YAxis />
-                <Tooltip
-                  formatter={(value: any) => [value, 'Orders']}
-                  labelFormatter={(label) => `Period: ${label}`}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="orders"
-                  stroke="#3B82F6"
-                  strokeWidth={2}
-                  dot={{ fill: '#3B82F6', strokeWidth: 2, r: 4 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      </div>
+      {/* Sales Performance Charts (Lazy Loaded) */}
+      <SalesCharts
+        data={currentChartData}
+        chartType={chartType}
+        setChartType={setChartType}
+        formatCurrency={formatCurrency}
+      />
 
       {/* Top Performing Products */}
       <Card>
@@ -406,128 +343,18 @@ export default function AnalyticsPage() {
         </CardContent>
       </Card>
 
-      {/* Customer Metrics */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Customer Lifetime Value */}
-        <Card>
-          <CardContent className="p-6">
-            <h3 className="text-lg font-semibold mb-4">Customer Lifetime Value</h3>
-            <ResponsiveContainer width="100%" height={250}>
-              <PieChart>
-                <Pie
-                  data={data.customerMetrics.lifetimeValue}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ segment, percent }: any) => `${segment} (${((percent || 0) * 100).toFixed(0)}%)`}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {data.customerMetrics.lifetimeValue.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip formatter={(value: any) => [formatCurrency(value), 'LTV']} />
-              </PieChart>
-            </ResponsiveContainer>
-            <div className="mt-4 space-y-2">
-              {data.customerMetrics.lifetimeValue.map((segment, index) => (
-                <div key={segment.segment} className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div
-                      className="w-3 h-3 rounded-full"
-                      style={{ backgroundColor: COLORS[index % COLORS.length] }}
-                    ></div>
-                    <span className="text-sm text-gray-600">{segment.segment}</span>
-                  </div>
-                  <span className="text-sm font-medium">{segment.count} customers</span>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+      {/* Customer Metrics Charts (Lazy Loaded) */}
+      <CustomerCharts
+        data={data.customerMetrics}
+        COLORS={COLORS}
+        formatCurrency={formatCurrency}
+      />
 
-        {/* Customer Retention */}
-        <Card>
-          <CardContent className="p-6">
-            <h3 className="text-lg font-semibold mb-4">Customer Retention Rate</h3>
-            <ResponsiveContainer width="100%" height={250}>
-              <LineChart data={data.customerMetrics.retention}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip formatter={(value: any) => [`${(value * 100).toFixed(1)}%`, 'Retention']} />
-                <Line
-                  type="monotone"
-                  dataKey="rate"
-                  stroke="#8B5CF6"
-                  strokeWidth={2}
-                  dot={{ fill: '#8B5CF6', strokeWidth: 2, r: 4 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        {/* Customer Demographics */}
-        <Card>
-          <CardContent className="p-6">
-            <h3 className="text-lg font-semibold mb-4">Customer Demographics</h3>
-            <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={data.customerMetrics.demographics}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="age" />
-                <YAxis />
-                <Tooltip formatter={(value: any) => [value, 'Count']} />
-                <Bar dataKey="count" fill="#F59E0B" />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Performance Comparison */}
-      <Card>
-        <CardContent className="p-6">
-          <h3 className="text-lg font-semibold mb-4">Category Performance Comparison</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <RadarChart data={data.performanceComparison}>
-              <PolarGrid />
-              <PolarAngleAxis dataKey="category" />
-              <PolarRadiusAxis />
-              <Radar
-                name="Revenue"
-                dataKey="revenue"
-                stroke="#10B981"
-                fill="#10B981"
-                fillOpacity={0.3}
-              />
-              <Radar
-                name="Orders"
-                dataKey="orders"
-                stroke="#3B82F6"
-                fill="#3B82F6"
-                fillOpacity={0.3}
-              />
-              <Tooltip />
-            </RadarChart>
-          </ResponsiveContainer>
-          <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-            {data.performanceComparison.map((category) => (
-              <div key={category.category} className="p-4 bg-gray-50 rounded-lg">
-                <h4 className="font-medium text-gray-900 mb-2">{category.category}</h4>
-                <div className="space-y-1 text-sm">
-                  <p>Revenue: {formatCurrency(category.revenue)}</p>
-                  <p>Orders: {category.orders}</p>
-                  <p>Conversion: {category.conversionRate.toFixed(2)}%</p>
-                  <p>Avg Price: {formatCurrency(category.avgPrice)}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+      {/* Performance Radar Chart (Lazy Loaded) */}
+      <PerformanceRadar
+        data={data.performanceComparison}
+        formatCurrency={formatCurrency}
+      />
     </div>
   );
 }

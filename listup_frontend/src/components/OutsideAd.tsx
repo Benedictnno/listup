@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
 import axios from "axios";
+import Image from "next/image";
 
 interface Advertisement {
   id: string;
@@ -139,16 +140,17 @@ export default function FloatingAd() {
         </button>
 
         {/* Advertisement Image with Transition */}
-        <div 
-          className="w-full h-20 overflow-hidden rounded-md border cursor-pointer hover:opacity-90 mt-4 relative"
+        <div
+          className="w-full h-24 relative overflow-hidden rounded-md border cursor-pointer hover:opacity-90 mt-4 bg-gray-50"
           onClick={handleAdClick}
         >
-          <img
+          <Image
             src={currentAd.imageUrl}
             alt={currentAd.title}
-            className={`w-full h-auto max-h-20 object-cover transition-opacity duration-300 ${
-              isTransitioning ? 'opacity-0' : 'opacity-100'
-            }`}
+            fill
+            sizes="(max-width: 768px) 100vw, 33vw"
+            className={`object-cover transition-opacity duration-300 ${isTransitioning ? 'opacity-0' : 'opacity-100'
+              }`}
           />
         </div>
 
@@ -158,11 +160,10 @@ export default function FloatingAd() {
             {advertisements.map((_, index) => (
               <div
                 key={index}
-                className={`h-1 rounded-full transition-all duration-300 ${
-                  index === currentAdIndex 
-                    ? 'w-6 bg-lime-500' 
-                    : 'w-1.5 bg-gray-300'
-                }`}
+                className={`h-1 rounded-full transition-all duration-300 ${index === currentAdIndex
+                  ? 'w-6 bg-lime-500'
+                  : 'w-1.5 bg-gray-300'
+                  }`}
               />
             ))}
           </div>
@@ -178,11 +179,11 @@ export default function FloatingAd() {
           )}
         </div>
 
-          <p className="text-sm font-medium">contact support on Whatsapp for your ad's placement (090110225097)</p>
-         
+        <p className="text-sm font-medium">contact support on Whatsapp for your ad's placement (090110225097)</p>
+
         {/* CTA Button */}
         {currentAd.targetUrl && (
-          <button 
+          <button
             onClick={handleAdClick}
             className="bg-lime-500 hover:bg-lime-600 text-white py-2 px-4 rounded-md text-sm mt-2 w-full transition-colors"
           >

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useRef } from "react";
+import Image from "next/image";
 
 interface ImageFile {
   file: File;
@@ -48,13 +49,13 @@ export default function ImageUploader({
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d')!;
       const img = new window.Image();
-      
+
       img.onload = () => {
         // Calculate new dimensions (max 1920x1080)
         const maxWidth = 1920;
         const maxHeight = 1080;
         let { width, height } = img;
-        
+
         if (width > height) {
           if (width > maxWidth) {
             height = (height * maxWidth) / width;
@@ -66,10 +67,10 @@ export default function ImageUploader({
             height = maxHeight;
           }
         }
-        
+
         canvas.width = width;
         canvas.height = height;
-        
+
         // Draw and compress
         ctx.drawImage(img, 0, 0, width, height);
         canvas.toBlob(
@@ -88,7 +89,7 @@ export default function ImageUploader({
           compressionQuality
         );
       };
-      
+
       img.src = URL.createObjectURL(file);
     });
   };
@@ -106,19 +107,19 @@ export default function ImageUploader({
       alert(`${file.name} is not an image file`);
       return;
     }
-    
+
     if (file.size > maxFileSize * 1024 * 1024) {
       alert(`${file.name} is too large. Maximum size is ${maxFileSize}MB`);
       return;
     }
 
     setCompressing(true);
-    
+
     try {
       const compressedFile = await compressImage(file);
       const originalSize = file.size;
       const compressedSize = compressedFile.size;
-      
+
       const newImage: ImageFile = {
         file: compressedFile,
         id: Math.random().toString(36).substr(2, 9),
@@ -128,7 +129,7 @@ export default function ImageUploader({
         originalSize,
         compressedSize
       };
-      
+
       // Update the specific slot
       const newImages = [...images];
       newImages[slotIndex] = newImage;
@@ -147,7 +148,7 @@ export default function ImageUploader({
     if (image) {
       URL.revokeObjectURL(image.preview);
     }
-    
+
     const newImages = [...images];
     newImages[slotIndex] = null as any;
     onImagesChange(newImages);
@@ -171,7 +172,7 @@ export default function ImageUploader({
     const newImages = [...images];
     const [draggedImage] = newImages.splice(draggedIndex, 1);
     newImages.splice(dropIndex, 0, draggedImage);
-    
+
     onImagesChange(newImages);
     setDraggedIndex(null);
   };
@@ -193,7 +194,7 @@ export default function ImageUploader({
       const newImages = [...images];
       const [movedImage] = newImages.splice(touchStart, 1);
       newImages.splice(touchEnd, 0, movedImage);
-      
+
       onImagesChange(newImages);
     }
     setTouchStart(null);
@@ -216,15 +217,14 @@ export default function ImageUploader({
         {slots.map((slotIndex) => {
           const image = images[slotIndex];
           const isEmpty = !image;
-          
+
           return (
             <div
               key={slotIndex}
-              className={`relative aspect-square rounded-lg border-2 transition-all duration-200 ${
-                isEmpty 
-                  ? 'border-dashed border-gray-300 bg-gray-50 hover:border-gray-400 hover:bg-gray-100' 
-                  : 'border-solid border-gray-200 bg-white shadow-sm'
-              }`}
+              className={`relative aspect-square rounded-lg border-2 transition-all duration-200 ${isEmpty
+                ? 'border-dashed border-gray-300 bg-gray-50 hover:border-gray-400 hover:bg-gray-100'
+                : 'border-solid border-gray-200 bg-white shadow-sm'
+                }`}
             >
               {isEmpty ? (
                 /* Empty Upload Slot */
@@ -236,7 +236,7 @@ export default function ImageUploader({
                     onChange={(e) => handleFileSelect(e, slotIndex)}
                     className="hidden"
                   />
-                  
+
                   <button
                     type="button"
                     onClick={() => triggerFileInput(slotIndex)}
@@ -248,7 +248,7 @@ export default function ImageUploader({
                       {slotIndex === 0 ? 'Main Photo' : `Photo ${slotIndex + 1}`}
                     </span>
                   </button>
-                  
+
                   {/* Slot Number Badge */}
                   <div className="absolute top-2 left-2 bg-gray-200 text-gray-600 text-xs px-2 py-1 rounded-full font-medium">
                     {slotIndex + 1}
@@ -266,17 +266,19 @@ export default function ImageUploader({
                   onTouchMove={(e) => handleTouchMove(e, slotIndex)}
                   onTouchEnd={handleTouchEnd}
                 >
-                  <img
+                  <Image
                     src={image.preview}
                     alt={`Preview ${slotIndex + 1}`}
-                    className="w-full h-full object-cover rounded-lg"
+                    fill
+                    unoptimized
+                    className="object-cover rounded-lg"
                   />
-                  
+
                   {/* Slot Number Badge */}
                   <div className="absolute top-2 left-2 bg-black bg-opacity-70 text-white text-xs px-2 py-1 rounded-full font-medium">
                     {slotIndex + 1}
                   </div>
-                  
+
                   {/* Remove Button */}
                   <button
                     type="button"
@@ -286,7 +288,7 @@ export default function ImageUploader({
                   >
                     <span className="text-white text-sm">×</span>
                   </button>
-                  
+
                   {/* Drag Handle */}
                   <div className="absolute bottom-2 left-2 bg-black bg-opacity-70 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-200">
                     <span className="text-white text-xs">⋮⋮</span>
@@ -327,7 +329,7 @@ export default function ImageUploader({
           </div>
         </div>
       )}
-      
+
       {/* Compression Summary */}
       {enableCompression && images.some(img => img?.originalSize && img?.compressedSize && img.compressedSize < img.originalSize) && (
         <div className="p-3 bg-green-50 rounded-lg border border-green-200">
@@ -342,7 +344,7 @@ export default function ImageUploader({
           </div>
         </div>
       )}
-      
+
       {/* Image Instructions */}
       <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
         <div className="flex items-start space-x-3">
