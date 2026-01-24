@@ -18,8 +18,8 @@ export default function LoginPage() {
   const [retryCount, setRetryCount] = useState(0);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [requiresEmailVerification, setRequiresEmailVerification] = useState(false);
-  
-  const login = useAuthStore((state) => state.login);  
+
+  const login = useAuthStore((state) => state.login);
   const router = useRouter();
 
   // Debug: Log when error state changes
@@ -30,7 +30,7 @@ export default function LoginPage() {
   // Clear errors when user starts typing (only when they actually change the input)
   const [lastEmail, setLastEmail] = useState("");
   const [lastPassword, setLastPassword] = useState("");
-  
+
   useEffect(() => {
     // Only clear error if email or password actually changed (user is typing)
     if (error && (email !== lastEmail || password !== lastPassword)) {
@@ -44,7 +44,7 @@ export default function LoginPage() {
   const handleFieldChange = (field: string, value: string) => {
     if (field === 'email') setEmail(value);
     if (field === 'password') setPassword(value);
-    
+
     // Clear field error when user starts typing
     if (fieldErrors[field]) {
       setFieldErrors(prev => {
@@ -78,16 +78,16 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Clear previous messages
     setError("");
     setSuccess("");
     setRequiresEmailVerification(false);
-    
+
     // Validate fields
     const emailError = validateField('email', email);
     const passwordError = validateField('password', password);
-    
+
     if (emailError || passwordError) {
       setFieldErrors({
         email: emailError || "",
@@ -98,15 +98,20 @@ export default function LoginPage() {
     }
 
     setLoading(true);
-    
+
     try {
-      await login(email.trim(), password);
+      const user = await login(email.trim(), password);
       setSuccess(getSuccessMessage('login'));
-      
+
       // Redirect after a short delay to show success message
       setTimeout(() => {
-        router.push("/dashboard");
-      }, 2000);
+        if (user.role === 'VENDOR') {
+          router.push("/dashboard");
+        } else {
+          // Partners and regular users go to partner dashboard (which serves as user dashboard too)
+          router.push("/partner");
+        }
+      }, 1000);
 
     } catch (error: any) {
       console.error("Login failed:", error);
@@ -145,7 +150,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-900">
       <div className="absolute inset-0 -z-0 bg-[radial-gradient(1200px_600px_at_20%_-10%,rgba(148,163,184,0.18),transparent_70%),radial-gradient(800px_400px_at_100%_10%,rgba(148,163,184,0.12),transparent_60%)]" />
-      
+
       <form
         onSubmit={handleSubmit}
         action="#"
@@ -157,9 +162,9 @@ export default function LoginPage() {
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-lime-400 text-slate-900 font-black">LU</div>
           <span className="text-lg font-semibold tracking-wide">ListUp</span>
         </div>
-        
+
         <h2 className="text-2xl font-bold mb-6 text-slate-800">Welcome back</h2>
-        
+
         {/* Success Message */}
         {success && (
           <div className="mb-4 p-4 rounded-xl bg-green-50 border border-green-200 text-green-700 text-sm">
@@ -175,55 +180,52 @@ export default function LoginPage() {
             </div>
           </div>
         )}
-        
+
         {/* Error Display */}
-  { error &&   (
-             <div className={`mb-4 p-4 rounded-xl border text-sm ${
-               requiresEmailVerification 
-                 ? 'bg-orange-50 border-orange-200 text-orange-700' 
-                 : 'bg-red-50 border-red-200 text-red-700'
-             }`}>
-                <div className="flex items-start gap-3">
-                  <AlertCircleIcon className={`w-5 h-5 mt-0.5 flex-shrink-0 ${
-                    requiresEmailVerification ? 'text-orange-500' : 'text-red-500'
-                  }`} />
-                  <div className="flex-1 space-y-2">
-                    <p className={`font-medium ${
-                      requiresEmailVerification ? 'text-orange-800' : 'text-red-800'
-                    }`}>{error}</p>
-          
-                    {requiresEmailVerification ? (
-                      <>
-                        <div className="text-xs text-orange-600 bg-orange-100 p-2 rounded-lg">
-                          <p className="font-medium mb-1">📧 Email Verification Required</p>
-                          <p className="mb-2">Please check your inbox for a verification email and click the link to verify your account.</p>
-                          <p className="text-xs text-orange-500">Check your spam folder if you don't see it.</p>
-                        </div>
-                        <Link
-                          href="/resend-verification"
-                          className="inline-block mt-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-xs font-medium rounded-lg transition-colors"
-                        >
-                          Resend Verification Email
-                        </Link>
-                      </>
-                    ) : (
-                      <>
-                        <div className="text-xs text-red-600 bg-red-100 p-2 rounded-lg">
-                          <p className="font-medium mb-1">💡 Helpful tips:</p>
-                          <ul className="space-y-1">
-                            <li>• Check if your email address is spelled correctly</li>
-                            <li>• Make sure you're using the email you registered with</li>
-                            <li>• Check if Caps Lock is turned off</li>
-                            <li>• Make sure you're using the correct password</li>
-                          </ul>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                </div>
+        {error && (
+          <div className={`mb-4 p-4 rounded-xl border text-sm ${requiresEmailVerification
+              ? 'bg-orange-50 border-orange-200 text-orange-700'
+              : 'bg-red-50 border-red-200 text-red-700'
+            }`}>
+            <div className="flex items-start gap-3">
+              <AlertCircleIcon className={`w-5 h-5 mt-0.5 flex-shrink-0 ${requiresEmailVerification ? 'text-orange-500' : 'text-red-500'
+                }`} />
+              <div className="flex-1 space-y-2">
+                <p className={`font-medium ${requiresEmailVerification ? 'text-orange-800' : 'text-red-800'
+                  }`}>{error}</p>
+
+                {requiresEmailVerification ? (
+                  <>
+                    <div className="text-xs text-orange-600 bg-orange-100 p-2 rounded-lg">
+                      <p className="font-medium mb-1">📧 Email Verification Required</p>
+                      <p className="mb-2">Please check your inbox for a verification email and click the link to verify your account.</p>
+                      <p className="text-xs text-orange-500">Check your spam folder if you don't see it.</p>
+                    </div>
+                    <Link
+                      href="/resend-verification"
+                      className="inline-block mt-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-xs font-medium rounded-lg transition-colors"
+                    >
+                      Resend Verification Email
+                    </Link>
+                  </>
+                ) : (
+                  <>
+                    <div className="text-xs text-red-600 bg-red-100 p-2 rounded-lg">
+                      <p className="font-medium mb-1">💡 Helpful tips:</p>
+                      <ul className="space-y-1">
+                        <li>• Check if your email address is spelled correctly</li>
+                        <li>• Make sure you're using the email you registered with</li>
+                        <li>• Check if Caps Lock is turned off</li>
+                        <li>• Make sure you're using the correct password</li>
+                      </ul>
+                    </div>
+                  </>
+                )}
               </div>
+            </div>
+          </div>
         )}
-        
+
         <div className="space-y-4 mb-6">
           {/* Email Field */}
           <div>
@@ -236,13 +238,12 @@ export default function LoginPage() {
               value={email}
               onChange={(e) => handleFieldChange("email", e.target.value)}
               onBlur={(e) => handleBlur("email", e.target.value)}
-              className={`w-full border p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-lime-200 focus:border-lime-400 transition-colors ${
-                getFieldError("email") 
-                  ? "border-red-300 bg-red-50" 
-                  : isFieldValid("email") 
-                  ? "border-green-300 bg-green-50" 
-                  : "border-slate-300"
-              }`}
+              className={`w-full border p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-lime-200 focus:border-lime-400 transition-colors ${getFieldError("email")
+                  ? "border-red-300 bg-red-50"
+                  : isFieldValid("email")
+                    ? "border-green-300 bg-green-50"
+                    : "border-slate-300"
+                }`}
             />
             {getFieldError("email") && (
               <div className="mt-1 text-xs text-red-600">
@@ -257,7 +258,7 @@ export default function LoginPage() {
               </div>
             )}
           </div>
-          
+
           {/* Password Field */}
           <div>
             <label className="block text-sm font-medium mb-1 text-slate-700">
@@ -270,13 +271,12 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => handleFieldChange("password", e.target.value)}
                 onBlur={(e) => handleBlur("password", e.target.value)}
-                className={`w-full border p-3 pr-12 rounded-xl focus:outline-none focus:ring-2 focus:ring-lime-200 focus:border-lime-400 transition-colors ${
-                  getFieldError("password") 
-                    ? "border-red-300 bg-red-50" 
-                    : isFieldValid("password") 
-                    ? "border-green-300 bg-green-50" 
-                    : "border-slate-300"
-                }`}
+                className={`w-full border p-3 pr-12 rounded-xl focus:outline-none focus:ring-2 focus:ring-lime-200 focus:border-lime-400 transition-colors ${getFieldError("password")
+                    ? "border-red-300 bg-red-50"
+                    : isFieldValid("password")
+                      ? "border-green-300 bg-green-50"
+                      : "border-slate-300"
+                  }`}
               />
               <button
                 type="button"
@@ -304,7 +304,7 @@ export default function LoginPage() {
             )}
           </div>
         </div>
-        
+
         {/* Helpful Tips */}
         <div className="mb-6 p-3 bg-blue-50 rounded-lg border border-blue-200">
           <div className="text-xs text-blue-700">
@@ -317,7 +317,7 @@ export default function LoginPage() {
             </ul>
           </div>
         </div>
-        
+
         {/* Submit Button */}
         <button
           type="submit"
@@ -336,7 +336,7 @@ export default function LoginPage() {
             </>
           )}
         </button>
-        
+
         {/* Help Links */}
         <div className="mt-6 space-y-3 text-center text-sm text-slate-600">
           <div>

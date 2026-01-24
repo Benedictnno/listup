@@ -11,6 +11,7 @@ enum Role {
   USER
   VENDOR
   ADMIN
+  PARTNER
 }
 
 enum AdType {
@@ -101,6 +102,7 @@ model User {
   usedReferralCode    ReferralUse?       @relation("ReferredVendor")
   vendorKYC           VendorKYC?
   commissionPayments  CommissionPayment[]
+  monthlyStatements   MonthlyStatement[]
   whatsappOptIn       Boolean             @default(false)
   whatsappMessageLogs WhatsAppMessageLog[]
 
@@ -158,6 +160,35 @@ model VendorProfile {
   @@index([businessCategory])
 }
 
+
+enum RewardStatus {
+  PENDING
+  QUALIFIED
+  APPROVED
+  PAID
+  REJECTED
+}
+
+enum PayoutPeriodStatus {
+  OPEN
+  LOCKED
+  PROCESSING
+  COMPLETED
+}
+
+enum StatementStatus {
+  DRAFT
+  APPROVED
+  PAID
+  REJECTED
+}
+
+enum ClickStatus {
+  STARTED
+  QUALIFIED
+  FLAGGED
+}
+
 model Referral {
   id           String   @id @default(auto()) @map("_id") @db.ObjectId
   code         String   @unique
@@ -166,13 +197,16 @@ model Referral {
 
   totalReferrals       Int     @default(0)
   successfulReferrals  Int     @default(0)
+  totalClicks          Int     @default(0) // New: distinct from totalReferrals
   totalEarnings        Float   @default(0)
+  pendingEarnings      Float   @default(0) // New: accrues here before statement
 
   isActive     Boolean  @default(true)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
   referredVendors ReferralUse[]
+  clicks          ReferralClick[]
 }
 
 model ReferralUse {
@@ -183,14 +217,93 @@ model ReferralUse {
   vendorId     String   @unique @db.ObjectId
   vendor       User     @relation("ReferredVendor", fields: [vendorId], references: [id])
 
+  // Reward Milestones
+  signupRewardAmount    Float    @default(25)
+  signupRewardStatus    RewardStatus @default(PENDING) // PENDING, FLAGGED, APPROVED, PAID
+  
+  listingRewardAmount   Float    @default(25)
+  listingRewardStatus   RewardStatus @default(PENDING)
+  
+  firstListingId        String?  @db.ObjectId // Link to the listing that triggered the reward
+
+  // Meta
+  isFraud               Boolean  @default(false)
+
+  // Old fields for backward compatibility/migration (if needed, but we can deprecate them)
   status       ReferralStatus @default(PENDING)
-  commission   Float    @default(1000)
+  commission   Float    @default(0) // Deprecated in favor of specific rewards? Keeping for safety
   commissionPaid Boolean @default(false)
 
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
   @@unique([referralId, vendorId])
+}
+
+model ReferralClick {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  referralId   String   @db.ObjectId
+  referral     Referral @relation(fields: [referralId], references: [id])
+  
+  fingerprint  String   // Hash of IP + UserAgent + DailySalt
+  ipAddress    String?
+  userAgent    String?
+  
+  status       ClickStatus @default(STARTED) // STARTED, QUALIFIED, FLAGGED
+  rewardAmount Float       @default(15)
+  
+  clickedAt    DateTime @default(now())
+  qualifiedAt  DateTime? // When they passed the bounce check
+  
+  @@index([referralId, fingerprint])
+  @@index([clickedAt]) 
+}
+
+model PayoutPeriod {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  month     Int      // e.g. 1
+  year      Int      // e.g. 2026
+  
+  startDate DateTime
+  endDate   DateTime
+  
+  status    PayoutPeriodStatus @default(OPEN) // OPEN, LOCKED, PROCESSING, COMPLETED
+  
+  totalPayoutAmount Float @default(0)
+  totalPartnersPaid Int   @default(0)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  statements MonthlyStatement[]
+  
+  @@unique([month, year])
+}
+
+model MonthlyStatement {
+  id              String       @id @default(auto()) @map("_id") @db.ObjectId
+  payoutPeriodId  String       @db.ObjectId
+  payoutPeriod    PayoutPeriod @relation(fields: [payoutPeriodId], references: [id])
+  
+  userId          String       @db.ObjectId // The Partner
+  user            User         @relation(fields: [userId], references: [id])
+  
+  // Stats for this month
+  vendorsReferredCount Int @default(0)
+  vendorsActivatedCount Int @default(0) // Completed both steps
+  clicksCount           Int @default(0)
+  
+  // Financials
+  totalEarned     Float   @default(0) // Sum of approved rewards
+  status          StatementStatus @default(DRAFT)
+  
+  paidAt          DateTime?
+  paymentReference String? // Bank transfer ref
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@unique([payoutPeriodId, userId])
 }
 
 model VendorKYC {
@@ -579,4 +692,13 @@ model FeatureFlag {
   description String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model SystemSettings {
+  id                  String   @id @default(auto()) @map("_id") @db.ObjectId
+  signupRewardAmount  Float    @default(25)
+  listingRewardAmount Float    @default(25)
+  clickRewardAmount   Float    @default(15)
+  minimumPayoutAmount Float    @default(1000)
+  updatedAt           DateTime @updatedAt
 }

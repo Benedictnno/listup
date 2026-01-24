@@ -63,18 +63,60 @@ const isAdmin = (req, res, next) => {
   });
 };
 
-// Keep the original auth middleware for backward compatibility
+
+// Combined auth middleware (checks authentication AND admin role)
 const auth = async (req, res, next) => {
   try {
-    await isAuthenticated(req, res, () => {
-      if (req.user.role !== 'ADMIN') {
-        return res.status(403).json({
-          success: false,
-          message: 'Admin access required'
-        });
+    // Try to get token from cookies first
+    let token = req.cookies?.token;
+console.log(token);
+
+
+    if (!token) {
+      // Fall back to Authorization header
+      const authHeader = req.header('Authorization');
+      token = authHeader?.replace('Bearer ', '');
+console.log(token);
+
+    }
+
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        message: 'No token provided, authorization denied'
+      });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    // Verify user exists
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.id },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true
       }
-      next();
     });
+
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: 'Token is not valid'
+      });
+    }
+
+    // Check if user is admin
+    if (user.role !== 'ADMIN') {
+      return res.status(403).json({
+        success: false,
+        message: 'Admin access required'
+      });
+    }
+
+    req.user = user;
+    next();
   } catch (error) {
     console.error('Auth middleware error:', error);
     res.status(401).json({

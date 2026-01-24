@@ -9,6 +9,7 @@ import { Analytics } from "@vercel/analytics/next"
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import BottomNav from "@/components/BottomNav";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
+import ReferralEngagementTracker from "@/components/ReferralEngagementTracker";
 
 
 const montserrat = Montserrat({
@@ -64,6 +65,7 @@ export default function RootLayout({
             <SpeedInsights />
             <Footer />
             <BottomNav />
+            <ReferralEngagementTracker />
             <PWAInstallPrompt />
 
           </FeatureFlagProvider>

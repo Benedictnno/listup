@@ -191,6 +191,15 @@ exports.create = async (req, res, next) => {
       },
     });
 
+    // Trigger First Listing Reward (if this vendor was referred)
+    try {
+      const ReferralService = require('../services/referral.service');
+      await ReferralService.completeListingAction(req.user.id, listing.id);
+    } catch (e) {
+      console.error('Error triggering listing reward:', e);
+      // Don't fail the listing creation if referral tracking fails
+    }
+
     res.status(201).json(listing);
   } catch (e) {
     next(e);

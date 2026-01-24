@@ -417,3 +417,32 @@ exports.toggleReferralActive = async (req, res) => {
     return res.status(500).json({ success: false, message: 'Failed to update referral status' });
   }
 };
+
+// New: Partner Dashboard Stats (uses the Service)
+exports.getPartnerDashboardStats = async (req, res) => {
+  try {
+    const ReferralService = require('../services/referral.service');
+    const stats = await ReferralService.getPartnerStats(req.user.id);
+
+    if (!stats) {
+      return res.json({
+        success: true,
+        data: {
+          referralCode: null,
+          pendingEarnings: 0,
+          totalPaid: 0,
+          activatedThisMonth: 0,
+          recentActivity: []
+        }
+      });
+    }
+
+    return res.json({
+      success: true,
+      data: stats
+    });
+  } catch (error) {
+    console.error('Error in getPartnerDashboardStats:', error);
+    return res.status(500).json({ success: false, message: 'Failed to fetch partner stats' });
+  }
+};

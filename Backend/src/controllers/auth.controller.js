@@ -168,35 +168,11 @@ exports.register = async (req, res, next) => {
         },
       });
 
-      // If vendor signed up with a valid referral code, create referral use and increment totals
+      // If vendor signed up with a valid referral code, create referral use via Service
       if (referral) {
         try {
-          await prisma.$transaction(async (tx) => {
-            const existingUse = await tx.referralUse.findFirst({
-              where: {
-                referralId: referral.id,
-                vendorId: user.id,
-              },
-            });
-
-            if (!existingUse) {
-              await tx.referralUse.create({
-                data: {
-                  referralId: referral.id,
-                  vendorId: user.id,
-                  status: 'PENDING',
-                  commission: 1000,
-                },
-              });
-
-              await tx.referral.update({
-                where: { id: referral.id },
-                data: {
-                  totalReferrals: { increment: 1 },
-                },
-              });
-            }
-          });
+          const ReferralService = require('../services/referral.service');
+          await ReferralService.createReferralUse(user.id, referral.code);
         } catch (e) {
           console.error('Error creating referral use during registration:', e);
         }

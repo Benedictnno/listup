@@ -68,10 +68,11 @@ router.post('/login', [
 
     // Set token as HTTP-only cookie for cookie-based authentication
     res.cookie('token', token, {
-      httpOnly: true, // Prevents client-side JavaScript from accessing the cookie
-      secure: process.env.NODE_ENV === 'production', // Only send over HTTPS in production
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // CSRF protection
-      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days in milliseconds
+      httpOnly: true,
+      secure: false,
+      domain: 'localhost', // Share cookie across all localhost ports
+      path: '/',
+      maxAge: 7 * 24 * 60 * 60 * 1000
     });
 
     // Remove password from response
@@ -128,8 +129,7 @@ router.post('/logout', auth, (req, res) => {
   // Clear the authentication cookie
   res.clearCookie('token', {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
+    secure: false
   });
 
   res.json({

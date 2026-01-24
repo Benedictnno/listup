@@ -23,7 +23,7 @@ const PORT = process.env.ADMIN_PORT || 4001; // Changed port to avoid conflict
 
 // Security middleware
 app.use(helmet());
-
+app.use(morgan('dev'));
 // Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -61,7 +61,7 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Logging middleware
-app.use(morgan('combined'));
+// app.use(morgan('combined'));
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -85,6 +85,9 @@ app.use('/api/uploads', uploadsRoutes);
 app.use('/api/kyc', kycRoutes);
 app.use('/api/referrals', require('./routes/referrals'));
 app.use('/api/features', require('./routes/features'));
+app.use('/api/payouts', require('./routes/admin-payouts.routes'));
+app.use('/api/partners', require('./routes/partner-analytics.routes'));
+app.use('/api/settings', require('./routes/settings.routes'));
 
 
 // Error handling middleware

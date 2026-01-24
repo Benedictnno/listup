@@ -5,7 +5,7 @@ type User = {
   id: string;
   name: string;
   email: string;
-  role: "USER" | "VENDOR";
+  role: "USER" | "VENDOR" | "PARTNER";
   phone?: string;
   isKYCVerified?: boolean;
   listingLimit?: number;
@@ -19,7 +19,7 @@ type User = {
 type AuthState = {
   user: User | null;
   isInitialized: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<User>;
   signup: (userData: {
     name: string;
     email: string;
@@ -53,12 +53,12 @@ export const useAuthStore = create<AuthState>((set) => ({
 
         const userData = response.data.data;
         console.log(userData);
-        
+
         const user: User = {
           id: userData.id,
           name: userData.name,
           email: userData.email,
-          role: userData.role.toUpperCase() as "USER" | "VENDOR",
+          role: userData.role.toUpperCase() as "USER" | "VENDOR" | "PARTNER",
           phone: userData.phone,
           isKYCVerified: userData.isKYCVerified,
           listingLimit: userData.listingLimit,
@@ -96,7 +96,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         id: userData.id,
         name: userData.name,
         email: userData.email,
-        role: userData.role.toUpperCase() as "USER" | "VENDOR",
+        role: userData.role.toUpperCase() as "USER" | "VENDOR" | "PARTNER",
         phone: userData.phone,
         isKYCVerified: userData.isKYCVerified,
         listingLimit: userData.listingLimit,
@@ -107,6 +107,7 @@ export const useAuthStore = create<AuthState>((set) => ({
 
       // Backend sets HttpOnly cookie; just keep user in memory
       set({ user });
+      return user;
     } catch (error: any) {
       console.error("Login error:", error);
 
