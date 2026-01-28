@@ -31,6 +31,7 @@ import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import ChatButton from "@/components/chat/ChatButton";
 import {
   Dialog,
   DialogContent,
@@ -247,25 +248,11 @@ export default function VendorProfilePage() {
                 </div>
 
                 <div className="flex flex-wrap gap-3 pt-2">
-                  <Button
-                    className="bg-green-600 hover:bg-green-700 text-white px-8 py-6 rounded-2xl flex items-center gap-3 font-bold text-lg shadow-lg shadow-green-100 transition-all border-b-4 border-green-800 active:border-b-0 active:translate-y-1"
-                    onClick={() => {
-                      const raw = (vendor.phone || "").replace(/[^0-9]/g, "");
-                      if (!raw) {
-                        alert("Vendor has no WhatsApp number available.");
-                        return;
-                      }
-                      let phone = raw;
-                      if (phone.length === 11 && phone.startsWith("0")) {
-                        phone = `234${phone.slice(1)}`;
-                      }
-                      const text = encodeURIComponent(`Hi ${vendor.storeName || vendor.name}, I found your store on Listup.ng and I'm interested in your products.`);
-                      window.open(`https://wa.me/${phone}?text=${text}`, '_blank');
-                    }}
-                  >
-                    <MessageSquare size={22} />
-                    Chat with Store
-                  </Button>
+                  <ChatButton
+                    sellerId={vendor.id}
+                    label="Chat with Store"
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-6 rounded-2xl flex items-center gap-3 font-bold text-lg shadow-lg shadow-blue-100 transition-all border-b-4 border-blue-800 active:border-b-0 active:translate-y-1"
+                  />
                   <Button
                     variant="outline"
                     className="px-8 py-6 rounded-2xl flex items-center gap-3 font-bold text-lg border-2 border-slate-200 hover:bg-slate-50 transition-all"

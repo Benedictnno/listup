@@ -105,6 +105,19 @@ model User {
   monthlyStatements   MonthlyStatement[]
   whatsappOptIn       Boolean             @default(false)
   whatsappMessageLogs WhatsAppMessageLog[]
+  botNotifications    BotNotification[]
+  searchLogs          SearchLog[]
+
+  // Bot specific fields
+  source              String?             @default("web") // 'web', 'mobile', 'whatsapp'
+  whatsappName        String?
+  whatsappVerified    Boolean             @default(false)
+  lastActiveAt        DateTime?
+
+  // Chat relations
+  buyerConversations  Conversation[]     @relation("BuyerConversations")
+  sellerConversations Conversation[]     @relation("SellerConversations")
+  sentMessages        Message[]
 
   @@index([role])
 }
@@ -405,6 +418,13 @@ model Listing {
   ListingView        ListingView[]
   ListingSaveEvent   ListingSaveEvent[]
   ListingMessageClick ListingMessageClick[]
+  conversations      Conversation[]
+
+  // WhatsApp specific
+  whatsappEnabled     Boolean             @default(true)
+  whatsappSearchTerms String[]            @default([])
+  brand               String?
+  stock               Int                 @default(1)
 
   @@index([isActive, boostScore, createdAt])
   @@index([categoryId, isActive, boostScore, createdAt])
@@ -701,4 +721,127 @@ model SystemSettings {
   clickRewardAmount   Float    @default(15)
   minimumPayoutAmount Float    @default(1000)
   updatedAt           DateTime @updatedAt
+}
+
+// Chat System Models
+model Conversation {
+  id            String    @id @default(auto()) @map("_id") @db.ObjectId
+  
+  // Optional: link to specific listing (null for general vendor chat)
+  listingId     String?   @db.ObjectId
+  listing       Listing?  @relation(fields: [listingId], references: [id])
+  
+  // Participants
+  buyerId       String    @db.ObjectId
+  buyer         User      @relation("BuyerConversations", fields: [buyerId], references: [id])
+  
+  sellerId      String    @db.ObjectId
+  seller        User      @relation("SellerConversations", fields: [sellerId], references: [id])
+  
+  // Metadata
+  lastMessageAt DateTime  @default(now())
+  lastMessagePreview String? @db.String // Cache for inbox list view
+  
+  // Status
+  isActive      Boolean   @default(true)
+  isArchived    Boolean   @default(false)
+  
+  // Timestamps
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  // Relations
+  messages      Message[]
+  reports       ConversationReport[]
+  
+  // Ensure unique conversation per buyer-seller-listing combo
+  @@unique([buyerId, sellerId, listingId])
+  @@index([buyerId, isActive])
+  @@index([sellerId, isActive])
+  @@index([listingId])
+  @@index([lastMessageAt])
+}
+
+model Message {
+  id             String       @id @default(auto()) @map("_id") @db.ObjectId
+  conversationId String       @db.ObjectId
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  
+  // Sender
+  senderId       String       @db.ObjectId
+  sender         User         @relation(fields: [senderId], references: [id])
+  senderType     String       // "BUYER" | "SELLER" for quick reference
+  
+  // Content
+  messageType    String       @default("TEXT") // "TEXT" | "IMAGE"
+  content        String?      @db.String // Text content (null for image-only)
+  imageUrl       String?      // URL for image messages
+  
+  // Read status
+  isRead         Boolean      @default(false)
+  readAt         DateTime?
+  
+  // Email notification tracking
+  emailSent      Boolean      @default(false)
+  emailSentAt    DateTime?
+  
+  // Timestamps
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  
+  @@index([conversationId, createdAt])
+  @@index([senderId])
+  @@index([isRead])
+  @@index([createdAt]) // For 30-day cleanup
+}
+
+model ConversationReport {
+  id             String       @id @default(auto()) @map("_id") @db.ObjectId
+  conversationId String       @db.ObjectId
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  reporterId     String       @db.ObjectId // User who reported
+  reason         String       // "SPAM" | "HARASSMENT" | "FRAUD" | "INAPPROPRIATE" | "OTHER"
+  details        String?      @db.String
+  status         String       @default("PENDING") // "PENDING" | "REVIEWED" | "RESOLVED" | "DISMISSED"
+  reviewedBy     String?      @db.ObjectId // Admin who reviewed
+  reviewedAt     DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  
+  @@index([conversationId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model SearchLog {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId       String?  @db.ObjectId
+  user         User?    @relation(fields: [userId], references: [id])
+  query        String
+  intent       String?  // 'product_search', 'support', etc.
+  entities     Json?    // Extracted entities (category, color, price, etc.)
+  resultsCount Int      @default(0)
+  clickedProductIds String[] @db.ObjectId
+  source       String   @default("whatsapp")
+  createdAt    DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([userId])
+}
+
+model BotNotification {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @db.ObjectId
+  user      User     @relation(fields: [userId], references: [id])
+  type      String   // 'new_message', 'low_stock'
+  title     String
+  message   String
+  sentVia   String   @default("whatsapp") // 'whatsapp', 'email', 'push', 'sms'
+  isRead    Boolean  @default(false)
+  metadata  Json?
+  sentAt    DateTime @default(now())
+  readAt    DateTime?
+
+  @@index([userId])
+  @@index([sentAt])
 }

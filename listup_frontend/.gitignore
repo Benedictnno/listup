@@ -40,3 +40,19 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Browser / automation artifacts
+Default/
+IndexedDB/
+Local Storage/
+Network/
+Extension Rules/
+Extension Scripts/
+GCM Store/
+ActorSafetyLists/
+CertificateRevocation/
+CookieReadinessList/
+Crowd Deny/
+
+# Bot / session data
+Backend/tokens/

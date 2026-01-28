@@ -4,7 +4,9 @@ import { Menu, X } from 'lucide-react';
 import Link from 'next/link';
 import React from 'react';
 import { useAuthStore } from '@/store/authStore';
+import { useChat } from '@/context/ChatContext';
 import Image from 'next/image';
+import { MessageSquare } from 'lucide-react';
 
 function NavBar() {
   const [open, setOpen] = React.useState(false);
@@ -12,6 +14,7 @@ function NavBar() {
 
   // Use the proper auth store instead of local localStorage
   const { user, logout } = useAuthStore();
+  const { unreadCount } = useChat();
 
   const nav = [
     { label: "Listings", href: "/listings" },
@@ -69,6 +72,14 @@ function NavBar() {
         {/* Authentication Buttons - show Dashboard for VENDOR, Saved for USER, or Login/Signup */}
         {user ? (
           <div className="hidden items-center gap-3 md:flex">
+            <Link href="/chat" className="relative p-2 text-white/80 hover:text-white transition">
+              <MessageSquare className="h-6 w-6" />
+              {unreadCount > 0 && (
+                <span className="absolute top-0 right-0 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white border-2 border-[#0f172a]">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
+            </Link>
             {user.role === 'VENDOR' ? (
               <Link href="/dashboard">
                 <PrimaryButton>Dashboard</PrimaryButton>
@@ -116,10 +127,21 @@ function NavBar() {
             ))}
 
             {/* Mobile Authentication Buttons - Fixed Logic */}
-            <div className="mt-2 flex items-center gap-3">
+            <div className="mt-2 flex flex-col gap-2">
               {user ? (
-                // User is logged in - Show Dashboard and Logout
+                // User is logged in
                 <>
+                  <Link href="/chat" onClick={() => setOpen(false)} className="flex items-center justify-between rounded-lg px-3 py-2 text-lg text-white/80 hover:bg-white/5 hover:text-white">
+                    <div className="flex items-center gap-2">
+                      <MessageSquare className="h-5 w-5" />
+                      Messages
+                    </div>
+                    {unreadCount > 0 && (
+                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white">
+                        {unreadCount}
+                      </span>
+                    )}
+                  </Link>
                   {user.role === 'VENDOR' ? (
                     <Link href="/dashboard" className="w-full" onClick={() => setOpen(false)}>
                       <PrimaryButton>Dashboard</PrimaryButton>

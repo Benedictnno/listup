@@ -161,6 +161,6 @@ export const useAuthStore = create<AuthState>((set) => ({
 }));
 
 export const useAuth = () => {
-  const { user, login, logout } = useAuthStore();
-  return { user, login, logout };
+  const { user, login, logout, isInitialized } = useAuthStore();
+  return { user, login, logout, isInitialized };
 };

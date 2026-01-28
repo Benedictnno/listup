@@ -18,9 +18,11 @@
   "description": "",
   "dependencies": {
     "@prisma/client": "^6.17.0",
+    "@wppconnect-team/wppconnect": "^1.38.0",
     "africastalking": "^0.7.4",
     "bcryptjs": "^3.0.2",
     "cloudinary": "^1.41.3",
+    "cookie": "^1.1.1",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^17.2.1",
@@ -40,7 +42,7 @@
     "passport": "^0.7.0",
     "passport-local": "^1.0.0",
     "resend": "^6.1.2",
-    "socket.io": "^4.8.1",
+    "socket.io": "^4.8.3",
     "twilio": "^5.11.2"
   },
   "devDependencies": {

@@ -24,5 +24,6 @@ router.use('/kyc', generalLimiter, require('./kyc.routes'));
 router.use('/kyc-payment', generalLimiter, require('./kyc-payment.routes'));
 router.use('/features', generalLimiter, require('./feature.routes'));
 router.use('/whatsapp', require('./whatsappRoutes'));
+router.use('/chat', require('./chat.routes'));
 
 module.exports = router;

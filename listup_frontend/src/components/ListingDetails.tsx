@@ -1,7 +1,8 @@
 "use client";
 import Image from "next/image";
 import Link from "next/link";
-import { Phone, ClipboardCopy, Heart, Send, ChevronDown } from "lucide-react";
+import { Phone, ClipboardCopy, Heart, Send, ChevronDown, MessageSquare } from 'lucide-react';
+import ChatButton from './chat/ChatButton';
 import VerifiedBadge from "./VerifiedBadge";
 import { useState, useEffect } from "react";
 import { getFavourites, toggleFavourite, removeFavourite } from "../lib/api/favourites";
@@ -216,7 +217,7 @@ export default function ListingDetails({ listing }: { listing: Listing }) {
                 </div>
               </div>
             </Link>
-            <div className="flex gap-2 mt-3">
+            {/* <div className="flex gap-2 mt-3">
               {showPhone ? <button className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-xl shadow hover:bg-green-700" onClick={() => setShowPhone(false)}>
                 <Phone size={18} /> {listing.seller.phone}
               </button> : <button className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-xl shadow hover:bg-green-700" onClick={() => setShowPhone(true)}>
@@ -231,26 +232,17 @@ export default function ListingDetails({ listing }: { listing: Listing }) {
                 <ClipboardCopy size={24} /> copy number
               </button>
 
-            </div>
+            </div> */}
 
-            {/* Quick WhatsApp message composer */}
-            <div className="mt-4 space-y-2">
-              <label className="text-sm text-gray-600">Quick message</label>
-              <div className="flex flex-col gap-2 sm:flex-row">
-                <div className="relative flex-1">
-                  <select
-                    value={selectedQuickMessage}
-                    onChange={(e) => setSelectedQuickMessage(e.target.value)}
-                    className="w-full appearance-none rounded-xl border px-3 py-2 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-green-600"
-                  >
-                    <option>Is this still available?</option>
-                    <option>Is the price negotiable?</option>
-                    <option>Can you share more photos or details?</option>
-                    <option>What is the condition and warranty?</option>
-                    <option>Where can we meet for inspection?</option>
-                  </select>
-                  <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
-                </div>
+            <div className="space-y-3 ">
+              <ChatButton
+                sellerId={listing.seller.id}
+                listingId={listing.id}
+                label="Chat with Seller"
+                className="w-full  bg-green-600 hover:bg-green-700 text-white rounded-xl py-6 text-lg font-bold shadow-lg mt-3 shadow-green-200"
+              />
+
+              {/* <div className="flex flex-col gap-2">
                 <button
                   onClick={() => {
                     const raw = (listing.seller.phone || "").replace(/[^0-9]/g, "");
@@ -258,7 +250,6 @@ export default function ListingDetails({ listing }: { listing: Listing }) {
                       alert("Seller has no WhatsApp number available.");
                       return;
                     }
-                    // Try to normalize Nigerian numbers (11 digits starting with 0)
                     let phone = raw;
                     if (phone.length === 11 && phone.startsWith("0")) {
                       phone = `234${phone.slice(1)}`;
@@ -266,36 +257,21 @@ export default function ListingDetails({ listing }: { listing: Listing }) {
 
                     const origin = typeof window !== 'undefined' ? window.location.origin : '';
                     const listingUrl = `${origin}/listings/${listing.id}`;
-                    // const productImage = listing.images?.[0] || '';
-
-                    const parts = [
-                      `Hi ${listing.seller.name}.I got your number from Listup.ng`,
-                      `\n\nProduct: ${listing.title}`,
-                      '\n\n', customMessage ? customMessage : selectedQuickMessage,
-                      `Price: ₦${listing.price.toLocaleString()}`,
-                      // productImage ? `Image: ${productImage}` : undefined,
-                      `Link: ${listingUrl}`,
-                      // customMessage ? `\n${customMessage}` : undefined,
-                    ].filter(Boolean);
-
-                    const text = encodeURIComponent(parts.join("\n"));
+                    const text = encodeURIComponent(
+                      `Hi ${listing.seller.name}. I found your item on Listup.ng\n\nProduct: ${listing.title}\nPrice: ₦${listing.price.toLocaleString()}\nLink: ${listingUrl}`
+                    );
                     const url = `https://wa.me/${phone}?text=${text}`;
                     trackListingMessageClick(listing.id);
                     window.open(url, '_blank');
                   }}
-                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-green-600 px-4 py-2 text-white shadow hover:bg-green-700"
+                  className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-green-600 px-4 py-3 text-green-600 hover:bg-green-50 transition-colors text-sm font-medium"
                 >
                   <Send size={16} /> Send on WhatsApp
                 </button>
-              </div>
-              <textarea
-                value={customMessage}
-                onChange={(e) => setCustomMessage(e.target.value)}
-                placeholder="Add an optional message..."
-                className="mt-2 w-full rounded-xl border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-600"
-                rows={2}
-              />
-              <p className="text-xs text-gray-500">Note: WhatsApp deep links cannot attach files. We include the product image URL and page link in the message.</p>
+                <p className="text-[10px] text-center text-gray-400">
+                  Recommended: Use in-app chat for better security and 30-day history.
+                </p>
+              </div> */}
             </div>
           </div>
 
