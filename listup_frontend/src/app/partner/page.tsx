@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Loader2, Copy, Check, Download, TrendingUp, Users, DollarSign, Calendar } from 'lucide-react';
 import { toast } from 'sonner';
+import { referralApi } from '@/lib/api/referral';
 
 interface PartnerStats {
     referralCode: string;
@@ -51,25 +52,18 @@ export default function PartnerDashboardPage() {
 
     const fetchStats = async () => {
         try {
-            const [statsResponse, leaderboardResponse] = await Promise.all([
-                fetch('/api/referrals/partner/dashboard', { credentials: 'include' }),
-                fetch('/api/referrals/leaderboard')
+            const [statsData, leaderboardData] = await Promise.all([
+                referralApi.getPartnerDashboard(),
+                referralApi.getLeaderboard()
             ]);
 
-            if (!statsResponse.ok) {
-                if (statsResponse.status === 401) {
-                    router.push('/login');
-                    return;
-                }
-                throw new Error('Failed to fetch stats');
-            }
-
-            const statsData = await statsResponse.json();
-            const leaderboardData = leaderboardResponse.ok ? await leaderboardResponse.json() : { data: [] };
-
             setStats({ ...statsData.data, leaderboard: leaderboardData.data });
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error fetching partner stats:', error);
+            if (error.response?.status === 401) {
+                router.push('/login');
+                return;
+            }
             toast.error('Failed to load dashboard');
         } finally {
             setLoading(false);
@@ -112,9 +106,7 @@ export default function PartnerDashboardPage() {
     const activateAccount = async () => {
         try {
             setLoading(true);
-            const res = await fetch('/api/referrals/my-code', { credentials: 'include' });
-            if (!res.ok) throw new Error('Failed to activate account');
-
+            await referralApi.getMyCode();
             toast.success('Account activated!');
             fetchStats(); // Reload stats
         } catch (error) {

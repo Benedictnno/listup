@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Cookies from 'js-cookie';
+import { referralApi } from '@/lib/api/referral';
 
 /**
  * Engagement Tracker Component
@@ -19,15 +20,9 @@ export default function ReferralEngagementTracker() {
         // Wait 10 seconds, then qualify the click
         const timer = setTimeout(async () => {
             try {
-                const response = await fetch('/api/referrals/qualify', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ clickId }),
-                });
+                const response = await referralApi.qualifyClick(clickId);
 
-                if (response.ok) {
+                if (response.success) {
                     setQualified(true);
                     console.log('✅ Referral click qualified');
                     // Optionally remove the cookie after qualification
