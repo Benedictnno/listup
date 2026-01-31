@@ -15,7 +15,9 @@ import {
   Eye,
   EyeOff,
   RefreshCw,
+  User,
 } from "lucide-react";
+import { toast } from "sonner";
 import Link from "next/link";
 import {
   parseApiError,
@@ -91,7 +93,7 @@ function SignupContent() {
       setAddressesLoading(true);
       setAddressesError("");
       const API_BASE_URL =
-        process.env.NEXT_PUBLIC_ADDRESS_API || "http://localhost:4001/api";
+        process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api";
       const res = await axios.get(`${API_BASE_URL}/addresses`);
       const data = Array.isArray(res.data) ? res.data : [];
       const active = data.filter((a: any) => a.active);
@@ -236,7 +238,7 @@ function SignupContent() {
     // If vendor, move to step 2
     if (form.role === "VENDOR") {
       setStep(2);
-      setSuccess("Basic information completed! Now add your store details.");
+      toast.success("Basic information completed! Now add your store details.");
       // fetchAddresses will run via useEffect when step becomes 2
     } else {
       // Non-vendor: final submit
@@ -274,6 +276,7 @@ function SignupContent() {
 
       const result = await signup(payload);
 
+      toast.success("Account created successfully! Please check your email to verify your account.");
       setSuccess("Account created successfully! Please check your email to verify your account.");
       reset();
 
@@ -288,6 +291,7 @@ function SignupContent() {
       console.error("Signup error:", err);
       const message = parseApiError(err);
       setError(message);
+      toast.error(message);
 
       const valErrors: ValidationError[] = parseValidationErrors(err);
       if (valErrors.length > 0) {
@@ -484,17 +488,50 @@ function SignupContent() {
               <p className="mt-1 text-xs text-slate-500">Minimum 6 characters</p>
             </div>
 
-            {/* Role */}
+            {/* Role Custom Radio Group */}
             <div>
-              <label className="block text-sm font-medium mb-1 text-slate-700">Account Type *</label>
-              <select
-                value={form.role}
-                onChange={(e) => handleFieldChange("role", e.target.value)}
-                className="w-full p-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-lime-200"
-              >
-                <option value="VENDOR">🏪 Vendor / Seller</option>
-                <option value="USER">👤 User / Student</option>
-              </select>
+              <label className="block text-sm font-medium mb-3 text-slate-700">Account Type *</label>
+              <div className="grid grid-cols-2 gap-4">
+                {/* Vendor Option */}
+                <div
+                  onClick={() => handleFieldChange("role", "VENDOR")}
+                  className={`cursor-pointer relative p-4 rounded-xl border-2 transition-all duration-200 flex flex-col items-center gap-2 group ${form.role === "VENDOR"
+                    ? "border-lime-400 bg-lime-50/50 ring-4 ring-lime-100"
+                    : "border-slate-100 bg-slate-50 hover:border-slate-200 hover:bg-slate-100"
+                    }`}
+                >
+                  <div className={`p-2 rounded-lg transition-colors ${form.role === "VENDOR" ? "bg-lime-400 text-slate-900" : "bg-slate-200 text-slate-500 group-hover:bg-slate-300"}`}>
+                    <Store className="w-5 h-5" />
+                  </div>
+                  <span className={`text-sm font-bold ${form.role === "VENDOR" ? "text-slate-900" : "text-slate-600"}`}>Vendor</span>
+                  <p className="text-[10px] text-center text-slate-500 leading-tight">I want to sell products</p>
+
+                  {/* Selection dot */}
+                  <div className={`absolute top-2 right-2 w-4 h-4 rounded-full border-2 flex items-center justify-center ${form.role === "VENDOR" ? "border-lime-500 bg-lime-500" : "border-slate-300 bg-white"}`}>
+                    {form.role === "VENDOR" && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                  </div>
+                </div>
+
+                {/* User Option */}
+                <div
+                  onClick={() => handleFieldChange("role", "USER")}
+                  className={`cursor-pointer relative p-4 rounded-xl border-2 transition-all duration-200 flex flex-col items-center gap-2 group ${form.role === "USER"
+                    ? "border-lime-400 bg-lime-50/50 ring-4 ring-lime-100"
+                    : "border-slate-100 bg-slate-50 hover:border-slate-200 hover:bg-slate-100"
+                    }`}
+                >
+                  <div className={`p-2 rounded-lg transition-colors ${form.role === "USER" ? "bg-lime-400 text-slate-900" : "bg-slate-200 text-slate-500 group-hover:bg-slate-300"}`}>
+                    <User className="w-5 h-5" />
+                  </div>
+                  <span className={`text-sm font-bold ${form.role === "USER" ? "text-slate-900" : "text-slate-600"}`}>User</span>
+                  <p className="text-[10px] text-center text-slate-500 leading-tight">I want to buy products</p>
+
+                  {/* Selection dot */}
+                  <div className={`absolute top-2 right-2 w-4 h-4 rounded-full border-2 flex items-center justify-center ${form.role === "USER" ? "border-lime-500 bg-lime-500" : "border-slate-300 bg-white"}`}>
+                    {form.role === "USER" && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* WhatsApp Opt-in */}

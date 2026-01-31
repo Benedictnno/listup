@@ -13,6 +13,7 @@ type User = {
     storeName: string;
     storeAddress: string;
     businessCategory: string;
+    logo?: string;
   };
 };
 
@@ -63,7 +64,10 @@ export const useAuthStore = create<AuthState>((set) => ({
           isKYCVerified: userData.isKYCVerified,
           listingLimit: userData.listingLimit,
           ...(userData.vendorProfile && {
-            vendorProfile: userData.vendorProfile,
+            vendorProfile: {
+              ...userData.vendorProfile,
+              logo: userData.vendorProfile.logo // explicitly ensure logo is included
+            },
           }),
         };
 
@@ -101,7 +105,10 @@ export const useAuthStore = create<AuthState>((set) => ({
         isKYCVerified: userData.isKYCVerified,
         listingLimit: userData.listingLimit,
         ...(userData.vendorProfile && {
-          vendorProfile: userData.vendorProfile,
+          vendorProfile: {
+            ...userData.vendorProfile,
+            logo: userData.vendorProfile.logo
+          },
         }),
       };
 

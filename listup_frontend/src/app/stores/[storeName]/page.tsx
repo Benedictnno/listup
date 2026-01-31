@@ -551,11 +551,11 @@ export default function StoreProfilePage() {
 
       {/* Share Modal */}
       <Dialog open={isShareModalOpen} onOpenChange={setIsShareModalOpen}>
-        <DialogContent className="rounded-3xl">
+        <DialogContent className="rounded-3xl ">
           <DialogHeader>
             <DialogTitle>Share this store</DialogTitle>
           </DialogHeader>
-          <div className="grid grid-cols-4 gap-4 py-4">
+          <div className="grid grid-cols-4 gap-4 py-4 ">
             <Button variant="outline" className="flex flex-col gap-2 h-20 rounded-2xl border-slate-100">
               <Instagram className="text-pink-600" />
               <span className="text-[10px]">Instagram</span>

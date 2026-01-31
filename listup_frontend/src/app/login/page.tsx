@@ -6,6 +6,7 @@ import { ArrowRight, AlertCircle, CheckCircle, Eye, EyeOff, RefreshCw, AlertCirc
 import Link from "next/link";
 import { parseApiError, getFieldErrorMessage, getSuccessMessage } from "@/utils/errorHandler";
 import ErrorNotice from "@/components/ErrorNotice";
+import { toast } from "sonner";
 import api from "@/utils/axios";
 
 export default function LoginPage() {
@@ -101,7 +102,9 @@ export default function LoginPage() {
 
     try {
       const user = await login(email.trim(), password);
-      setSuccess(getSuccessMessage('login'));
+      const successMsg = getSuccessMessage('login');
+      setSuccess(successMsg);
+      toast.success(successMsg);
 
       // Redirect after a short delay to show success message
       setTimeout(() => {
@@ -134,6 +137,7 @@ export default function LoginPage() {
         message = error.message;
       }
 
+      toast.error(message);
       setError(message);
       setFieldErrors({});
     } finally {
@@ -184,8 +188,8 @@ export default function LoginPage() {
         {/* Error Display */}
         {error && (
           <div className={`mb-4 p-4 rounded-xl border text-sm ${requiresEmailVerification
-              ? 'bg-orange-50 border-orange-200 text-orange-700'
-              : 'bg-red-50 border-red-200 text-red-700'
+            ? 'bg-orange-50 border-orange-200 text-orange-700'
+            : 'bg-red-50 border-red-200 text-red-700'
             }`}>
             <div className="flex items-start gap-3">
               <AlertCircleIcon className={`w-5 h-5 mt-0.5 flex-shrink-0 ${requiresEmailVerification ? 'text-orange-500' : 'text-red-500'
@@ -239,10 +243,10 @@ export default function LoginPage() {
               onChange={(e) => handleFieldChange("email", e.target.value)}
               onBlur={(e) => handleBlur("email", e.target.value)}
               className={`w-full border p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-lime-200 focus:border-lime-400 transition-colors ${getFieldError("email")
-                  ? "border-red-300 bg-red-50"
-                  : isFieldValid("email")
-                    ? "border-green-300 bg-green-50"
-                    : "border-slate-300"
+                ? "border-red-300 bg-red-50"
+                : isFieldValid("email")
+                  ? "border-green-300 bg-green-50"
+                  : "border-slate-300"
                 }`}
             />
             {getFieldError("email") && (
@@ -272,10 +276,10 @@ export default function LoginPage() {
                 onChange={(e) => handleFieldChange("password", e.target.value)}
                 onBlur={(e) => handleBlur("password", e.target.value)}
                 className={`w-full border p-3 pr-12 rounded-xl focus:outline-none focus:ring-2 focus:ring-lime-200 focus:border-lime-400 transition-colors ${getFieldError("password")
-                    ? "border-red-300 bg-red-50"
-                    : isFieldValid("password")
-                      ? "border-green-300 bg-green-50"
-                      : "border-slate-300"
+                  ? "border-red-300 bg-red-50"
+                  : isFieldValid("password")
+                    ? "border-green-300 bg-green-50"
+                    : "border-slate-300"
                   }`}
               />
               <button
