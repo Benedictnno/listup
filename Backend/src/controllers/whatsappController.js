@@ -1,92 +1,57 @@
-const whatsappService = require('../services/whatsapp.service');
+const whatsappService = require('../services/whatsappService');
 
 /**
- * Get QR Code
+ * Meta Webhook verification (GET)
  */
-const getQr = async (req, res) => {
-    const qr = whatsappService.getQr();
-    if (!qr) {
-        return res.json({ success: false, message: 'QR Code not available yet. Please wait or check if already connected.' });
-    }
+exports.verifyWebhook = (req, res) => {
+    const mode = req.query['hub.mode'];
+    const token = req.query['hub.verify_token'];
+    const challenge = req.query['hub.challenge'];
 
-    // Serve as HTML for easy viewing
-    res.send(`
-        <html>
-            <body style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; font-family: sans-serif;">
-                <h1>Scan this QR with WhatsApp</h1>
-                <img src="${qr}" alt="WhatsApp QR Code" />
-                <p>Status: Waiting for scan...</p>
-                <script>setTimeout(() => window.location.reload(), 10000);</script>
-            </body>
-        </html>
-    `);
+    if (mode && token) {
+        if (mode === 'subscribe' && token === process.env.WEBHOOK_VERIFY_TOKEN) {
+            console.log('WEBHOOK_VERIFIED');
+            return res.status(200).send(challenge);
+        } else {
+            return res.sendStatus(403);
+        }
+    }
 };
 
 /**
- * Check Bot Status
+ * Handle incoming messages from Meta (POST)
  */
-const getBotStatus = async (req, res) => {
-    const client = whatsappService.getClient();
-    if (!client) {
-        return res.json({ success: false, status: 'DISCONNECTED', message: 'Bot client not initialized' });
-    }
-
+exports.webhook = async (req, res) => {
     try {
-        const isConnected = await client.isConnected();
-        res.json({
-            success: true,
-            status: isConnected ? 'CONNECTED' : 'DISCONNECTED',
-            session: 'listup-bot'
-        });
+        const body = req.body;
+
+        // Check if it's a WhatsApp message webhook
+        if (body.object === 'whatsapp_business_account') {
+            if (
+                body.entry &&
+                body.entry[0].changes &&
+                body.entry[0].changes[0].value.messages &&
+                body.entry[0].changes[0].value.messages[0]
+            ) {
+                const message = body.entry[0].changes[0].value.messages[0];
+                const from = message.from; // Sender's phone number
+                const msgBody = message.text ? message.text.body : null;
+
+                if (msgBody) {
+                    // Fire and forget handling to respond fast to Meta
+                    whatsappService.handleIncomingMessage(from, msgBody).catch(err =>
+                        console.error('Error handling incoming WPPS message:', err)
+                    );
+                }
+            }
+            // Meta expects a 200 OK for ALL webhooks
+            return res.status(200).send('EVENT_RECEIVED');
+        } else {
+            // Not a WhatsApp event
+            return res.sendStatus(404);
+        }
     } catch (error) {
-        res.status(500).json({ success: false, error: error.message });
+        console.error('Webhook Error:', error);
+        res.status(500).send('Error processing event');
     }
-};
-
-/**
- * Send Manual Message (Admin)
- */
-const sendManualMessage = async (req, res) => {
-    const { to, message } = req.body;
-    if (!to || !message) {
-        return res.status(400).json({ success: false, message: 'Recipient and message are required' });
-    }
-
-    try {
-        const result = await whatsappService.sendMessage(to, message);
-        res.json({ success: true, result });
-    } catch (error) {
-        res.status(500).json({ success: false, error: error.message });
-    }
-};
-
-/**
- * Diagnostic Send
- */
-const testSend = async (req, res) => {
-    const { to, message } = req.query;
-    if (!to || !message) {
-        return res.status(400).json({ success: false, message: 'Missing to or message query params' });
-    }
-    try {
-        const result = await whatsappService.sendMessage(to, message);
-        res.json({ success: true, result });
-    } catch (error) {
-        res.status(500).json({ success: false, error: error.message });
-    }
-};
-
-/**
- * Legacy Webhook
- */
-const webhook = async (req, res) => {
-    res.status(200).send('WPPConnect bot uses internal listeners, not webhooks.');
-};
-
-module.exports = {
-    getQr,
-    getBotStatus,
-    sendManualMessage,
-    testSend,
-    webhook
 };

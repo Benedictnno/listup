@@ -10,7 +10,7 @@ import { SpeedInsights } from "@vercel/speed-insights/next"
 import BottomNav from "@/components/BottomNav";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 import ReferralEngagementTracker from "@/components/ReferralEngagementTracker";
-import { ChatProvider } from "@/context/ChatContext";
+import { Toaster } from "sonner";
 
 
 const montserrat = Montserrat({
@@ -58,18 +58,17 @@ export default function RootLayout({
       <body className="antialiased">
         <AuthProvider>
           <FeatureFlagProvider>
-            <ChatProvider>
-              <NavBar />
-              <div className="pb-20 md:pb-0">
-                {children}
-              </div>
-              <Analytics />
-              <SpeedInsights />
-              <Footer />
-              <BottomNav />
-              <ReferralEngagementTracker />
-              <PWAInstallPrompt />
-            </ChatProvider>
+            <NavBar />
+            <div className="pb-20 md:pb-0">
+              {children}
+            </div>
+            <Analytics />
+            <SpeedInsights />
+            <Footer />
+            <BottomNav />
+            <ReferralEngagementTracker />
+            <PWAInstallPrompt />
+            <Toaster position="top-center" richColors />
 
           </FeatureFlagProvider>
         </AuthProvider>

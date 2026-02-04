@@ -5,7 +5,7 @@ const Footer: React.FC = () => {
   return (
     <footer className="bg-[#0B0B0E] text-slate-300">
       {/* LOGO SECTION */}
-      
+
 
       {/* FOOTER / NEWSLETTER */}
       <div className="mx-auto max-w-7xl px-4 py-14 md:px-6">

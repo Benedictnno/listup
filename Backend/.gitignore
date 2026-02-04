@@ -6,18 +6,6 @@ service-account.json
 .env.local
 .env.*.local
 
-# Browser / automation artifacts
-Default/
-IndexedDB/
-Local Storage/
-Network/
-Extension Rules/
-Extension Scripts/
-GCM Store/
-ActorSafetyLists/
-CertificateRevocation/
-CookieReadinessList/
-Crowd Deny/
-
-# Bot / session data
-Backend/tokens/
+tokens/
+logs/
+*.log

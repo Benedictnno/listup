@@ -37,6 +37,7 @@ exports.getMe = async (req, res) => {
             storeName: true,
             storeAddress: true,
             businessCategory: true,
+            logo: true,
           },
         },
       },
@@ -294,6 +295,7 @@ exports.login = async (req, res, next) => {
             storeName: true,
             storeAddress: true,
             businessCategory: true,
+            logo: true,
           },
         },
       }
