@@ -5,3 +5,7 @@ npm-debug.log*
 service-account.json
 .env.local
 .env.*.local
+
+tokens/
+logs/
+*.log
