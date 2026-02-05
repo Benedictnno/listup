@@ -65,61 +65,59 @@ export default function ListingCard({ listing }: ListingCardProps) {
         </div>
 
         {/* Content */}
-        <div className="p-3 md:p-4">
-          {/* (Save button intentionally removed; saved/unsaved actions are available on the single listing page) */}
-          <h3 className="font-semibold text-gray-900 text-base md:text-lg mb-1 md:mb-2 line-clamp-2 group-hover:text-lime-600 transition-colors">
+        <div className="p-3">
+          {/* Title */}
+          <h3 className="font-semibold text-gray-900 text-sm mb-2 line-clamp-2 group-hover:text-lime-600 transition-colors">
             {listing.title}
           </h3>
 
-          <p className="text-xl md:text-3xl font-bold text-lime-600 mb-1 md:mb-2">
+          {/* Price */}
+          <p className="text-lg font-bold text-lime-600 mb-3">
             ₦{listing.price.toLocaleString()}
           </p>
 
-          <p className="text-gray-600 text-sm mb-2 line-clamp-2">
-            {listing.description}
-          </p>
+          {/* Meta information - vertical stack */}
+          <div className="space-y-2">
+            {/* Location */}
+            {listing.location && (
+              <div className="flex items-center gap-1 text-gray-500">
+                <MapPin className="h-3.5 w-3.5 flex-shrink-0" />
+                <span className="text-xs truncate">{listing.location}</span>
+              </div>
+            )}
 
-          {/* Meta information - stack on mobile */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-sm text-gray-500 gap-2">
-            <div className="flex items-center gap-2 text-sm min-w-0">
-              {listing.location && (
-                <div className="flex items-center gap-1 min-w-0">
-                  <MapPin className="h-4 w-4 flex-shrink-0" />
-                  <span className="text-sm truncate block min-w-0">{listing.location}</span>
-                </div>
-              )}
-            </div>
-
-            {/* Category and Seller - place below on small screens */}
-            <div className="flex items-center justify-end gap-3 text-xs text-gray-500 flex-wrap">
-              {listing.category && (
-                <span className="px-2 py-1 bg-lime-50 text-lime-700 rounded-full">
-                  {listing.category.name}
+            {/* Category */}
+            {listing.category && (
+              <div className="flex items-start">
+                <span className="text-xs text-gray-600">
+                  <span className="text-gray-400">All Categories</span>
                 </span>
-              )}
-              {listing.seller && (
-                <div className="flex items-center gap-1.5 min-w-0">
-                  <div className="relative w-5 h-5 rounded-full overflow-hidden bg-gray-200 flex-shrink-0">
-                    {(listing.seller.vendorProfile?.logo || listing.seller.profileImage) ? (
-                      <Image
-                        src={listing.seller.vendorProfile?.logo || listing.seller.profileImage || ''}
-                        alt={listing.seller.vendorProfile?.storeName || listing.seller.name}
-                        fill
-                        className="object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-lime-100 text-lime-700 text-[10px] font-bold">
-                        {(listing.seller.vendorProfile?.storeName || listing.seller.name).charAt(0).toUpperCase()}
-                      </div>
-                    )}
-                  </div>
-                  <span className="truncate text-gray-500 text-xs">
-                    {listing.seller.vendorProfile?.storeName || listing.seller.name}
-                  </span>
-                  {listing.seller.isKYCVerified && <VerifiedBadge size="sm" />}
+              </div>
+            )}
+
+            {/* Seller */}
+            {listing.seller && (
+              <div className="flex items-center gap-1.5">
+                <div className="relative w-4 h-4 rounded-full overflow-hidden bg-gray-200 flex-shrink-0">
+                  {(listing.seller.vendorProfile?.logo || listing.seller.profileImage) ? (
+                    <Image
+                      src={listing.seller.vendorProfile?.logo || listing.seller.profileImage || ''}
+                      alt={listing.seller.vendorProfile?.storeName || listing.seller.name}
+                      fill
+                      className="object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-lime-100 text-lime-700 text-[10px] font-bold">
+                      {(listing.seller.vendorProfile?.storeName || listing.seller.name).charAt(0).toUpperCase()}
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
+                <span className="truncate text-gray-600 text-xs">
+                  {listing.seller.vendorProfile?.storeName || listing.seller.name}
+                </span>
+                {listing.seller.isKYCVerified && <VerifiedBadge size="sm" />}
+              </div>
+            )}
           </div>
         </div>
       </div>
