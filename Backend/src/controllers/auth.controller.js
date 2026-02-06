@@ -215,18 +215,11 @@ exports.register = async (req, res, next) => {
     }
 
     // Send WhatsApp welcome message if opted in
-    // PAUSED: Switching to Click-to-Chat email strategy (User Request)
+    // DISABLED: Switching to Click-to-Chat strategy for ban prevention
+    // We only respond to users who message us first.
     /* 
     if (user.whatsappOptIn) {
-      try {
-        const whatsappService = require('../services/whatsappService');
-        // sending async, not awaiting to keep response fast
-        whatsappService.sendWelcomeMessage(user).catch(err => 
-          console.error("Failed to send WhatsApp welcome:", err.message)
-        );
-      } catch (waError) {
-        console.error("WhatsApp service error:", waError);
-      }
+      ...
     }
     */
 

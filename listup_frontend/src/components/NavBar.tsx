@@ -60,9 +60,9 @@ function NavBar() {
         </Link>
 
         {/* Desktop Search Bar - Centered */}
-        <div className="hidden md:flex flex-1 justify-center max-w-2xl mx-auto">
+        {/* <div className="hidden md:flex flex-1 justify-center max-w-2xl mx-auto">
           <SearchBar />
-        </div>
+        </div> */}
 
         {/* <nav className="hidden items-center gap-8 text-[13px] text-white/80 md:flex">
           {nav.map((n) => (
@@ -117,14 +117,6 @@ function NavBar() {
         <div className="fixed inset-0 z-50 flex md:hidden bg-black/50 backdrop-blur-sm">
           {/* Menu Drawer */}
           <div ref={menuRef} className="relative w-3/4 max-w-sm flex flex-col bg-white text-slate-900 h-full shadow-xl">
-
-<<<<<<< HEAD
-            {/* Mobile Authentication Buttons - Fixed Logic */}
-            <div className="mt-2 flex items-center gap-3">
-              {user ? (
-                // User is logged in - Show Dashboard and Logout
-                <>
-=======
             {/* Header with Close Button */}
             <div className="flex items-center justify-center p-4 border-b border-slate-200 relative">
               <h2 className="text-xl font-bold text-slate-900">Categories</h2>
@@ -157,7 +149,6 @@ function NavBar() {
             <div className="px-4 py-4 bg-white">
               {user ? (
                 <div className="flex flex-col gap-2 text-center">
->>>>>>> 5d05430 (Fix Render deployment: Use Chromium instead of Chrome for WPPConnect\n\n- Remove Chrome installation from build script\n- Configure WPPConnect to use Chromium (useChrome: false)\n- Add executablePath support for PUPPETEER_EXECUTABLE_PATH env var\n- Enhanced browserArgs for containerized environments\n- Update product cards UI with simplified layout\n- Center search bar in NavBar and improve mobile menu)
                   {user.role === 'VENDOR' ? (
                     <Link href="/dashboard" onClick={() => setOpen(false)} className="flex items-center justify-center gap-2 py-2.5 text-slate-900 hover:bg-slate-50 font-normal text-base transition-colors">
                       <Layers className="h-4 w-4" />
@@ -180,12 +171,11 @@ function NavBar() {
                 </div>
               )}
             </div>
-
           </div>
         </div>
       )}
     </header>
-  )
+  );
 }
 
 export default NavBar
