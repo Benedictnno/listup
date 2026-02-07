@@ -14,7 +14,7 @@ const router = express.Router();
 router.get('/random', async (req, res) => {
   try {
     const now = new Date();
-    
+
     // Get all active, non-expired advertisements
     const activeAds = await prisma.advertisement.findMany({
       where: {
@@ -52,6 +52,47 @@ router.get('/random', async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to fetch advertisement'
+    });
+  }
+});
+
+/**
+ * GET /api/advertisements/carousel
+ * Get all active HERO_CAROUSEL advertisements
+ * Public endpoint - no authentication required
+ */
+router.get('/carousel', async (req, res) => {
+  try {
+    const now = new Date();
+
+    const activeCarouselAds = await prisma.advertisement.findMany({
+      where: {
+        isActive: true,
+        position: 'HERO_CAROUSEL',
+        expiryDate: {
+          gte: now
+        }
+      },
+      select: {
+        id: true,
+        title: true,
+        imageUrl: true,
+        targetUrl: true
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+
+    res.json({
+      success: true,
+      data: { advertisements: activeCarouselAds }
+    });
+  } catch (error) {
+    console.error('Get carousel advertisements error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch carousel advertisements'
     });
   }
 });

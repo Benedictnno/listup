@@ -21,10 +21,10 @@ export default function SearchBar() {
   const [suggestions] = useState<SearchSuggestion[]>([
     { id: '1', text: 'iPhone 13', type: 'trending', icon: <TrendingUp size={16} /> },
     { id: '2', text: 'Samsung Galaxy', type: 'trending', icon: <TrendingUp size={16} /> },
-    { id: '3', text: 'MacBook Pro', type: 'trending', icon: <TrendingUp size={16} /> },
-    { id: '4', text: 'Lagos', type: 'location', icon: <MapPin size={16} /> },
-    { id: '5', text: 'Abuja', type: 'location', icon: <MapPin size={16} /> },
-    { id: '6', text: 'Port Harcourt', type: 'location', icon: <MapPin size={16} /> },
+    { id: '3', text: 'pefume', type: 'trending', icon: <TrendingUp size={16} /> },
+    { id: '4', text: 'school gate', type: 'location', icon: <MapPin size={16} /> },
+    { id: '5', text: 'iworoko', type: 'location', icon: <MapPin size={16} /> },
+    { id: '6', text: 'Phase 2', type: 'location', icon: <MapPin size={16} /> },
   ]);
 
   // Recent searches from localStorage
@@ -61,7 +61,7 @@ export default function SearchBar() {
 
   const addToRecentSearches = (searchTerm: string) => {
     if (!searchTerm.trim()) return;
-    
+
     setRecentSearches(prev => {
       const filtered = prev.filter(term => term !== searchTerm);
       const newSearches = [searchTerm, ...filtered].slice(0, 5); // Keep only 5 recent
@@ -85,7 +85,7 @@ export default function SearchBar() {
     setSearch(suggestion.text);
     setShowSuggestions(false);
     addToRecentSearches(suggestion.text);
-    
+
     // Trigger search immediately when suggestion is clicked
     setIsSearching(true);
     setTimeout(() => setIsSearching(false), 300);
@@ -96,7 +96,7 @@ export default function SearchBar() {
     setSearch(searchTerm);
     setShowSuggestions(false);
     addToRecentSearches(searchTerm);
-    
+
     // Trigger search immediately when recent search is clicked
     setIsSearching(true);
     setTimeout(() => setIsSearching(false), 300);
@@ -104,12 +104,12 @@ export default function SearchBar() {
 
   const handleSearchClick = () => {
     if (!inputValue.trim()) return;
-    
+
     setIsSearching(true);
     setSearch(inputValue.trim());
     addToRecentSearches(inputValue.trim());
     setShowSuggestions(false);
-    
+
     // Simulate search delay
     setTimeout(() => setIsSearching(false), 300);
   };
@@ -202,16 +202,16 @@ export default function SearchBar() {
   };
 
   return (
-    <div className="mb-6" ref={searchRef}>
-      <div className="relative max-w-2xl mx-auto">
+    <div className="w-full" ref={searchRef}>
+      <div className="relative w-full mx-auto">
         {/* Search Input with Button */}
         <div className="relative flex">
           <div className="relative flex-1">
-            <Search 
-              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" 
-              size={20} 
+            <Search
+              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+              size={20}
             />
-            
+
             <input
               type="text"
               placeholder="Search for products, categories, or locations..."
@@ -219,9 +219,9 @@ export default function SearchBar() {
               onChange={handleInputChange}
               onFocus={handleInputFocus}
               onKeyPress={handleKeyPress}
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-lime-400 focus:border-transparent transition-all focus:outline-none"
+              className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 text-white placeholder-slate-400 rounded-l-lg focus:ring-2 focus:ring-lime-400 focus:border-transparent transition-all focus:outline-none"
             />
-            
+
             {/* Clear Button */}
             {inputValue && (
               <button
@@ -232,16 +232,15 @@ export default function SearchBar() {
               </button>
             )}
           </div>
-          
+
           {/* Search Button */}
           <button
             onClick={handleSearchClick}
             disabled={!inputValue.trim() || isSearching}
-            className={`px-6 py-3 bg-lime-500 text-white font-medium rounded-r-lg transition-all focus:outline-none focus:ring-2 focus:ring-lime-400 focus:ring-offset-2 ${
-              !inputValue.trim() || isSearching
+            className={`px-6 py-3 bg-lime-500 text-white font-medium rounded-r-lg transition-all focus:outline-none focus:ring-2 focus:ring-lime-400 focus:ring-offset-2 ${!inputValue.trim() || isSearching
                 ? 'opacity-50 cursor-not-allowed'
                 : 'hover:bg-lime-600 active:bg-lime-700'
-            }`}
+              }`}
           >
             {isSearching ? (
               <div className="flex items-center gap-2">

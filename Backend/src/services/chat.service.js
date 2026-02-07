@@ -1,5 +1,4 @@
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const prisma = require('../lib/prisma');
 
 class ChatService {
     /**
@@ -7,6 +6,11 @@ class ChatService {
      * Supports hybrid approach: listing-specific or general vendor.
      */
     async createOrGetConversation(buyerId, sellerId, listingId = null) {
+        console.log('ChatService: createOrGetConversation called with:', { buyerId, sellerId, listingId });
+        console.log('Prisma keys:', Object.keys(prisma));
+        if (!prisma.conversation) {
+            console.error('CRITICAL: prisma.conversation is UNDEFINED!');
+        }
         // Try to find existing conversation
         let conversation = await prisma.conversation.findUnique({
             where: {

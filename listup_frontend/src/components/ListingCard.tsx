@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Package, MapPin } from "lucide-react";
 import VerifiedBadge from "./VerifiedBadge";
+import ChatButton from "./chat/ChatButton";
 
 interface Listing {
   id: string;
@@ -55,64 +56,59 @@ export default function ListingCard({ listing }: ListingCardProps) {
               <Package className="h-12 w-12 text-gray-300" />
             </div>
           )}
-          {listing.condition && (
-            <div className="absolute top-2 right-2 z-10">
-              <span className="px-2 py-1 bg-white/90 backdrop-blur-sm text-gray-700 text-xs font-medium rounded-md shadow-sm border border-gray-100">
-                {listing.condition}
-              </span>
-            </div>
-          )}
+          <div className="absolute top-2 right-2 z-10">
+            <span className="px-3 py-1 bg-white text-slate-900 text-xs font-bold rounded-md shadow-md uppercase font-montserrat tracking-tight">
+              New
+            </span>
+          </div>
         </div>
 
         {/* Content */}
-        <div className="p-3">
+        <div className="p-3 bg-white">
           {/* Title */}
-          <h3 className="font-semibold text-gray-900 text-sm mb-2 line-clamp-2 group-hover:text-lime-600 transition-colors">
+          <h3 className="font-bold text-slate-900 text-base mb-2 line-clamp-1">
             {listing.title}
           </h3>
 
-          {/* Price */}
-          <p className="text-lg font-bold text-lime-600 mb-3">
-            ₦{listing.price.toLocaleString()}
-          </p>
+          {/* Price & Chat Icon */}
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-xl font-bold text-lime-600">
+              ₦{listing.price.toLocaleString()}
+            </p>
+            <ChatButton
+              sellerId={listing.seller?.id || ''}
+              listingId={listing.id}
+              variant="ghost"
+              size="icon"
+              label=""
+              className="text-slate-900 hover:text-lime-600 hover:bg-transparent p-0 h-auto w-auto"
+            />
+          </div>
 
           {/* Meta information - vertical stack */}
           <div className="space-y-2">
             {/* Location */}
             {listing.location && (
-              <div className="flex items-center gap-1 text-gray-500">
-                <MapPin className="h-3.5 w-3.5 flex-shrink-0" />
-                <span className="text-xs truncate">{listing.location}</span>
+              <div className="flex items-center gap-1.5 text-slate-400">
+                <MapPin className="h-4 w-4 shrink-0" />
+                <span className="text-sm font-montserrat">{listing.location}</span>
               </div>
             )}
 
-            {/* Category */}
-            {listing.category && (
-              <div className="flex items-start">
-                <span className="text-xs text-gray-600">
-                  <span className="text-gray-400">All Categories</span>
-                </span>
-              </div>
-            )}
+            {/* Category Badge */}
+            <div className="inline-block px-3 py-1 bg-lime-100/50 rounded-full">
+              <span className="text-xs font-medium text-lime-700">All Categories</span>
+            </div>
 
             {/* Seller */}
             {listing.seller && (
-              <div className="flex items-center gap-1.5">
-                <div className="relative w-4 h-4 rounded-full overflow-hidden bg-gray-200 flex-shrink-0">
-                  {(listing.seller.vendorProfile?.logo || listing.seller.profileImage) ? (
-                    <Image
-                      src={listing.seller.vendorProfile?.logo || listing.seller.profileImage || ''}
-                      alt={listing.seller.vendorProfile?.storeName || listing.seller.name}
-                      fill
-                      className="object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-lime-100 text-lime-700 text-[10px] font-bold">
-                      {(listing.seller.vendorProfile?.storeName || listing.seller.name).charAt(0).toUpperCase()}
-                    </div>
-                  )}
+              <div className="flex items-center gap-2 pt-1">
+                <div className="relative w-5 h-5 rounded-full overflow-hidden bg-slate-900 flex-shrink-0">
+                  <div className="w-full h-full flex items-center justify-center text-[10px] font-bold text-white uppercase">
+                    {(listing.seller.vendorProfile?.storeName || listing.seller.name).charAt(0)}
+                  </div>
                 </div>
-                <span className="truncate text-gray-600 text-xs">
+                <span className="truncate text-slate-400 text-xs font-montserrat">
                   {listing.seller.vendorProfile?.storeName || listing.seller.name}
                 </span>
                 {listing.seller.isKYCVerified && <VerifiedBadge size="sm" />}

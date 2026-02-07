@@ -78,10 +78,8 @@ const ChatButton = ({
             </Button>
 
             <LoginPromptDialog
-                isOpen={showLoginPrompt}
-                onClose={() => setShowLoginPrompt(false)}
-                title="Login to Chat"
-                description="You need to be logged in to send messages to sellers on ListUp."
+                open={showLoginPrompt}
+                onOpenChange={setShowLoginPrompt}
             />
         </>
     );

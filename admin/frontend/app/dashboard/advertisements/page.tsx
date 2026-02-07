@@ -16,6 +16,7 @@ interface Advertisement {
   startDate: string;
   expiryDate: string;
   isActive: boolean;
+  position: 'HERO_CAROUSEL' | 'RANDOM';
   impressions: number;
   clicks: number;
   createdBy: {
@@ -143,11 +144,14 @@ export default function AdvertisementsPage() {
                         {ad.title}
                         <span
                           className={`text-xs px-2 py-1 rounded ${isCurrentlyActive
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-gray-100 text-gray-800'
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-gray-100 text-gray-800'
                             }`}
                         >
                           {isCurrentlyActive ? 'Active' : 'Inactive'}
+                        </span>
+                        <span className="text-xs px-2 py-1 rounded bg-blue-100 text-blue-800">
+                          {ad.position === 'HERO_CAROUSEL' ? 'Hero Carousel' : 'Random Section'}
                         </span>
                       </CardTitle>
                       <CardDescription>

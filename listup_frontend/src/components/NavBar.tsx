@@ -2,16 +2,18 @@
 import { PrimaryButton } from '@/utils/helpers';
 import { Menu, X, Layers } from 'lucide-react';
 import Link from 'next/link';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { useChat } from '@/context/ChatContext';
 import Image from 'next/image';
 import { MessageSquare } from 'lucide-react';
+import { fetchCategories, Category } from '@/lib/api/categories';
 
 import SearchBar from './SearchBar';
 
 function NavBar() {
   const [open, setOpen] = React.useState(false);
+  const [categories, setCategories] = useState<Category[]>([]);
   const menuRef = React.useRef<HTMLDivElement | null>(null);
 
   // Use the proper auth store instead of local localStorage
@@ -53,6 +55,37 @@ function NavBar() {
     };
   }, [open]);
 
+  // Fetch and cache categories
+  useEffect(() => {
+    const loadCategories = async () => {
+      // 1. Try to load from localStorage first
+      const cached = localStorage.getItem('listup_categories');
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setCategories(parsed);
+          }
+        } catch (e) {
+          console.error("Error parsing cached categories", e);
+        }
+      }
+
+      // 2. Fetch from API to update cache
+      try {
+        const fetched = await fetchCategories();
+        if (fetched && fetched.length > 0) {
+          setCategories(fetched);
+          localStorage.setItem('listup_categories', JSON.stringify(fetched));
+        }
+      } catch (error) {
+        console.error("Failed to update categories from API", error);
+      }
+    };
+
+    loadCategories();
+  }, []);
+
   return (
     <header className="sticky top-0 z-40 w-full border-b border-slate-200/20 bg-[#0f172a] backdrop-blur">
       <div className="mx-auto flex max-w-7xl items-center text-lg justify-between px-4 py-3 md:px-6">
@@ -63,7 +96,7 @@ function NavBar() {
         </Link>
 
         {/* Desktop Search Bar - Centered */}
-        <div className="hidden md:flex flex-1 justify-center max-w-2xl mx-auto">
+        <div className="hidden md:flex flex-1 justify-center max-w-[720px] mx-auto">
           <SearchBar />
         </div>
 
@@ -141,15 +174,25 @@ function NavBar() {
             <div className="flex-1 overflow-y-auto py-6">
               <div className="px-4">
                 <div className="flex flex-col gap-1 text-center">
-                  <Link href="/categories/audio" onClick={() => setOpen(false)} className="py-2.5 text-slate-900 hover:bg-slate-50 text-base transition-colors">Audio</Link>
-                  <Link href="/categories/beauty-personal-care" onClick={() => setOpen(false)} className="py-2.5 text-slate-900 hover:bg-slate-50 text-base transition-colors">Beauty & Personal care</Link>
-                  <Link href="/categories/computers" onClick={() => setOpen(false)} className="py-2.5 text-slate-900 hover:bg-slate-50 text-base transition-colors">Computers</Link>
-                  <Link href="/categories/electronics" onClick={() => setOpen(false)} className="py-2.5 text-slate-900 hover:bg-slate-50 text-base transition-colors">Electronics</Link>
-                  <Link href="/categories/fashion-clothing" onClick={() => setOpen(false)} className="py-2.5 text-slate-900 hover:bg-slate-50 text-base transition-colors">Fashion & Clothing</Link>
-                  <Link href="/categories/food-snacks" onClick={() => setOpen(false)} className="py-2.5 text-slate-900 hover:bg-slate-50 text-base transition-colors">Food & Snacks</Link>
-                  <Link href="/categories/handmade-crafts" onClick={() => setOpen(false)} className="py-2.5 text-slate-900 hover:bg-slate-50 text-base transition-colors">Handmade & Crafts</Link>
-                  <Link href="/categories/mobile" onClick={() => setOpen(false)} className="py-2.5 text-slate-900 hover:bg-slate-50 text-base transition-colors">Mobile</Link>
-                  <Link href="/categories/utensils" onClick={() => setOpen(false)} className="py-2.5 text-slate-900 hover:bg-slate-50 text-base transition-colors">Utensils</Link>
+                  {categories.length > 0 ? (
+                    categories.map((cat) => (
+                      <Link
+                        key={cat.id}
+                        href={`/categories/${cat.slug}`}
+                        onClick={() => setOpen(false)}
+                        className="py-2.5 text-slate-900 hover:bg-slate-50 text-base transition-colors"
+                      >
+                        {cat.name}
+                      </Link>
+                    ))
+                  ) : (
+                    // Fallback categories if API fails or is loading
+                    <>
+                      <Link href="/categories/audio" onClick={() => setOpen(false)} className="py-2.5 text-slate-900 hover:bg-slate-50 text-base transition-colors">Audio</Link>
+                      <Link href="/categories/electronics" onClick={() => setOpen(false)} className="py-2.5 text-slate-900 hover:bg-slate-50 text-base transition-colors">Electronics</Link>
+                      <Link href="/categories/mobile" onClick={() => setOpen(false)} className="py-2.5 text-slate-900 hover:bg-slate-50 text-base transition-colors">Mobile</Link>
+                    </>
+                  )}
                 </div>
               </div>
             </div>

@@ -11,6 +11,9 @@ import Link from "next/link";
 import { GhostButton } from "@/utils/helpers";
 import { useAuthStore } from "@/store/authStore";
 import OutsideAd from "@/components/OutsideAd";
+import CategorySidebar from "@/components/CategorySidebar";
+import HeroCarousel from "@/components/HeroCarousel";
+import PromoCards from "@/components/PromoCards";
 /**
  * Marketplace Landing Page
  * Framework: Next.js (app router ready) + TailwindCSS
@@ -26,85 +29,63 @@ export default function MarketplaceLanding() {
     <div className="min-h-screen w-full text-slate-800 font-montserrat realative">
       {/* NAVBAR */}
 
-      {/* HERO */}
-      <section className="relative overflow-hidden bg-slate-900">
-        <div className="absolute inset-0 z-0 bg-[radial-gradient(1200px_600px_at_20%_-10%,rgba(148,163,184,0.18),transparent_70%),radial-gradient(800px_400px_at_100%_10%,rgba(148,163,184,0.12),transparent_60%)]" />
-        <div className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-10 px-4 py-16 md:grid-cols-2 md:px-6 md:py-24">
-          <motion.div
-            initial={{ opacity: 0, y: 14 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="relative z-10"
-          >
-            <SectionEyebrow>New</SectionEyebrow>
-            <h1 className="text-3xl font-bold leading-tight text-white md:text-4xl font-montserrat">
-              Find Your Next Great
-              <br />
-              Deal Today!
-            </h1>
-            <p className="mt-3 max-w-xl text-sm leading-relaxed text-slate-300 font-montserrat">
-              Browse thousands of verified listings across categories. Buy and sell
-              smarter with our community-driven marketplace.
-            </p>
+      {/* HERO SECTION */}
+      <section className="bg-[#0f172a] py-6 md:py-10">
+        <div className="mx-auto max-w-7xl px-4 md:px-6">
 
-
-
-
+          {/* Mobile Search Bar - Visible only on mobile as per mockup */}
+          <div className="md:hidden mb-6">
             <form onSubmit={(e) => {
               e.preventDefault();
               const searchInput = e.currentTarget.querySelector('input');
               const searchValue = searchInput?.value || '';
               window.location.href = `/listings?q=${encodeURIComponent(searchValue)}`;
-            }} className="border flex rounded h-10 items-center text-white bg-white/10 overflow-hidden">
-              <Search className="h-5 w-10 ml-2" />
+            }} className="flex w-full items-center bg-[#1e293b] border border-slate-700 rounded-xl overflow-hidden h-14">
+              <div className="pl-4">
+                <Search className="h-5 w-5 text-slate-400" />
+              </div>
               <input
                 type="text"
-                className="w-full h-full bg-transparent text-white outline-0 px-2 font-montserrat"
                 placeholder="Search listings..."
+                className="flex-1 bg-transparent text-white outline-none px-3 font-montserrat text-base"
               />
               <button
                 type="submit"
-                className="h-full px-4 bg-lime-400 text-slate-900 font-medium hover:bg-lime-300 transition font-montserrat"
+                className="h-full px-6 bg-lime-400 text-slate-900 font-bold font-montserrat hover:bg-lime-300 transition-colors"
               >
                 Search
               </button>
             </form>
-            <p className="mt-2 text-xs text-slate-400 font-montserrat">No fees to browse. Secure checkout on eligible items.</p>
-            {user ? null : <div className="mt-6 flex flex-wrap items-center gap-3">
-              <Link href="/signup">
-                <PrimaryButton>
-                  Get Signed Up
-                </PrimaryButton>
-              </Link>
-              <Link href={"/login"}>
-                <GhostButton>
-                  Login
-                </GhostButton>
-              </Link>
-            </div>}
-          </motion.div>
+          </div>
 
+          <div className="flex flex-col md:flex-row gap-6 h-auto md:h-[420px] lg:h-[480px]">
+            {/* 1. Category Sidebar (Desktop Only) */}
+            <CategorySidebar />
 
-          <motion.div
-            initial={{ opacity: 0, y: 14 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            className="relative z-10"
-          >
-            <div className="relative mx-auto w-full max-w-md overflow-hidden rounded-3xl border border-white/10 bg-white/5 shadow-2xl">
-              <Image
-                src={"/images/mainImg.jpg"}
-                alt="Friends shopping in a cafe"
-                width={500}
-                height={600}
-                className="h-72 w-full object-cover md:h-96"
-                priority={true}
-              />
-              <div className="absolute bottom-3 right-3 rounded-xl bg-slate-900/80 px-3 py-1.5 text-[11px] text-white backdrop-blur font-montserrat">
-                Verified Sellers Only
-              </div>
+            {/* 2. Hero Carousel (Main) */}
+            <div className="flex-1 h-[300px] md:h-full">
+              <HeroCarousel />
             </div>
-          </motion.div>
+
+            {/* 3. Promo Cards (Desktop Only) */}
+            <PromoCards />
+          </div>
+
+          {/* Mobile Promo Buttons (Visible only on mobile) */}
+          <div className="grid grid-cols-2 gap-3 mt-6 md:hidden">
+            <Link
+              href="/signup?redirect=dashboard"
+              className="bg-white text-slate-900 font-bold py-4 rounded-2xl text-center font-montserrat text-sm shadow-lg active:scale-95 transition-transform"
+            >
+              Start Selling
+            </Link>
+            <a
+              href="https://wa.me/2348012345678"
+              className="bg-lime-400 text-slate-900 font-bold py-4 rounded-2xl text-center font-montserrat text-sm shadow-lg active:scale-95 transition-transform"
+            >
+              Join WhatsApp
+            </a>
+          </div>
         </div>
       </section>
 

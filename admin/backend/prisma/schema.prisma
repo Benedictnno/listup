@@ -19,6 +19,11 @@ enum AdType {
   SEARCH_BOOST
 }
 
+enum AdvertisementPosition {
+  HERO_CAROUSEL
+  RANDOM
+}
+
 enum AdStatus {
   PENDING
   ACTIVE
@@ -629,6 +634,7 @@ model Advertisement {
   title       String
   imageUrl    String   // URL to the advertisement image
   targetUrl   String?  // Optional URL to redirect when ad is clicked
+  position    AdvertisementPosition @default(RANDOM)
   duration    Int      // Duration in days (3, 7, 15, or 31)
   startDate   DateTime @default(now())
   expiryDate  DateTime // Calculated from startDate + duration

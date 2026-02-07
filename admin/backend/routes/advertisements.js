@@ -106,6 +106,7 @@ router.post('/', [
   body('title').trim().notEmpty().withMessage('Title is required'),
   body('imageUrl').trim().isURL().withMessage('Valid image URL is required'),
   body('targetUrl').optional({ checkFalsy: true }).trim().isURL().withMessage('Valid target URL required'),
+  body('position').optional().isIn(['HERO_CAROUSEL', 'RANDOM']).withMessage('Invalid position'),
   body('duration').isInt({ min: 1 }).withMessage('Duration must be a positive integer')
     .custom((value) => {
       const validDurations = [3, 7, 15, 31];
@@ -127,7 +128,7 @@ router.post('/', [
     }
 
     const { title, imageUrl, targetUrl, duration } = req.body;
-    
+
     // Calculate expiry date
     const startDate = new Date();
     const expiryDate = new Date(startDate);
@@ -138,6 +139,7 @@ router.post('/', [
         title,
         imageUrl,
         targetUrl: targetUrl && targetUrl.trim() ? targetUrl.trim() : null,
+        position: req.body.position || 'RANDOM',
         duration: parseInt(duration),
         startDate,
         expiryDate,
@@ -174,6 +176,7 @@ router.put('/:id', [
   body('title').optional().trim().notEmpty().withMessage('Title cannot be empty'),
   body('imageUrl').optional().trim().isURL().withMessage('Valid image URL is required'),
   body('targetUrl').optional({ checkFalsy: true }).trim().isURL().withMessage('Valid target URL required'),
+  body('position').optional().isIn(['HERO_CAROUSEL', 'RANDOM']).withMessage('Invalid position'),
   body('isActive').optional().isBoolean().withMessage('isActive must be boolean')
 ], async (req, res) => {
   try {
@@ -205,6 +208,7 @@ router.put('/:id', [
     if (title !== undefined) updateData.title = title;
     if (imageUrl !== undefined) updateData.imageUrl = imageUrl;
     if (targetUrl !== undefined) updateData.targetUrl = targetUrl && targetUrl.trim() ? targetUrl.trim() : null;
+    if (req.body.position !== undefined) updateData.position = req.body.position;
     if (isActive !== undefined) updateData.isActive = isActive;
 
     const advertisement = await prisma.advertisement.update({
@@ -265,6 +269,64 @@ router.delete('/:id', auth, async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to delete advertisement'
+    });
+  }
+});
+
+/**
+ * POST /api/advertisements/bulk
+ * Create multiple advertisements at once
+ */
+router.post('/bulk', [
+  auth,
+  body('ads').isArray().withMessage('Ads must be an array'),
+  body('ads.*.title').trim().notEmpty().withMessage('Title is required for all ads'),
+  body('ads.*.imageUrl').trim().isURL().withMessage('Valid image URL is required for all ads'),
+  body('ads.*.duration').isInt({ min: 1 }).withMessage('Duration must be a positive integer')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation error',
+        errors: errors.array()
+      });
+    }
+
+    const { ads } = req.body;
+    const startDate = new Date();
+
+    const createData = ads.map(ad => {
+      const expiryDate = new Date(startDate);
+      expiryDate.setDate(expiryDate.getDate() + parseInt(ad.duration));
+
+      return {
+        title: ad.title,
+        imageUrl: ad.imageUrl,
+        targetUrl: ad.targetUrl && ad.targetUrl.trim() ? ad.targetUrl.trim() : null,
+        position: ad.position || 'RANDOM',
+        duration: parseInt(ad.duration),
+        startDate,
+        expiryDate,
+        createdById: req.user.id
+      };
+    });
+
+    const result = await prisma.advertisement.createMany({
+      data: createData
+    });
+
+    res.status(201).json({
+      success: true,
+      message: `${result.count} advertisements created successfully`,
+      count: result.count
+    });
+  } catch (error) {
+    console.error('Bulk create advertisements error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to create advertisements'
     });
   }
 });

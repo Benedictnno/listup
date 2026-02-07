@@ -15,6 +15,14 @@ interface AdFormData {
   imageUrl: string;
   targetUrl?: string;
   duration: number;
+  position: 'HERO_CAROUSEL' | 'RANDOM';
+}
+
+interface QueuedFile {
+  file: File;
+  preview: string;
+  status: 'pending' | 'uploading' | 'uploaded' | 'error';
+  url?: string;
 }
 
 type UploadMode = 'url' | 'file';
@@ -26,7 +34,7 @@ export default function CreateAdvertisementPage() {
   const [imagePreview, setImagePreview] = useState<string>('');
   const [uploadMode, setUploadMode] = useState<UploadMode>('file');
   const [isUploading, setIsUploading] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [queuedFiles, setQueuedFiles] = useState<QueuedFile[]>([]);
 
   const {
     register,
@@ -49,45 +57,70 @@ export default function CreateAdvertisementPage() {
 
   // Handle file selection
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      // Validate file type
-      if (!file.type.startsWith('image/')) {
-        toast.error('Please select an image file');
-        return;
-      }
+    const files = Array.from(e.target.files || []);
+    if (files.length > 0) {
+      const newQueuedFiles: QueuedFile[] = [];
 
-      // Validate file size (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error('Image size must be less than 5MB');
-        return;
-      }
+      files.forEach(file => {
+        if (!file.type.startsWith('image/')) {
+          toast.error(`File ${file.name} is not an image`);
+          return;
+        }
 
-      setSelectedFile(file);
+        if (file.size > 5 * 1024 * 1024) {
+          toast.error(`File ${file.name} is too large (max 5MB)`);
+          return;
+        }
 
-      // Create preview
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+        const preview = URL.createObjectURL(file);
+        newQueuedFiles.push({
+          file,
+          preview,
+          status: 'pending'
+        });
+      });
+
+      setQueuedFiles(prev => [...prev, ...newQueuedFiles]);
     }
   };
 
+  const removeQueuedFile = (index: number) => {
+    setQueuedFiles(prev => {
+      const newFiles = [...prev];
+      URL.revokeObjectURL(newFiles[index].preview);
+      newFiles.splice(index, 1);
+      return newFiles;
+    });
+  };
+
   // Handle upload button click
-  const handleUploadClick = async () => {
-    if (!selectedFile) {
-      toast.error('Please select an image first');
+  const handleUploadAll = async () => {
+    if (queuedFiles.length === 0) {
+      toast.error('Please select images first');
       return;
     }
 
-    try {
-      const uploadedUrl = await uploadToCloudinary(selectedFile);
-      setValue('imageUrl', uploadedUrl);
-      toast.success('Image uploaded successfully!');
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to upload image');
+    setIsUploading(true);
+    const updatedFiles = [...queuedFiles];
+
+    for (let i = 0; i < updatedFiles.length; i++) {
+      if (updatedFiles[i].status === 'uploaded') continue;
+
+      try {
+        updatedFiles[i].status = 'uploading';
+        setQueuedFiles([...updatedFiles]);
+
+        const url = await uploadToCloudinary(updatedFiles[i].file);
+        updatedFiles[i].status = 'uploaded';
+        updatedFiles[i].url = url;
+        setQueuedFiles([...updatedFiles]);
+      } catch (error) {
+        updatedFiles[i].status = 'error';
+        setQueuedFiles([...updatedFiles]);
+        toast.error(`Failed to upload ${updatedFiles[i].file.name}`);
+      }
     }
+    setIsUploading(false);
   };
 
   // Upload image to Cloudinary
@@ -116,30 +149,56 @@ export default function CreateAdvertisementPage() {
   const onSubmit = async (data: AdFormData) => {
     setIsLoading(true);
     try {
-      // Validate imageUrl
-      if (!data.imageUrl) {
-        toast.error('Please upload an image or provide an image URL');
-        setIsLoading(false);
-        return;
+      if (uploadMode === 'file') {
+        const uploadedFiles = queuedFiles.filter(f => f.status === 'uploaded');
+        if (uploadedFiles.length === 0) {
+          toast.error('Please upload at least one image');
+          setIsLoading(false);
+          return;
+        }
+
+        if (uploadedFiles.length === 1) {
+          // Single creation
+          const payload = {
+            title: data.title,
+            imageUrl: uploadedFiles[0].url,
+            duration: data.duration,
+            position: data.position,
+            targetUrl: data.targetUrl?.trim() || null
+          };
+          await api.post('/advertisements', payload);
+        } else {
+          // Bulk creation
+          const payload = {
+            ads: uploadedFiles.map(f => ({
+              title: data.title,
+              imageUrl: f.url,
+              duration: data.duration,
+              position: data.position,
+              targetUrl: data.targetUrl?.trim() || null
+            }))
+          };
+          await api.post('/advertisements/bulk', payload);
+        }
+      } else {
+        // URL Mode - Single creation
+        if (!data.imageUrl) {
+          toast.error('Please provide an image URL');
+          setIsLoading(false);
+          return;
+        }
+
+        const payload = {
+          title: data.title,
+          imageUrl: data.imageUrl,
+          duration: data.duration,
+          position: data.position,
+          targetUrl: data.targetUrl?.trim() || null
+        };
+        await api.post('/advertisements', payload);
       }
 
-
-
-      // Prepare payload - only include targetUrl if it has a value
-      const payload: any = {
-        title: data.title,
-        imageUrl: data.imageUrl,
-        duration: data.duration,
-      };
-
-      // Only add targetUrl if it's not empty
-      if (data.targetUrl && data.targetUrl.trim()) {
-        payload.targetUrl = data.targetUrl.trim();
-      }
-
-      await api.post('/advertisements', payload);
-
-      toast.success('Advertisement created successfully');
+      toast.success('Advertisement(s) created successfully');
       router.push('/dashboard/advertisements');
     } catch (error: any) {
       console.error('Error creating advertisement:', error);
@@ -220,6 +279,7 @@ export default function CreateAdvertisementPage() {
                       type="file"
                       id="imageFile"
                       accept="image/*"
+                      multiple
                       onChange={handleFileSelect}
                       className="hidden"
                       disabled={isUploading}
@@ -230,7 +290,7 @@ export default function CreateAdvertisementPage() {
                     >
                       <Upload className="w-12 h-12 text-gray-400 mb-3" />
                       <p className="text-sm font-medium text-gray-700 mb-1">
-                        {selectedFile ? selectedFile.name : 'Click to select image'}
+                        Click to select images (multiple allowed)
                       </p>
                       <p className="text-xs text-gray-500">
                         PNG, JPG, WEBP up to 5MB
@@ -238,12 +298,43 @@ export default function CreateAdvertisementPage() {
                     </label>
                   </div>
 
+                  {/* Queued Files List */}
+                  {queuedFiles.length > 0 && (
+                    <div className="grid grid-cols-2 gap-4 mt-4">
+                      {queuedFiles.map((file, idx) => (
+                        <div key={idx} className="relative group rounded-lg overflow-hidden border">
+                          <img src={file.preview} alt="preview" className="w-full h-24 object-cover" />
+                          <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button
+                              type="button"
+                              onClick={() => removeQueuedFile(idx)}
+                              className="bg-red-500 text-white p-1 rounded-full hover:bg-red-600"
+                              disabled={isUploading}
+                            >
+                              <Upload className="w-4 h-4 rotate-45" />
+                            </button>
+                          </div>
+                          {file.status === 'uploading' && (
+                            <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                              <Loader2 className="w-6 h-6 text-white animate-spin" />
+                            </div>
+                          )}
+                          {file.status === 'uploaded' && (
+                            <div className="absolute top-1 right-1 bg-green-500 text-white p-0.5 rounded-full">
+                              <Loader2 className="w-3 h-3" />
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
                   {/* Upload Button */}
-                  {selectedFile && (
+                  {queuedFiles.some(f => f.status !== 'uploaded') && (
                     <Button
                       type="button"
-                      onClick={handleUploadClick}
-                      disabled={isUploading || !!watch('imageUrl')}
+                      onClick={handleUploadAll}
+                      disabled={isUploading}
                       className="w-full bg-lime-500 hover:bg-lime-600 text-white"
                     >
                       {isUploading ? (
@@ -251,19 +342,19 @@ export default function CreateAdvertisementPage() {
                           <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                           Uploading...
                         </>
-                      ) : watch('imageUrl') ? (
-                        '✓ Uploaded'
                       ) : (
                         <>
                           <Upload className="w-4 h-4 mr-2" />
-                          Upload to Cloudinary
+                          Upload {queuedFiles.filter(f => f.status !== 'uploaded').length} Images to Cloudinary
                         </>
                       )}
                     </Button>
                   )}
 
-                  {!selectedFile && !watch('imageUrl') && (
-                    <p className="text-sm text-red-500">Please select an image file</p>
+                  {queuedFiles.length > 0 && queuedFiles.every(f => f.status === 'uploaded') && (
+                    <p className="text-sm text-green-600 font-medium text-center italic">
+                      All images uploaded successfully!
+                    </p>
                   )}
                 </div>
               )}
@@ -353,20 +444,38 @@ export default function CreateAdvertisementPage() {
               )}
             </div>
 
+            <div className="space-y-2">
+              <label htmlFor="position" className="text-sm font-medium">
+                Ad Position <span className="text-red-500">*</span>
+              </label>
+              <select
+                id="position"
+                {...register('position', { required: 'Position is required' })}
+                className="w-full px-3 py-2 border rounded-md bg-white"
+                defaultValue="RANDOM"
+              >
+                <option value="RANDOM">Random Section</option>
+                <option value="HERO_CAROUSEL">Hero Carousel (Top Sliding View)</option>
+              </select>
+              {errors.position && (
+                <p className="text-sm text-red-500">{errors.position.message}</p>
+              )}
+            </div>
+
             <div className="bg-blue-50 border border-blue-200 rounded p-4">
               <h4 className="font-medium text-blue-900 mb-2">Important Notes:</h4>
               <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
-                <li>Advertisements will be displayed randomly to users</li>
-                <li>The ad will automatically expire after the selected duration</li>
-                <li>You can manually deactivate the ad at any time</li>
-                <li>Impressions and clicks will be tracked automatically</li>
+                <li><strong>Hero Carousel</strong> ads will be displayed in the sliding gallery at the top.</li>
+                <li><strong>Random Section</strong> ads appear scattered throughout the site.</li>
+                <li>Multiple images will create separate ads with the same details.</li>
+                <li>The ads will automatically expire after the selected duration.</li>
               </ul>
             </div>
 
             <div className="flex gap-2 pt-4">
               <Button
                 type="submit"
-                disabled={isLoading || isUploading || !watch('imageUrl')}
+                disabled={isLoading || isUploading || (uploadMode === 'file' && queuedFiles.filter(f => f.status === 'uploaded').length === 0)}
               >
                 {isLoading ? (
                   <>
@@ -374,7 +483,9 @@ export default function CreateAdvertisementPage() {
                     Creating...
                   </>
                 ) : (
-                  'Create Advertisement'
+                  queuedFiles.filter(f => f.status === 'uploaded').length > 1
+                    ? `Create ${queuedFiles.filter(f => f.status === 'uploaded').length} Advertisements`
+                    : 'Create Advertisement'
                 )}
               </Button>
               <Button

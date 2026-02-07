@@ -428,7 +428,7 @@ function ListingsPageContent() {
     <div className="min-h-screen bg-gray-50 flex flex-col ">
       <div className="container mx-auto px-4 py-8 max-w-7xl">
         {/* Header */}
-        <div className="mb-8">
+        <div className="mb-8 md:hidden">
           <SearchBar />
           <div className="mt-2 text-xs text-gray-500 text-center">
             💡 Tip: Use Ctrl+F to quickly search, or click the filter button to refine results

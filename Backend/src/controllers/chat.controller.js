@@ -182,8 +182,7 @@ class ChatController {
             const userId = req.user.id;
 
             // Get conversation ID first to emit event
-            const { PrismaClient } = require('@prisma/client');
-            const prisma = new PrismaClient();
+            const prisma = require('../lib/prisma');
             const message = await prisma.message.findUnique({ where: { id }, select: { conversationId: true } });
 
             await ChatService.markAsRead([id], userId);

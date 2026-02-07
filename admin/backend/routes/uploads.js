@@ -12,11 +12,11 @@ const storage = new CloudinaryStorage({
   params: async (req) => ({
     folder: `listup/admin/${req.user.id}`, // Separate folder for admin uploads
     allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
-    transformation: [{ quality: 'auto', fetch_format: 'auto' }]
+    transformation: [{ quality: 90, fetch_format: 'auto' }]
   })
 });
 
-const upload = multer({ 
+const upload = multer({
   storage,
   limits: {
     fileSize: 5 * 1024 * 1024 // 5MB limit
@@ -60,10 +60,10 @@ router.post('/image', auth, upload.single('image'), (req, res) => {
 router.delete('/image/:publicId', auth, async (req, res) => {
   try {
     const { publicId } = req.params;
-    
+
     // Delete from Cloudinary
     await cloudinary.uploader.destroy(publicId);
-    
+
     res.json({
       success: true,
       message: 'Image deleted successfully'
