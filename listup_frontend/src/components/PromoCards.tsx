@@ -6,7 +6,7 @@ import { ArrowRight, ShoppingBag, MessageCircle } from "lucide-react";
 
 export default function PromoCards() {
     return (
-        <div className="hidden lg:flex flex-col gap-4 w-64 h-full shrink-0">
+        <div className="hidden lg:flex flex-col gap-4 w-54 h-full shrink-0">
             {/* Start Selling Card */}
             <Link
                 href="/signup?redirect=dashboard"
@@ -19,11 +19,11 @@ export default function PromoCards() {
                     <h3 className="text-slate-900 font-bold text-xl font-montserrat leading-tight mb-2">
                         Start Selling <br /> on ListUp Today
                     </h3>
-                    <p className="text-slate-500 text-sm font-montserrat leading-relaxed">
+                    {/* <p className="text-slate-500 text-sm font-montserrat leading-relaxed">
                         Reach thousands of buyers in your community instantly.
-                    </p>
+                    </p> */}
                 </div>
-                <div className="mt-4 flex items-center gap-2 text-lime-600 font-bold text-sm font-montserrat">
+                <div className="mt-2 flex items-center gap-2 text-lime-600 font-bold text-sm font-montserrat">
                     <span>Get Started</span>
                     <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </div>
@@ -43,11 +43,11 @@ export default function PromoCards() {
                     <h3 className="text-slate-900 font-bold text-xl font-montserrat leading-tight mb-2">
                         Join Our <br /> WhatsApp Community
                     </h3>
-                    <p className="text-slate-800/70 text-sm font-montserrat leading-relaxed">
+                    {/* <p className="text-slate-800/70 text-sm font-montserrat leading-relaxed">
                         Get exclusive deals and market updates directly on your phone.
-                    </p>
+                    </p> */}
                 </div>
-                <div className="mt-4 flex items-center gap-2 text-slate-900 font-bold text-sm font-montserrat">
+                <div className="mt-2 flex items-center gap-2 text-slate-900 font-bold text-sm font-montserrat">
                     <span>Chat with us</span>
                     <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </div>

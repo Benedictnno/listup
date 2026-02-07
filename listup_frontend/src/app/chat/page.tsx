@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation';
 import { MessageSquare, Settings, Search } from 'lucide-react';
 import ConversationList from '@/components/chat/ConversationList';
 import axios from '@/utils/axios';
-import { Input } from '@/components/ui/button'; // Actually intended standard input, but checking if UI has input
 import { useChat } from '@/context/ChatContext';
 
 const ChatPage = () => {

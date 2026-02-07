@@ -14,7 +14,8 @@ import { VendorListingHeader } from "@/components/dashboard/vendor-listing/Vendo
 import { VendorListingMetrics } from "@/components/dashboard/vendor-listing/VendorListingMetrics";
 import { VendorListingFilters, FilterState } from "@/components/dashboard/vendor-listing/VendorListingFilters";
 import { VendorListingBulkActions } from "@/components/dashboard/vendor-listing/VendorListingBulkActions";
-import { VendorListingGrid, Listing } from "@/components/dashboard/vendor-listing/VendorListingGrid";
+import { VendorListingGrid } from "@/components/dashboard/vendor-listing/VendorListingGrid";
+import { Listing } from "@/types/listing";
 import { VendorListingEmptyState } from "@/components/dashboard/vendor-listing/VendorListingEmptyState";
 import { EditListingModal } from "@/components/dashboard/vendor-listing/EditListingModal";
 import { PromoteListingModal } from "@/components/dashboard/vendor-listing/PromoteListingModal";
@@ -170,7 +171,10 @@ export default function VendorListingsPage() {
 
     // Category filter
     if (filters.category) {
-      filtered = filtered.filter(listing => listing.category === filters.category);
+      filtered = filtered.filter(listing => {
+        const catName = typeof listing.category === 'object' ? listing.category.name : listing.category;
+        return catName === filters.category;
+      });
     }
 
     // Price range filter
@@ -182,13 +186,13 @@ export default function VendorListingsPage() {
     if (filters.stockLevel) {
       switch (filters.stockLevel) {
         case 'low':
-          filtered = filtered.filter(listing => listing.stock <= 5);
+          filtered = filtered.filter(listing => (listing.stock || 0) <= 5);
           break;
         case 'out':
-          filtered = filtered.filter(listing => listing.stock === 0);
+          filtered = filtered.filter(listing => (listing.stock || 0) === 0);
           break;
         case 'high':
-          filtered = filtered.filter(listing => listing.stock > 20);
+          filtered = filtered.filter(listing => (listing.stock || 0) > 20);
           break;
       }
     }
@@ -698,7 +702,7 @@ export default function VendorListingsPage() {
         saving={saving}
       />
 
- {     <PromoteListingModal
+      {<PromoteListingModal
         showPromoteModal={showPromoteModal}
         setShowPromoteModal={setShowPromoteModal}
         promoteListings={promoteListings}

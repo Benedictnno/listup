@@ -3,14 +3,19 @@ const prisma = require('../lib/prisma');
 
 exports.getAll = async (req, res, next) => {
   try {
-    const { limit = 20, page = 1, categoryId } = req.query;
+    const { limit = 20, page = 1, categoryId, q } = req.query;
     const take = Math.min(parseInt(limit), 50);
     const skip = (Math.max(parseInt(page), 1) - 1) * take;
 
     const filters = {};
-    // Only filter active listings, and optionally by category
-    // filters.isActive = true; // Use this if you only want active listings
     if (categoryId) filters.categoryId = categoryId;
+    if (q) {
+      filters.OR = [
+        { title: { contains: q, mode: 'insensitive' } },
+        { description: { contains: q, mode: 'insensitive' } },
+        { location: { contains: q, mode: 'insensitive' } }
+      ];
+    }
 
     const [items, total] = await Promise.all([
       prisma.listing.findMany({
@@ -70,7 +75,13 @@ exports.search = async (req, res, next) => {
 
     const filters = { isActive: true };
     if (categoryId) filters.categoryId = categoryId;
-    if (q) filters.title = { contains: q, mode: 'insensitive' };
+    if (q) {
+      filters.OR = [
+        { title: { contains: q, mode: 'insensitive' } },
+        { description: { contains: q, mode: 'insensitive' } },
+        { location: { contains: q, mode: 'insensitive' } }
+      ];
+    }
 
     // price filter (Mongo Decimal)
     if (minPrice || maxPrice) {

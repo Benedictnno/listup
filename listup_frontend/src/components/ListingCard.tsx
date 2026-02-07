@@ -6,27 +6,7 @@ import { Package, MapPin } from "lucide-react";
 import VerifiedBadge from "./VerifiedBadge";
 import ChatButton from "./chat/ChatButton";
 
-interface Listing {
-  id: string;
-  title: string;
-  description: string;
-  price: number;
-  images: string[];
-  location?: string;
-  condition?: string;
-  category?: {
-    name: string;
-  };
-  seller?: {
-    name: string;
-    isKYCVerified?: boolean;
-    profileImage?: string;
-    vendorProfile?: {
-      storeName?: string;
-      logo?: string;
-    };
-  };
-}
+import { Listing } from "@/types/listing";
 
 interface ListingCardProps {
   listing: Listing;
@@ -56,11 +36,13 @@ export default function ListingCard({ listing }: ListingCardProps) {
               <Package className="h-12 w-12 text-gray-300" />
             </div>
           )}
-          <div className="absolute top-2 right-2 z-10">
-            <span className="px-3 py-1 bg-white text-slate-900 text-xs font-bold rounded-md shadow-md uppercase font-montserrat tracking-tight">
-              New
-            </span>
-          </div>
+          {listing.condition && (
+            <div className="absolute top-2 right-2 z-10">
+              <span className="px-3 py-1 bg-white text-slate-900 text-xs font-bold rounded-md shadow-md uppercase font-montserrat tracking-tight">
+                {listing.condition}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Content */}
@@ -97,16 +79,29 @@ export default function ListingCard({ listing }: ListingCardProps) {
 
             {/* Category Badge */}
             <div className="inline-block px-3 py-1 bg-lime-100/50 rounded-full">
-              <span className="text-xs font-medium text-lime-700">All Categories</span>
+              <span className="text-xs font-medium text-lime-700">
+                {typeof listing.category === 'object'
+                  ? listing.category.name
+                  : (listing.category || "All Categories")}
+              </span>
             </div>
 
             {/* Seller */}
             {listing.seller && (
               <div className="flex items-center gap-2 pt-1">
-                <div className="relative w-5 h-5 rounded-full overflow-hidden bg-slate-900 flex-shrink-0">
-                  <div className="w-full h-full flex items-center justify-center text-[10px] font-bold text-white uppercase">
-                    {(listing.seller.vendorProfile?.storeName || listing.seller.name).charAt(0)}
-                  </div>
+                <div className="relative w-6 h-6 rounded-full overflow-hidden bg-slate-100 flex-shrink-0 border border-slate-200">
+                  {listing.seller.profileImage || listing.seller.vendorProfile?.logo ? (
+                    <Image
+                      src={listing.seller.profileImage || listing.seller.vendorProfile?.logo || ""}
+                      alt={listing.seller.vendorProfile?.storeName || listing.seller.name}
+                      fill
+                      className="object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-[10px] font-bold text-slate-600 uppercase">
+                      {(listing.seller.vendorProfile?.storeName || listing.seller.name).charAt(0)}
+                    </div>
+                  )}
                 </div>
                 <span className="truncate text-slate-400 text-xs font-montserrat">
                   {listing.seller.vendorProfile?.storeName || listing.seller.name}

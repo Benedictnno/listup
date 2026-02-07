@@ -95,22 +95,22 @@ export default function HeroCarousel() {
     const currentAd = advertisements[currentAdIndex];
 
     return (
-        <div className="relative group w-full h-[300px] md:h-full bg-slate-800 rounded-2xl overflow-hidden shadow-2xl">
-            <div className={`w-full h-full relative transition-opacity duration-500 ${isTransitioning ? 'opacity-50' : 'opacity-100'}`}>
+        <div className="relative group w-full h-[200px] md:h-full overflow-hidden">
+            <div className={`w-full h-full md:h-[500px] relative transition-opacity duration-500 ${isTransitioning ? 'opacity-50' : 'opacity-100'}`}>
                 <Image
                     src={currentAd.imageUrl}
                     alt={currentAd.title}
                     fill
                     priority
-                    className="object-cover"
+                    className="object-contain"
                 />
                 {/* Overlays */}
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent" />
 
                 <div className="absolute bottom-6 left-6 right-6">
-                    <h3 className="text-white text-xl md:text-2xl font-bold font-montserrat drop-shadow-lg">
+                    {/* <h3 className="text-white text-xl md:text-2xl font-bold font-montserrat drop-shadow-lg">
                         {currentAd.title}
-                    </h3>
+                    </h3> */}
                     {currentAd.targetUrl && (
                         <a
                             href={currentAd.targetUrl}

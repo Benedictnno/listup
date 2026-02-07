@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { Search, X, TrendingUp, Clock, MapPin } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useFilterStore } from "../store/useFilterStore";
 
 interface SearchSuggestion {
@@ -11,6 +12,7 @@ interface SearchSuggestion {
 }
 
 export default function SearchBar() {
+  const router = useRouter();
   const { search, setSearch } = useFilterStore();
   const [inputValue, setInputValue] = useState(search);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -88,6 +90,7 @@ export default function SearchBar() {
 
     // Trigger search immediately when suggestion is clicked
     setIsSearching(true);
+    router.push(`/listings?q=${encodeURIComponent(suggestion.text)}`);
     setTimeout(() => setIsSearching(false), 300);
   };
 
@@ -99,6 +102,7 @@ export default function SearchBar() {
 
     // Trigger search immediately when recent search is clicked
     setIsSearching(true);
+    router.push(`/listings?q=${encodeURIComponent(searchTerm)}`);
     setTimeout(() => setIsSearching(false), 300);
   };
 
@@ -109,6 +113,9 @@ export default function SearchBar() {
     setSearch(inputValue.trim());
     addToRecentSearches(inputValue.trim());
     setShowSuggestions(false);
+
+    // Navigate to listings page if not already there
+    router.push(`/listings?q=${encodeURIComponent(inputValue.trim())}`);
 
     // Simulate search delay
     setTimeout(() => setIsSearching(false), 300);
@@ -205,7 +212,13 @@ export default function SearchBar() {
     <div className="w-full" ref={searchRef}>
       <div className="relative w-full mx-auto">
         {/* Search Input with Button */}
-        <div className="relative flex">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleSearchClick();
+          }}
+          className="relative flex"
+        >
           <div className="relative flex-1">
             <Search
               className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
@@ -218,13 +231,13 @@ export default function SearchBar() {
               value={inputValue}
               onChange={handleInputChange}
               onFocus={handleInputFocus}
-              onKeyPress={handleKeyPress}
               className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 text-white placeholder-slate-400 rounded-l-lg focus:ring-2 focus:ring-lime-400 focus:border-transparent transition-all focus:outline-none"
             />
 
             {/* Clear Button */}
             {inputValue && (
               <button
+                type="button"
                 onClick={clearSearch}
                 className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
               >
@@ -235,11 +248,11 @@ export default function SearchBar() {
 
           {/* Search Button */}
           <button
-            onClick={handleSearchClick}
+            type="submit"
             disabled={!inputValue.trim() || isSearching}
             className={`px-6 py-3 bg-lime-500 text-white font-medium rounded-r-lg transition-all focus:outline-none focus:ring-2 focus:ring-lime-400 focus:ring-offset-2 ${!inputValue.trim() || isSearching
-                ? 'opacity-50 cursor-not-allowed'
-                : 'hover:bg-lime-600 active:bg-lime-700'
+              ? 'opacity-50 cursor-not-allowed'
+              : 'hover:bg-lime-600 active:bg-lime-700'
               }`}
           >
             {isSearching ? (
@@ -254,7 +267,7 @@ export default function SearchBar() {
               </div>
             )}
           </button>
-        </div>
+        </form>
 
         {/* Search Suggestions Dropdown */}
         {renderSuggestions()}

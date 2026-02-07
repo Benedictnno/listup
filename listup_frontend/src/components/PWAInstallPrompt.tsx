@@ -73,13 +73,13 @@ export default function PWAInstallPrompt() {
                         <Download size={14} className="mr-2" />
                         Install Now
                     </Button>
-                    <Button
+                    {/* <Button
                         variant="ghost"
                         onClick={() => setShowPrompt(false)}
                         className="text-slate-400 hover:text-white text-xs h-9"
                     >
                         Not now
-                    </Button>
+                    </Button> */}
                 </div>
             </div>
         </div>

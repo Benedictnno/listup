@@ -4,17 +4,7 @@ import Link from "next/link";
 import ListingCard from "@/components/ListingCard";
 import { fetchListings } from "@/lib/api/listing";
 
-interface Listing {
-  id: string;
-  title: string;
-  description: string;
-  price: number;
-  images: string[];
-  location?: string;
-  condition?: string;
-  category?: { name: string };
-  seller?: { name: string };
-}
+import { Listing } from "@/types/listing";
 
 export default function MiniListings() {
   const [listings, setListings] = useState<Listing[]>([]);

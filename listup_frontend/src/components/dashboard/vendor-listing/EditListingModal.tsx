@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Image from "next/image";
-import { Listing } from "./VendorListingGrid";
+import { Listing } from "@/types/listing";
 import { Category } from "@/lib/api/categories";
 
 interface EditListingModalProps {
@@ -99,7 +99,10 @@ export function EditListingModal({
                         </div>
                         <div >
                             <label className="block text-sm font-medium mb-2 ">Category</label>
-                            <Select value={editing.category} onValueChange={(value) => setEditing({ ...editing, category: value })}>
+                            <Select
+                                value={typeof editing.category === 'object' ? editing.category.name : editing.category}
+                                onValueChange={(value) => setEditing({ ...editing, category: value })}
+                            >
                                 <SelectTrigger>
                                     <SelectValue />
                                 </SelectTrigger>

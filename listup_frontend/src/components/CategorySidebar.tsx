@@ -28,7 +28,7 @@ const categories = [
 
 export default function CategorySidebar() {
     return (
-        <aside className="hidden lg:block w-64 h-full shrink-0 overflow-hidden shadow-2xl">
+        <aside className="hidden lg:block w-54 h-full shrink-0 overflow-hidden shadow-2xl">
             <div className="p-4">
                 <h2 className="text-white font-bold text-lg font-montserrat tracking-tight">Categories</h2>
             </div>

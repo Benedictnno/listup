@@ -14,6 +14,8 @@ import OutsideAd from "@/components/OutsideAd";
 import CategorySidebar from "@/components/CategorySidebar";
 import HeroCarousel from "@/components/HeroCarousel";
 import PromoCards from "@/components/PromoCards";
+import { useRouter } from "next/navigation";
+import { useFilterStore } from "@/store/useFilterStore";
 /**
  * Marketplace Landing Page
  * Framework: Next.js (app router ready) + TailwindCSS
@@ -24,6 +26,8 @@ import PromoCards from "@/components/PromoCards";
 
 export default function MarketplaceLanding() {
   const user = useAuthStore((state) => state.user);
+  const router = useRouter();
+  const setSearch = useFilterStore((state) => state.setSearch);
 
   return (
     <div className="min-h-screen w-full text-slate-800 font-montserrat realative">
@@ -39,7 +43,10 @@ export default function MarketplaceLanding() {
               e.preventDefault();
               const searchInput = e.currentTarget.querySelector('input');
               const searchValue = searchInput?.value || '';
-              window.location.href = `/listings?q=${encodeURIComponent(searchValue)}`;
+              if (searchValue.trim()) {
+                setSearch(searchValue.trim());
+                router.push(`/listings?q=${encodeURIComponent(searchValue.trim())}`);
+              }
             }} className="flex w-full items-center bg-[#1e293b] border border-slate-700 rounded-xl overflow-hidden h-14">
               <div className="pl-4">
                 <Search className="h-5 w-5 text-slate-400" />

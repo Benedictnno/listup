@@ -13,25 +13,7 @@ import { useFilterStore } from "@/store/useFilterStore";
 import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
 import OutsideAd from "@/components/OutsideAd";
 
-interface Listing {
-  id: string;
-  title: string;
-  description: string;
-  price: number;
-  images: string[];
-  location: string;
-  condition: string;
-  createdAt: string;
-  category: {
-    id: string;
-    name: string;
-    slug: string;
-  };
-  seller: {
-    id: string;
-    name: string;
-  };
-}
+import { Listing } from "@/types/listing";
 
 interface FilterState {
   search: string;
@@ -259,11 +241,11 @@ function ListingsPageContent() {
 
   // Handle URL query parameters for search
   useEffect(() => {
-    const query = searchParams.get('q');
-    if (query) {
+    const query = searchParams.get('q') || '';
+    if (query !== search) {
       setSearch(query);
     }
-  }, [searchParams, setSearch]);
+  }, [searchParams, setSearch, search]);
 
   // Keyboard shortcuts
   useEffect(() => {

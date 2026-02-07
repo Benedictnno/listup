@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { MessageSquare, Loader2 } from 'lucide-react';
+import { MessagesSquare, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/store/authStore';
 import LoginPromptDialog from '@/components/LoginPromptDialog';
@@ -72,7 +72,7 @@ const ChatButton = ({
                 {isLoading ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
-                    <MessageSquare className="h-4 w-4" />
+                    <MessagesSquare size={20} className="h-6 w-6" />
                 )}
                 {label}
             </Button>

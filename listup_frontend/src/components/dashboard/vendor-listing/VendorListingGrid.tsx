@@ -3,23 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { CheckSquare, Edit, Eye, Square, Trash2, TrendingUp, BarChart3 } from "lucide-react";
 import Image from "next/image";
 
-export interface Listing {
-    id: string;
-    title: string;
-    price: number;
-    stock: number;
-    description: string;
-    images?: string[];
-    status: 'active' | 'inactive' | 'pending' | 'sold';
-    category: string;
-    views: number;
-    sales: number;
-    revenue: number;
-    createdAt: string;
-    seoScore?: number;
-    location?: string;
-    condition?: string;
-}
+import { Listing } from "@/types/listing";
 
 interface VendorListingGridProps {
     listings: Listing[];
@@ -49,8 +33,8 @@ export function VendorListingGrid({
         }
     };
 
-    const getStockColor = (stock: number) => {
-        if (stock === 0) return 'text-red-600';
+    const getStockColor = (stock: number | undefined) => {
+        if (stock === undefined || stock === 0) return 'text-red-600';
         if (stock <= 5) return 'text-orange-600';
         return 'text-green-600';
     };
@@ -111,9 +95,9 @@ export function VendorListingGrid({
 
                                 {/* Price and Stock */}
                                 <div className="flex justify-between items-center mt-3">
-                                    <p className="text-lg font-bold text-lime-600">₦{listing.price.toLocaleString()}</p>
-                                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(listing.status)}`}>
-                                        {listing.status.charAt(0).toUpperCase() + listing.status.slice(1)}
+                                    <p className="text-lg font-bold text-lime-600">₦{(listing.price ?? 0).toLocaleString()}</p>
+                                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(listing.status || 'inactive')}`}>
+                                        {(listing.status || 'inactive').charAt(0).toUpperCase() + (listing.status || 'inactive').slice(1)}
                                     </span>
                                 </div>
 
