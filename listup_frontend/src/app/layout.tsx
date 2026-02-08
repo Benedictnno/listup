@@ -5,6 +5,7 @@ import NavBar from "@/components/NavBar";
 import Footer from "@/components/Footer";
 import AuthProvider from "@/components/AuthProvider";
 import { FeatureFlagProvider } from "@/context/FeatureFlagContext";
+import { ChatProvider } from "@/context/ChatContext";
 import { Analytics } from "@vercel/analytics/next"
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import BottomNav from "@/components/BottomNav";
@@ -58,17 +59,19 @@ export default function RootLayout({
       <body className="antialiased">
         <AuthProvider>
           <FeatureFlagProvider>
-            <NavBar />
-            <div className="pb-20 md:pb-0">
-              {children}
-            </div>
-            <Analytics />
-            <SpeedInsights />
-            <Footer />
-            <BottomNav />
-            <ReferralEngagementTracker />
-            <PWAInstallPrompt />
-            <Toaster position="top-center" richColors />
+            <ChatProvider>
+              <NavBar />
+              <div className="pb-20 md:pb-0">
+                {children}
+              </div>
+              <Analytics />
+              <SpeedInsights />
+              <Footer />
+              <BottomNav />
+              <ReferralEngagementTracker />
+              <PWAInstallPrompt />
+              <Toaster position="top-center" richColors />
+            </ChatProvider>
 
           </FeatureFlagProvider>
         </AuthProvider>
