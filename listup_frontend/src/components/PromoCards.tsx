@@ -31,7 +31,7 @@ export default function PromoCards() {
 
             {/* Join WhatsApp Card */}
             <a
-                href="https://wa.me/2348012345678" // Placeholder WhatsApp number
+                href="https://wa.me/2349110225097" // Placeholder WhatsApp number
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex-1 bg-lime-400 rounded-2xl p-6 flex flex-col justify-between group hover:shadow-xl transition-all duration-300"
