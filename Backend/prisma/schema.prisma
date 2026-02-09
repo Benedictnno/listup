@@ -108,37 +108,50 @@ model User {
   vendorKYC           VendorKYC?
   commissionPayments  CommissionPayment[]
   monthlyStatements   MonthlyStatement[]
-  whatsappOptIn       Boolean             @default(false)
-  whatsappMessageLogs WhatsAppMessageLog[]
-  botNotifications    BotNotification[]
-  searchLogs          SearchLog[]
+  // WhatsApp Bot Fields
+  whatsappOptIn                Boolean             @default(false)
+  whatsappStopRequested        Boolean             @default(false)  // User opted out via STOP command
+  whatsappMessageCount         Int                 @default(0)      // Daily message counter
+  whatsappLastMessageDate      DateTime?                            // Last message sent date (for daily reset)
+  whatsappEngagementScore      Float               @default(100.0)  // Engagement tracking (0-100)
+  lastWhatsappInteraction      DateTime?                            // Last user-initiated message
+  lastContactReminderDate      DateTime?                            // Last time we asked user to save contact
+  whatsappContactReminderCount Int                 @default(0)      // Number of contact save reminders sent
+  isContactSavedByBot          Boolean             @default(false)    // Whether we have saved the user's contact
+  whatsappMessageLogs          WhatsAppMessageLog[]
+  botNotifications             BotNotification[]
+  searchLogs                   SearchLog[]
 
   // Bot specific fields
-  source              String?             @default("web") // 'web', 'mobile', 'whatsapp'
-  whatsappName        String?
-  whatsappVerified    Boolean             @default(false)
-  lastActiveAt        DateTime?
+  source                       String?             @default("web") // 'web', 'mobile', 'whatsapp'
+  whatsappName                 String?
+  whatsappVerified             Boolean             @default(false)
+  lastActiveAt                 DateTime?
 
   // Chat relations
-  buyerConversations  Conversation[]     @relation("BuyerConversations")
-  sellerConversations Conversation[]     @relation("SellerConversations")
-  sentMessages        Message[]
+  buyerConversations           Conversation[]      @relation("BuyerConversations")
+  sellerConversations          Conversation[]      @relation("SellerConversations")
+  sentMessages                 Message[]
+
 
   @@index([role])
 }
 
 model WhatsAppMessageLog {
-  id         String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId     String?  @db.ObjectId
-  user       User?    @relation(fields: [userId], references: [id])
-  messageSid String   @unique
-  status     String
-  direction  String   // inbound, outbound
-  body       String?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId         String?  @db.ObjectId
+  user           User?    @relation(fields: [userId], references: [id])
+  messageSid     String   @unique
+  status         String
+  direction      String   // inbound, outbound
+  body           String?
+  responseDelay  Int?     // Simulated typing delay in milliseconds
+  wasThrottled   Boolean  @default(false) // Was this message rate-limited?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   @@index([userId])
+  @@index([createdAt])
 }
 
 model VendorProfile {

@@ -1,12 +1,11 @@
 "use client"
 import { PrimaryButton } from '@/utils/helpers';
-import { Menu, X, Layers } from 'lucide-react';
+import { Menu, X, Layers, MessageSquare } from 'lucide-react';
 import Link from 'next/link';
 import React, { useEffect, useState } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { useChat } from '@/context/ChatContext';
 import Image from 'next/image';
-import { MessageSquare } from 'lucide-react';
 import { fetchCategories, Category } from '@/lib/api/categories';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -20,13 +19,6 @@ function NavBar() {
   // Use the proper auth store instead of local localStorage
   const { user, logout } = useAuthStore();
   const { unreadCount } = useChat();
-
-  // const nav = [
-  //   { label: "Listings", href: "/listings" },
-  //   { label: "Categories", href: "/categories" },
-  //   { label: "Deals", href: "#deals" },
-  //   { label: "Blog", href: "#blog" },
-  // ];
 
   const handleLogout = () => {
     logout();
@@ -90,74 +82,62 @@ function NavBar() {
   return (
     <>
       <header className="sticky top-0 z-40 w-full border-b border-slate-200/20 bg-[#0f172a] backdrop-blur">
-      <div className="mx-auto flex max-w-7xl items-center text-lg justify-between px-4 py-3 md:px-6">
-        <Link href="/" className="flex items-center gap-2 text-white shrink-0">
-          {/* <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-lime-400 text-slate-900 font-black">LU</div>
-          <span className="text-sm font-semibold tracking-wide">ListUp</span> */}
-          <Image src="/images/Listup.png" alt="ListUp" width={80} height={32} className="object-contain h-auto w-auto max-h-8" priority />
-        </Link>
+        <div className="mx-auto flex max-w-7xl items-center text-lg justify-between px-4 py-3 md:px-6">
+          <Link href="/" className="flex items-center gap-2 text-white shrink-0">
+            <Image src="/images/Listup.png" alt="ListUp" width={80} height={32} className="object-contain h-auto w-auto max-h-8" priority />
+          </Link>
 
-        {/* Desktop Search Bar - Centered */}
-        <div className="hidden md:flex flex-1 justify-center max-w-[720px] mx-auto">
-          <SearchBar />
-        </div>
+          {/* Desktop Search Bar - Centered */}
+          <div className="hidden md:flex flex-1 justify-center max-w-[720px] mx-auto">
+            <SearchBar />
+          </div>
 
-        {/* <nav className="hidden items-center gap-8 text-[13px] text-white/80 md:flex">
-          {nav.map((n) => (
-            <Link key={n.label} href={n.href} className="transition text-lg hover:text-white">
-              {n.label}
-            </Link>
-          ))}
-
-        </nav> */}
-
-        {/* Authentication Buttons - show Dashboard for VENDOR, Saved for USER, or Login/Signup */}
-        {user ? (
-          <div className="hidden items-center gap-3 md:flex">
-            <Link href="/chat" className="relative p-2 text-white/80 hover:text-white transition">
-              <MessageSquare className="h-6 w-6" />
-              {unreadCount > 0 && (
-                <span className="absolute top-0 right-0 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[12px] font-bold text-white border-2 border-[#0f172a]">
-                  {unreadCount > 9 ? '9+' : unreadCount}
-                </span>
+          {/* Authentication Buttons - show Dashboard for VENDOR, Saved for USER, or Login/Signup */}
+          {user ? (
+            <div className="hidden items-center gap-3 md:flex">
+              <Link href="/chat" className="relative p-2 text-white/80 hover:text-white transition">
+                <MessageSquare className="h-6 w-6" />
+                {unreadCount > 0 && (
+                  <span className="absolute top-0 right-0 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[12px] font-bold text-white border-2 border-[#0f172a]">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
+              </Link>
+              {user.role === 'VENDOR' ? (
+                <Link href="/dashboard">
+                  <PrimaryButton>Dashboard</PrimaryButton>
+                </Link>
+              ) : (
+                <Link href="/saved">
+                  <button className="rounded-xl px-3 py-2 text-lg font-semibold text-white/80 transition hover:text-white">Saved</button>
+                </Link>
               )}
-            </Link>
-            {user.role === 'VENDOR' ? (
-              <Link href="/dashboard">
-                <PrimaryButton>Dashboard</PrimaryButton>
+              <button
+                onClick={handleLogout}
+                className="rounded-xl px-3 py-2 text-lg font-semibold text-white/80 transition hover:text-white"
+              >
+                Logout
+              </button>
+            </div>
+          ) : (
+            <div className="hidden items-center gap-3 md:flex px-3 py-2">
+              <Link href="/login" className="rounded-xl px-3 py-2 text-lg font-semibold text-white/80 transition hover:text-white">
+                Log in
               </Link>
-            ) : (
-              <Link href="/saved">
-                <button className="rounded-xl px-3 py-2 text-lg font-semibold text-white/80 transition hover:text-white">Saved</button>
+              <Link href="/signup">
+                <PrimaryButton>Sign up</PrimaryButton>
               </Link>
-            )}
-            <button
-              onClick={handleLogout}
-              className="rounded-xl px-3 py-2 text-lg font-semibold text-white/80 transition hover:text-white"
-            >
-              Logout
-            </button>
-          </div>
-        ) : (
-          <div className="hidden items-center gap-3 md:flex px-3 py-2">
-            <Link href="/login" className="rounded-xl px-3 py-2 text-lg font-semibold text-white/80 transition hover:text-white">
-              Log in
-            </Link>
-            <Link href="/signup">
-              <PrimaryButton>Sign up</PrimaryButton>
-            </Link>
-          </div>
-        )}
+            </div>
+          )}
 
-        <button
-          className="inline-flex items-center justify-center rounded-lg p-2 text-white md:hidden"
-          onClick={() => setOpen((s) => !s)}
-          aria-label="Toggle menu"
-        >
-          {open ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-        </button>
-      </div>
-
+          <button
+            className="inline-flex items-center justify-center rounded-lg p-2 text-white md:hidden"
+            onClick={() => setOpen((s) => !s)}
+            aria-label="Toggle menu"
+          >
+            {open ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          </button>
+        </div>
       </header>
 
       {/* Premium Mobile Menu with Framer Motion (Moved outside header for z-index safety) */}
@@ -279,7 +259,7 @@ function NavBar() {
                       Sign In
                     </Link>
                     <div className="flex items-center justify-center gap-2 text-slate-500 text-[14px]">
-                      Don't have an account? 
+                      Don't have an account?
                       <Link href="/signup" onClick={() => setOpen(false)} className="text-slate-900 font-bold hover:text-lime-600 transition-colors underline decoration-lime-400/40 decoration-2 underline-offset-4">
                         Sign Up
                       </Link>
@@ -292,7 +272,7 @@ function NavBar() {
         )}
       </AnimatePresence>
     </>
-  )
+  );
 }
 
-export default NavBar
+export default NavBar;

@@ -48,7 +48,7 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
         }
 
         // Initialize socket connection
-        const socketUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+        const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
         const newSocket = io(socketUrl, {
             withCredentials: true, // Important for cookie-based auth
             transports: ['websocket', 'polling'],
@@ -66,11 +66,10 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
 
         newSocket.on('notification:message', () => {
             // New message received while not looking at it
-            // Instead of prev => prev + 1, refetch to be accurate
             refreshUnreadCount();
         });
 
-        // Also listen for unread count refresh events (e.g. from other tabs marking as read)
+        // Also listen for unread count refresh events
         newSocket.on('unread:refresh', () => {
             refreshUnreadCount();
         });
@@ -90,4 +89,10 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
     );
 };
 
-export const useChat = () => useContext(ChatContext);
+export const useChat = () => {
+    const context = useContext(ChatContext);
+    if (!context) {
+        throw new Error('useChat must be used within a ChatProvider');
+    }
+    return context;
+};

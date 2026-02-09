@@ -4,7 +4,9 @@ require('./jobs/kyc-expiry-reminder.job');
 
 // Initialize cron jobs
 const { scheduleAdvertisementExpiry } = require('./jobs/advertisement-expiry.job');
+const { scheduleWhatsAppMaintenance } = require('./jobs/whatsapp-maintenance.job');
 scheduleAdvertisementExpiry();
+scheduleWhatsAppMaintenance();
 
 const app = require('./app');
 const whatsappService = require('./services/whatsappService');
