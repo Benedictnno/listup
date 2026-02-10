@@ -94,7 +94,7 @@ export default function HeroCarousel() {
     }
 
     return (
-        <div className="relative h-full min-h-[250px] md:min-h-[400px] w-full overflow-hidden rounded-2xl bg-[#0b101b] shadow-2xl">
+        <div className="relative h-full min-h-[210px] md:min-h-[400px] w-full overflow-hidden rounded-2xl bg-[#0b101b] shadow-2xl">
             <AnimatePresence mode="wait">
                 <motion.div
                     key={currentIndex}
