@@ -30,7 +30,13 @@ const WhatsAppService = {
             wppClient = await wppconnect.create({
                 session: 'ListUp-Bot',
                 catchQR: (base64Qr, asciiQR, attempts, urlCode) => {
-                    console.log('Terminal QR Code: ', asciiQR);
+                    console.log('Using fallback QR logging...');
+                    console.log('Scan the QR Code below to log in:');
+                    console.log(asciiQR); // Keep ASCII for terminal
+                    console.log('--------------------------------------------------');
+                    console.log('If the QR code above creates a mess, copy the code below and paste it into a QR generator (e.g. https://www.qr-code-generator.com/):');
+                    console.log(urlCode); // Raw text code
+                    console.log('--------------------------------------------------');
                 },
                 statusFind: (statusSession, session) => {
                     console.log('Status Session: ', statusSession);
