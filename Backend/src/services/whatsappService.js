@@ -45,16 +45,22 @@ const WhatsAppService = {
                 browserArgs: [
                     '--no-sandbox',
                     '--disable-setuid-sandbox',
-                    '--disable-dev-shm-usage', // Recommended for Docker/Render
+                    '--disable-dev-shm-usage',
                     '--disable-gpu'
                 ],
                 puppetOptions: {
-                    executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || null,
+                    executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined, // Fallback to bundled chromium
                     args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
                 }
             });
 
             console.log('✅ WPPConnect Client Initialized');
+            console.log('Browser Args:', JSON.stringify(config.browserArgs));
+            if (process.env.PUPPETEER_EXECUTABLE_PATH) {
+                console.log('Using Custom Executable Path:', process.env.PUPPETEER_EXECUTABLE_PATH);
+            } else {
+                console.log('Using Default Bundled Chromium');
+            }
 
             // Listen for messages
             wppClient.onMessage(async (message) => {
