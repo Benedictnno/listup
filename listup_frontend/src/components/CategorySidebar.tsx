@@ -73,7 +73,7 @@ export default function CategorySidebar() {
     const displayCategories = categories.length > 0 ? categories : STATIC_CATEGORIES.map(c => ({ ...c, id: c.slug }));
 
     return (
-        <aside className="hidden lg:block w-64 h-full shrink-0 overflow-hidden shadow-2xl bg-[#0f172a] rounded-lg p-4">
+        <aside className="w-full h-full overflow-hidden shadow-2xl bg-[#0f172a]/50 backdrop-blur-lg  p-3">
             <div className="mb-4 flex items-center gap-2 px-2 text-white">
                 <Layers className="h-5 w-5 text-lime-400" />
                 <h2 className="text-lg font-bold font-montserrat tracking-tight">Categories</h2>
@@ -86,7 +86,7 @@ export default function CategorySidebar() {
                         <Link
                             key={cat.id}
                             href={`/categories/${cat.slug}`}
-                            className="flex items-center justify-between px-4 py-2.5 text-slate-300 hover:text-white hover:bg-white/5 transition-all group font-montserrat text-sm rounded-md"
+                            className="flex items-center justify-between px-4 py-2 text-slate-300 hover:text-white hover:bg-white/5 transition-all group font-montserrat text-sm rounded-md"
                         >
                             <div className="flex items-center gap-3">
                                 <Icon className="w-4 h-4 text-slate-400 group-hover:text-lime-400 transition-colors" />

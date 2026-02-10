@@ -215,7 +215,16 @@ export default function SearchBar() {
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            handleSearchClick();
+            const searchInput = e.currentTarget.querySelector('input');
+            const searchValue = searchInput?.value || '';
+            if (searchValue.trim()) {
+              setIsSearching(true);
+              setSearch(searchValue.trim());
+              addToRecentSearches(searchValue.trim());
+              setShowSuggestions(false);
+              router.push(`/listings?q=${encodeURIComponent(searchValue.trim())}`);
+              setTimeout(() => setIsSearching(false), 300);
+            }
           }}
           className="relative flex"
         >

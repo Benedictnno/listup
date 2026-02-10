@@ -7,9 +7,17 @@ import { useAuthStore } from '@/store/authStore';
 import { useChat } from '@/context/ChatContext';
 import Image from 'next/image';
 import { fetchCategories, Category } from '@/lib/api/categories';
+import { fetchCategories, Category } from '@/lib/api/categories';
 import { motion, AnimatePresence } from 'framer-motion';
+import dynamic from 'next/dynamic';
+import SearchBarSkeleton from './skeletons/SearchBarSkeleton';
 
-import SearchBar from './SearchBar';
+const SearchBar = dynamic(() => import('./SearchBar'), {
+  loading: () => <SearchBarSkeleton />,
+  ssr: false
+});
+
+// import SearchBar from './SearchBar'; // Replaced with dynamic import
 
 function NavBar() {
   const [open, setOpen] = React.useState(false);

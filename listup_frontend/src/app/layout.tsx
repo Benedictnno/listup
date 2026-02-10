@@ -12,6 +12,7 @@ import BottomNav from "@/components/BottomNav";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 import ReferralEngagementTracker from "@/components/ReferralEngagementTracker";
 import { Toaster } from "sonner";
+import QueryProvider from "@/providers/QueryProvider";
 
 
 const montserrat = Montserrat({
@@ -57,24 +58,26 @@ export default function RootLayout({
         <link rel="preconnect" href="https://api.listup.ng" />
       </head>
       <body className="antialiased">
-        <AuthProvider>
-          <FeatureFlagProvider>
-            <ChatProvider>
-              <NavBar />
-              <div className="pb-20 md:pb-0">
-                {children}
-              </div>
-              <Analytics />
-              <SpeedInsights />
-              <Footer />
-              <BottomNav />
-              <ReferralEngagementTracker />
-              <PWAInstallPrompt />
-              <Toaster position="top-center" richColors />
-            </ChatProvider>
+        <QueryProvider>
+          <AuthProvider>
+            <FeatureFlagProvider>
+              <ChatProvider>
+                <NavBar />
+                <div className="pb-20 md:pb-0">
+                  {children}
+                </div>
+                <Analytics />
+                <SpeedInsights />
+                <Footer />
+                <BottomNav />
+                <ReferralEngagementTracker />
+                <PWAInstallPrompt />
+                <Toaster position="top-center" richColors />
+              </ChatProvider>
 
-          </FeatureFlagProvider>
-        </AuthProvider>
+            </FeatureFlagProvider>
+          </AuthProvider>
+        </QueryProvider>
       </body>
     </html>
   );

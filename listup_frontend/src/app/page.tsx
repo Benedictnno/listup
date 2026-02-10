@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
-import { motion } from "framer-motion";
-import { ArrowRight, Search } from "lucide-react";
+// import { motion } from "framer-motion"; // Removed unused import to save bundle size if not used elsewhere, or keep if needed. It was used in original file.
+import { ArrowRight, Search, Store, MessageCircle } from "lucide-react";
 import { tips } from "@/utils/constants";
 import { PrimaryButton, SectionEyebrow } from "@/utils/helpers";
 import AdsPage from "@/components/TrendingAds";
@@ -12,10 +12,18 @@ import { GhostButton } from "@/utils/helpers";
 import { useAuthStore } from "@/store/authStore";
 import OutsideAd from "@/components/OutsideAd";
 import CategorySidebar from "@/components/CategorySidebar";
-import HeroCarousel from "@/components/HeroCarousel";
+// import HeroCarousel from "@/components/HeroCarousel"; // Replaced with dynamic import
 import PromoCards from "@/components/PromoCards";
 import { useRouter } from "next/navigation";
 import { useFilterStore } from "@/store/useFilterStore";
+import dynamic from "next/dynamic";
+import CarouselSkeleton from "@/components/skeletons/CarouselSkeleton";
+
+const HeroCarousel = dynamic(() => import("@/components/HeroCarousel"), {
+  loading: () => <CarouselSkeleton />,
+  ssr: false // Disable SSR for carousel since it's client-side heavy
+});
+
 /**
  * Marketplace Landing Page
  * Framework: Next.js (app router ready) + TailwindCSS
@@ -30,11 +38,11 @@ export default function MarketplaceLanding() {
   const setSearch = useFilterStore((state) => state.setSearch);
 
   return (
-    <div className="min-h-screen w-full text-slate-800 font-montserrat realative">
+    <div className="min-h-screen w-full text-slate-800 font-montserrat relative overflow-x-hidden">
       {/* NAVBAR */}
 
       {/* HERO SECTION */}
-      <section className="bg-[#0f172a] py-6 md:py-10">
+      <section className="bg-slate-950 py-6 md:py-12 border-b border-white/5">
         <div className="mx-auto max-w-7xl px-4 md:px-6">
 
           {/* Mobile Search Bar - Visible only on mobile as per mockup */}
@@ -47,48 +55,80 @@ export default function MarketplaceLanding() {
                 setSearch(searchValue.trim());
                 router.push(`/listings?q=${encodeURIComponent(searchValue.trim())}`);
               }
-            }} className="flex w-full items-center bg-[#1e293b] border border-slate-700 rounded-xl overflow-hidden h-14">
+            }} className="flex w-full items-center bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden h-14 shadow-2xl">
               <div className="pl-4">
-                <Search className="h-5 w-5 text-slate-400" />
+                <Search className="h-5 w-5 text-slate-500" />
               </div>
               <input
                 type="text"
                 placeholder="Search listings..."
-                className="flex-1 bg-transparent text-white outline-none px-3 font-montserrat text-base"
+                className="flex-1 bg-transparent text-white outline-none px-3 font-montserrat text-sm"
               />
               <button
                 type="submit"
-                className="h-full px-6 bg-lime-400 text-slate-900 font-bold font-montserrat hover:bg-lime-300 transition-colors"
+                className="h-full px-6 bg-lime-400 text-slate-950 font-bold font-montserrat hover:bg-lime-300 transition-colors"
               >
                 Search
               </button>
             </form>
           </div>
 
-          <div className="flex flex-col md:flex-row gap-6 h-auto md:h-[420px] lg:h-[480px]">
+
+
+          <div className="flex flex-col lg:flex-row gap-6">
             {/* 1. Category Sidebar (Desktop Only) */}
-            <CategorySidebar />
+            <div className="hidden lg:block w-58 h-[440px]">
+              <CategorySidebar />
+            </div>
 
             {/* 2. Hero Carousel (Main) */}
-            <div className="flex-1 h-[300px] md:h-full">
+            <div className="flex-1 min-h-[250px] lg:h-[430px]">
               <HeroCarousel />
             </div>
 
-            {/* 3. Promo Cards (Desktop Only) */}
-            <PromoCards />
+            {/* 3. Vertical Promo Cards (Desktop Only) */}
+            <div className="hidden lg:flex flex-col gap-4 w-52">
+              <Link
+                href="/signup?redirect=dashboard"
+                className="relative overflow-hidden rounded-2xl bg-white border border-slate-200 p-6 hover:shadow-xl transition-all group h-[215px] flex flex-col justify-center"
+              >
+                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-lime-400 to-lime-500 opacity-10 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-110" />
+                <div className="inline-flex p-3 rounded-xl bg-gradient-to-br from-lime-400 to-lime-500 text-white mb-4 shadow-lg shadow-lime-500/20 w-fit">
+                  <Store className="w-6 h-6" />
+                </div>
+                <h3 className="text-xl font-bold text-slate-900 mb-2 font-montserrat tracking-tight">Start Selling</h3>
+                <p className="text-slate-500 text-sm font-montserrat">Turn your items into cash today</p>
+              </Link>
+
+              <a
+                href="https://wa.me/2349011022509"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-lime-400 to-lime-500 p-6 hover:shadow-xl transition-all group h-[215px] flex flex-col justify-center"
+              >
+                <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-110" />
+                <div className="inline-flex p-3 rounded-xl bg-white/20 backdrop-blur-sm text-white mb-4 shadow-lg w-fit">
+                  <MessageCircle className="w-6 h-6" />
+                </div>
+                <h3 className="text-xl font-bold text-white mb-2 font-montserrat tracking-tight">Join WhatsApp</h3>
+                <p className="text-white/90 text-sm font-montserrat">Get exclusive deals & updates</p>
+              </a>
+            </div>
           </div>
 
-          {/* Mobile Promo Buttons (Visible only on mobile) */}
-          <div className="grid grid-cols-2 gap-3 mt-6 md:hidden">
+          {/* Mobile Promo Buttons (Below Hero Carousel on Mobile) */}
+          <div className="grid grid-cols-2 gap-3 mt-6 lg:hidden">
             <Link
               href="/signup?redirect=dashboard"
-              className="bg-white text-slate-900 font-bold py-4 rounded-2xl text-center font-montserrat text-sm shadow-lg active:scale-95 transition-transform"
+              className="bg-white text-slate-900 font-bold py-4 px-6 rounded-2xl text-center font-montserrat text-sm shadow-lg active:scale-95 transition-transform border border-slate-700"
             >
               Start Selling
             </Link>
             <a
-              href="https://wa.me/2348012345678"
-              className="bg-lime-400 text-slate-900 font-bold py-4 rounded-2xl text-center font-montserrat text-sm shadow-lg active:scale-95 transition-transform"
+              href="https://wa.me/2349011022509"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-lime-400 text-slate-900 font-bold py-4 px-6 rounded-2xl text-center font-montserrat text-sm shadow-lg active:scale-95 transition-transform"
             >
               Join WhatsApp
             </a>
@@ -96,9 +136,11 @@ export default function MarketplaceLanding() {
         </div>
       </section>
 
+      {/* <PromoCards /> */}
+
       {/* <AdsPage/> */}
 
-      <MiniListings />
+      < MiniListings />
 
       {/* <Category /> */}
 
@@ -147,25 +189,30 @@ export default function MarketplaceLanding() {
       </section>
 
       {/* PARALLAX BANNER */}
-      <section className="relative">
-        <div
-          className="relative h-56 w-full bg-fixed bg-cover bg-center md:h-64"
-          style={{
-            backgroundImage:
-              "url(https://images.unsplash.com/photo-1517816743773-6e0fd518b4a6?q=80&w=1600&auto=format&fit=crop)",
-          }}
-        >
-          <div className="absolute inset-0 bg-slate-900/60" />
-          <div className="relative flex max-sm:flex-col max-sm:p-8 z-10 mx-auto h-full max-w-7xl items-center justify-between px-4 md:px-6">
-            <div >
-              <h3 className="text-lg font-semibold text-white md:text-2xl font-montserrat">Discover Amazing Deals Today!</h3>
-              <p className="mt-1 text-sm text-slate-200 font-montserrat">Limited‑time offers across popular categories.</p>
-            </div>
-            <div className=" m-auto">
-              <PrimaryButton>Explore Now</PrimaryButton>
-            </div>
+      <section className="relative h-56 md:h-64 w-full overflow-hidden">
+        {/* Optimized Background Image using Next.js Image */}
+        <div className="absolute inset-0">
+          <Image
+            src="/images/parallax-banner.jpg"
+            alt="Discover Amazing Deals"
+            fill
+            className="object-cover object-center"
+            quality={80}
+            priority={false}
+          />
+        </div>
+
+        <div className="absolute inset-0 bg-slate-900/60" />
+        <div className="relative flex max-sm:flex-col max-sm:p-8 z-10 mx-auto h-full max-w-7xl items-center justify-between px-4 md:px-6">
+          <div >
+            <h3 className="text-lg font-semibold text-white md:text-2xl font-montserrat">Discover Amazing Deals Today!</h3>
+            <p className="mt-1 text-sm text-slate-200 font-montserrat">Limited‑time offers across popular categories.</p>
+          </div>
+          <div className=" m-auto">
+            <PrimaryButton>Explore Now</PrimaryButton>
           </div>
         </div>
+
       </section>
 
       {/* TIPS SECTION */}
@@ -197,6 +244,6 @@ export default function MarketplaceLanding() {
       </section>
       <OutsideAd />
 
-    </div>
+    </div >
   );
 }
