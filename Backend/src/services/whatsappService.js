@@ -582,18 +582,19 @@ const WhatsAppService = {
                 data: {
                     whatsappMessageCount: 0
                 }
+            }); // Restored missing closing components
             console.log('✅ Daily WhatsApp message counters reset');
-            } catch (error) {
-                console.error('Error resetting daily counters:', error);
-            }
-        },
-
-        /**
-         * Get the latest QR code
-         */
-        getQR() {
-            return latestQR;
+        } catch (error) {
+            console.error('Error resetting daily counters:', error);
         }
-    };
+    },
 
-    module.exports = WhatsAppService;
+    /**
+     * Get the latest QR code
+     */
+    getQR() {
+        return latestQR;
+    }
+};
+
+module.exports = WhatsAppService;
