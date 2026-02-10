@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react';
 import axios from '@/utils/axios';
-import { useQuery } from '@tantml:parameter>react-query';
+import { useQuery } from '@tanstack/react-query';
 
 interface Advertisement {
     id: string;
