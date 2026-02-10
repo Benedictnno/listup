@@ -20,9 +20,6 @@ const nextConfig = {
     // Cache optimized images for 7 days
     minimumCacheTTL: 60 * 60 * 24 * 7,
 
-    // Image quality (1-100, lower = smaller file size)
-    quality: 80,
-
     // Remote image patterns
     remotePatterns: [
       { protocol: "https", hostname: "res.cloudinary.com" },
