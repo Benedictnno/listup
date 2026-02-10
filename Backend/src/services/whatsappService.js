@@ -7,6 +7,7 @@ const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 
 let wppClient = null;
+let latestQR = null; // Store QR for API retrieval
 
 // Configuration constants
 const RATE_LIMIT_CONFIG = {
@@ -30,6 +31,7 @@ const WhatsAppService = {
             wppClient = await wppconnect.create({
                 session: 'ListUp-Bot',
                 catchQR: (base64Qr, asciiQR, attempts, urlCode) => {
+                    latestQR = urlCode; // Capture QR for API
                     console.log('Using fallback QR logging...');
                     console.log('Scan the QR Code below to log in:');
                     console.log(asciiQR); // Keep ASCII for terminal
@@ -580,12 +582,18 @@ const WhatsAppService = {
                 data: {
                     whatsappMessageCount: 0
                 }
-            });
             console.log('✅ Daily WhatsApp message counters reset');
-        } catch (error) {
-            console.error('Error resetting daily counters:', error);
-        }
-    }
-};
+            } catch (error) {
+                console.error('Error resetting daily counters:', error);
+            }
+        },
 
-module.exports = WhatsAppService;
+        /**
+         * Get the latest QR code
+         */
+        getQR() {
+            return latestQR;
+        }
+    };
+
+    module.exports = WhatsAppService;
