@@ -38,11 +38,20 @@ const WhatsAppService = {
                 },
                 headless: true,
                 devtools: false,
-                useChrome: true,
+                useChrome: false, // Use Chromium by default, or system browser
                 debug: false,
                 logQR: true,
                 autoClose: 300000, // 5 minutes to scan QR
-                browserArgs: ['--no-sandbox', '--disable-setuid-sandbox']
+                browserArgs: [
+                    '--no-sandbox',
+                    '--disable-setuid-sandbox',
+                    '--disable-dev-shm-usage', // Recommended for Docker/Render
+                    '--disable-gpu'
+                ],
+                puppetOptions: {
+                    executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || null,
+                    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
+                }
             });
 
             console.log('✅ WPPConnect Client Initialized');
