@@ -46,7 +46,16 @@ const WhatsAppService = {
                     '--no-sandbox',
                     '--disable-setuid-sandbox',
                     '--disable-dev-shm-usage',
-                    '--disable-gpu'
+                    '--disable-gpu',
+                    '--disable-extensions',
+                    '--disable-default-apps',
+                    '--mute-audio',
+                    '--no-default-browser-check',
+                    '--disable-background-timer-throttling',
+                    '--disable-backgrounding-occluded-windows',
+                    '--disable-notifications',
+                    '--disable-component-update',
+                    '--disable-sync'
                 ],
                 puppetOptions: {
                     executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined, // Fallback to bundled chromium
