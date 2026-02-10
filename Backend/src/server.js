@@ -11,7 +11,7 @@ scheduleWhatsAppMaintenance();
 const app = require('./app');
 const whatsappService = require('./services/whatsappService');
 
-// QR Code Endpoint for debugging/linking
+
 app.get('/whatsapp/qr', (req, res) => {
     const qr = whatsappService.getQR();
     if (!qr) {
