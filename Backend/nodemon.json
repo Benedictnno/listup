@@ -1,5 +1,6 @@
 {
   "ignore": [
+    "baileys_auth/*",
     "tokens/*",
     "logs/*",
     "*.log"
