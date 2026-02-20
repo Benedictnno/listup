@@ -1,4 +1,4 @@
-const { default: makeWASocket, DisconnectReason, useMultiFileAuthState, fetchLatestBaileysVersion } = require('@whiskeysockets/baileys');
+const { default: makeWASocket, DisconnectReason, useMultiFileAuthState, fetchLatestBaileysVersion, downloadContentFromMessage } = require('@whiskeysockets/baileys');
 const { Boom } = require('@hapi/boom');
 const qrcode = require('qrcode-terminal');
 const { PrismaClient } = require('@prisma/client');
@@ -380,7 +380,27 @@ const WhatsAppService = {
         const messageContent = message.message?.conversation ||
             message.message?.extendedTextMessage?.text || '';
 
-        if (!messageContent) return;
+        const audioMessage = message.message?.audioMessage;
+        let audioData = null;
+
+        if (audioMessage && audioMessage.url) {
+            console.log('🎙️ Received voice message/audio');
+            try {
+                const stream = await downloadContentFromMessage(audioMessage, 'audio');
+                let buffer = Buffer.from([]);
+                for await (const chunk of stream) {
+                    buffer = Buffer.concat([buffer, chunk]);
+                }
+                audioData = {
+                    buffer,
+                    mimetype: audioMessage.mimetype || 'audio/ogg; codecs=opus'
+                };
+            } catch (downloadError) {
+                console.error('Failed to download audio message:', downloadError);
+            }
+        }
+
+        if (!messageContent && !audioData) return;
 
         const cleanPhone = from.split('@')[0];
         const pushname = message.pushName || 'Customer';
@@ -407,7 +427,7 @@ const WhatsAppService = {
                 messageSid: message.key.id,
                 status: 'received',
                 direction: 'inbound',
-                body: messageContent
+                body: messageContent || (audioData ? '[Voice Message]' : '')
             });
         }
 
@@ -504,7 +524,7 @@ const WhatsAppService = {
         console.log('Current Message:', messageContent);
         console.log('History Context:', JSON.stringify(history, null, 2));
 
-        const responseText = await GeminiService.generateResponse(userName, from, messageContent, history);
+        const responseText = await GeminiService.generateResponse(userName, from, messageContent, history, audioData);
 
         const delay = this.calculateResponseDelay(responseText.length);
 

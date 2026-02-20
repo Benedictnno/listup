@@ -92,19 +92,38 @@ const GeminiService = {
     /**
      * Main entry point to generate a response for a user message
      */
-    async generateResponse(userName, phoneNumber, message, history = []) {
+    async generateResponse(userName, phoneNumber, message, history = [], media = null) {
         try {
             // Map existing history to Gemini format { role: "user" | "model", parts: [{ text: "..." }] }
-            const formattedHistory = history.map(h => ({
+            let formattedHistory = history.map(h => ({
                 role: h.direction === 'inbound' ? 'user' : 'model',
                 parts: [{ text: h.body }]
             }));
+
+            // Gemini requires the first message in context to be from the 'user'
+            const firstUserIndex = formattedHistory.findIndex(h => h.role === 'user');
+            if (firstUserIndex > 0) {
+                formattedHistory = formattedHistory.slice(firstUserIndex);
+            } else if (firstUserIndex === -1) {
+                formattedHistory = [];
+            }
 
             const chat = model.startChat({
                 history: formattedHistory,
             });
 
-            let result = await chat.sendMessage(message);
+            const messageParts = [];
+            if (message) messageParts.push({ text: message });
+            if (media) {
+                messageParts.push({
+                    inlineData: {
+                        data: media.buffer.toString('base64'),
+                        mimeType: media.mimetype
+                    }
+                });
+            }
+
+            let result = await chat.sendMessage(messageParts);
             let response = result.response;
 
             // Handle tool calls if any
