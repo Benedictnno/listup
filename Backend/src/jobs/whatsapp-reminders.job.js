@@ -1,7 +1,7 @@
 const cron = require('node-cron');
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
-const { sendMessage } = require('../services/whatsapp.service');
+const { sendMessage } = require('../services/whatsappService');
 
 /**
  * Hourly cron job to remind sellers of unreplied messages

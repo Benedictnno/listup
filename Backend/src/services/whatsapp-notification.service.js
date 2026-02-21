@@ -1,4 +1,4 @@
-const { sendMessage } = require('./whatsapp.service');
+const { sendMessage } = require('./whatsappService');
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
@@ -45,6 +45,48 @@ async function notifySeller(sellerId, buyerName, productName, messagePreview) {
     }
 }
 
+/**
+ * Notify Buyer of vendor response
+ */
+async function notifyBuyer(buyerId, vendorName, productName, messagePreview) {
+    try {
+        const buyer = await prisma.user.findUnique({
+            where: { id: buyerId },
+            select: { phone: true, whatsappOptIn: true, name: true }
+        });
+
+        if (!buyer || !buyer.phone || !buyer.whatsappOptIn) {
+            console.log(`[WhatsApp] Skipping notification for buyer ${buyerId}: opt-out or no phone.`);
+            return;
+        }
+
+        const body = `✅ *Vendor Response Received*
+
+Hi ${buyer.name}, *${vendorName}* has responded to your inquiry about *${productName}*.
+
+*Message:* "${messagePreview.substring(0, 100)}${messagePreview.length > 100 ? '...' : ''}"
+
+🔗 View and reply here: https://listup.ng/messages`;
+
+        await sendMessage(buyer.phone, body);
+
+        // Log notification
+        await prisma.botNotification.create({
+            data: {
+                userId: buyerId,
+                type: 'vendor_response',
+                title: 'Vendor Response Received',
+                message: body,
+                sentVia: 'whatsapp'
+            }
+        });
+
+    } catch (error) {
+        console.error('Failed to notify buyer via WhatsApp:', error);
+    }
+}
+
 module.exports = {
-    notifySeller
+    notifySeller,
+    notifyBuyer
 };

@@ -596,6 +596,67 @@ const WhatsAppService = {
     },
 
     /**
+     * Send Image with Caption
+     */
+    async sendImage(to, imageUrl, caption) {
+        if (!sock) return null;
+        try {
+            const jid = to.includes('@s.whatsapp.net') ? to : `${to.replace(/\D/g, '')}@s.whatsapp.net`;
+            const result = await sock.sendMessage(jid, {
+                image: { url: imageUrl },
+                caption: caption
+            });
+            return result;
+        } catch (error) {
+            console.error('[WhatsApp] Failed to send image:', error);
+            return null;
+        }
+    },
+
+    /**
+     * Send Buttons (using Poll as fallback)
+     */
+    async sendButtons(to, title, buttons, footer = 'Listup Assistant') {
+        if (!sock) return null;
+        try {
+            const jid = to.includes('@s.whatsapp.net') ? to : `${to.replace(/\D/g, '')}@s.whatsapp.net`;
+            return await sock.sendMessage(jid, {
+                poll: {
+                    name: title,
+                    values: buttons.map(b => b.text),
+                    selectableCount: 1
+                }
+            });
+        } catch (error) {
+            console.error('[WhatsApp] Failed to send buttons/poll:', error);
+            // Fallback to text
+            const buttonText = buttons.map((b, i) => `${i + 1}. ${b.text}`).join('\n');
+            return await this.sendMessage(to, `${title}\n\n${buttonText}`);
+        }
+    },
+
+    /**
+     * Send List Message (fallback to text)
+     */
+    async sendListMessage(to, title, buttonText, sections, footer = 'Listup Assistant') {
+        if (!sock) return null;
+        try {
+            let message = `${title}\n\n`;
+            sections.forEach(section => {
+                message += `*${section.title}*\n`;
+                section.rows.forEach((row, i) => {
+                    message += `${i + 1}. ${row.title}${row.description ? ' - ' + row.description : ''}\n`;
+                });
+                message += '\n';
+            });
+            return await this.sendMessage(to, message);
+        } catch (error) {
+            console.error('[WhatsApp] Failed to send list:', error);
+            return await this.sendMessage(to, `${title}\n\n(Menu failed to load)`);
+        }
+    },
+
+    /**
      * Get the latest QR code
      */
     getQR() {

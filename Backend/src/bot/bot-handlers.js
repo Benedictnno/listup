@@ -41,7 +41,7 @@ async function handleWhatsAppMessage(client, message) {
  * Lazy load service functions to avoid circular dependency
  */
 function getService() {
-    return require('../services/whatsapp.service');
+    return require('../services/whatsappService');
 }
 
 /**

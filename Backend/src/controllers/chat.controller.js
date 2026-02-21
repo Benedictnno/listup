@@ -114,11 +114,16 @@ class ChatController {
             const { emitNewMessage } = require('../utils/socketEmitter');
             emitNewMessage(conversationId, message, recipientId);
 
-            // Notify seller via WhatsApp if buyer sent the message
+            // Notify via WhatsApp
             if (senderType === 'BUYER') {
                 const productName = conversation.listing?.title || 'General Inquiry';
                 const buyerName = req.user.name;
                 notifySeller(conversation.sellerId, buyerName, productName, content);
+            } else if (senderType === 'SELLER') {
+                const productName = conversation.listing?.title || 'General Inquiry';
+                const vendorName = conversation.seller?.vendorProfile?.storeName || conversation.seller?.name || 'A Vendor';
+                const { notifyBuyer } = require('../services/whatsapp-notification.service');
+                notifyBuyer(conversation.buyerId, vendorName, productName, content);
             }
 
             return res.json({ success: true, message });
@@ -159,11 +164,16 @@ class ChatController {
             const { emitNewMessage } = require('../utils/socketEmitter');
             emitNewMessage(conversationId, message, recipientId);
 
-            // Notify seller via WhatsApp if buyer sent the image
+            // Notify via WhatsApp
             if (senderType === 'BUYER') {
                 const productName = conversation.listing?.title || 'General Inquiry';
                 const buyerName = req.user.name;
                 notifySeller(conversation.sellerId, buyerName, productName, '[Image]');
+            } else if (senderType === 'SELLER') {
+                const productName = conversation.listing?.title || 'General Inquiry';
+                const vendorName = conversation.seller?.vendorProfile?.storeName || conversation.seller?.name || 'A Vendor';
+                const { notifyBuyer } = require('../services/whatsapp-notification.service');
+                notifyBuyer(conversation.buyerId, vendorName, productName, '[Image]');
             }
 
             return res.json({ success: true, message });
