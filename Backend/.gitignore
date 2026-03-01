@@ -9,3 +9,4 @@ service-account.json
 tokens/
 logs/
 *.log
+/baileys_auth
