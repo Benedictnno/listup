@@ -31,7 +31,7 @@ app.get('/whatsapp/qr', (req, res) => {
             </html>
         `);
     }
-    
+
     // Serve QR code using public API
     res.send(`
         <html>
@@ -48,13 +48,31 @@ app.get('/whatsapp/qr', (req, res) => {
 });
 
 const PORT = process.env.PORT || 4000;
-app.listen(PORT, async () => {
-  console.log(`✅ API running on http://localhost:${PORT}`);
+const server = app.listen(PORT, async () => {
+    console.log(`✅ API running on http://localhost:${PORT}`);
 
-  // Initialize WhatsApp Bot
-  try {
-    await whatsappService.initialize();
-  } catch (err) {
-    console.error('Failed to start WhatsApp bot:', err);
-  }
+    // Initialize WhatsApp Bot
+    try {
+        await whatsappService.initialize();
+    } catch (err) {
+        console.error('Failed to start WhatsApp bot:', err);
+    }
+});
+
+// Initialize Socket.io
+const { initSocket } = require('./lib/socket');
+initSocket(server, {
+    origin: [
+        'https://listup.ng',
+        'https://www.listup.ng',
+        'https://api.listup.ng',
+        'https://listup-admin.vercel.app',
+        'http://localhost:3000',
+        'http://localhost:3001',
+        'https://listup-three.vercel.app',
+        /^https:\/\/.*\.vercel\.app$/ // All Vercel subdomains
+    ],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    credentials: true
 });

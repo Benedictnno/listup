@@ -210,13 +210,21 @@ export async function createListing(listingData: FormData | CreateListingPayload
       });
 
       if (!listingRes.ok) {
-        throw new Error("Failed to create listing");
+        const errData = await listingRes.json().catch(() => ({}));
+        if (errData.errors && Array.isArray(errData.errors)) {
+          const messages = errData.errors.map((e: any) => `${e.path || e.param}: ${e.msg}`).join(", ");
+          throw new Error(messages || "Validation failed");
+        }
+        throw new Error(errData.message || errData.error || "Failed to create listing");
       }
 
       return listingRes.json();
     }
   } catch (error: unknown) {
     console.error("Error creating listing:", error);
+    if (error instanceof Error) {
+      throw error;
+    }
     throw new Error("Failed to create listing");
   }
 }
