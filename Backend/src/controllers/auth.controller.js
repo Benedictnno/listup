@@ -3,6 +3,7 @@ const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const prisma = require('../lib/prisma');
 const { sign, verify } = require('../lib/jwt');
+const { addToGoogleSheet } = require('../utils/googleSheets');
 
 // Helper function to generate unique verification token
 function generateVerificationToken() {
@@ -223,7 +224,11 @@ exports.register = async (req, res, next) => {
     }
     */
 
-    await addToGoogleSheet(name, storeName || '', email, phone || '', role);
+    try {
+      await addToGoogleSheet(name, storeName || '', email, phone || '', role);
+    } catch (sheetError) {
+      console.error('Failed to sync new user to Google Sheets:', sheetError.message);
+    }
 
     // Return success response WITHOUT token - user must verify email before logging in
     res.status(201).json({
@@ -352,7 +357,6 @@ function generateVerificationCode() {
 
 // Use the email service to send verification codes
 const emailService = require('../lib/email');
-const { addToGoogleSheet } = require('../utils/googleSheets');
 
 exports.forgotPassword = async (req, res, next) => {
   try {

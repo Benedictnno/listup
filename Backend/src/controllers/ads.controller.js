@@ -261,15 +261,27 @@ exports.getAdById = async (req, res, next) => {
 // Update ad status
 exports.updateAdStatus = async (req, res, next) => {
   try {
-    const { id } = req.params;
+    const { adId } = req.params;
     const { status } = req.body;
 
-    const ad = await prisma.ad.update({
-      where: { id },
+    const ad = await prisma.ad.findUnique({
+      where: { id: adId }
+    });
+
+    if (!ad) {
+      return res.status(404).json({ message: "Ad not found" });
+    }
+
+    if (ad.vendorId !== req.user.id && req.user.role !== "ADMIN") {
+      return res.status(403).json({ message: "Unauthorized to update this ad" });
+    }
+
+    const updatedAd = await prisma.ad.update({
+      where: { id: adId },
       data: { status },
     });
 
-    res.json(ad);
+    res.json(updatedAd);
   } catch (e) {
     console.error("Error updating ad status:", e);
     next(e);

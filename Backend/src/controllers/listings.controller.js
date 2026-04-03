@@ -7,7 +7,7 @@ exports.getAll = async (req, res, next) => {
     const take = Math.min(parseInt(limit), 50);
     const skip = (Math.max(parseInt(page), 1) - 1) * take;
 
-    const filters = {};
+    const filters = { isActive: true };
     if (categoryId) filters.categoryId = categoryId;
     if (q) {
       filters.OR = [
@@ -248,7 +248,7 @@ exports.getByVendorId = async (req, res) => {
     const { vendorId } = req.params;
 
     // Optional: prevent vendors from accessing other vendors' data
-    if (req.user.id !== vendorId && req.user.role !== "admin") {
+    if (req.user.id !== vendorId && req.user.role !== "ADMIN") {
       return res.status(403).json({ message: "Unauthorized" });
     }
 

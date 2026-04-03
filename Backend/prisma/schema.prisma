@@ -137,10 +137,32 @@ model User {
   @@index([role])
 }
 
+model BotContact {
+  id                           String   @id @default(auto()) @map("_id") @db.ObjectId
+  phone                        String   @unique
+  name                         String?
+  whatsappOptIn                Boolean  @default(true)
+  whatsappStopRequested        Boolean  @default(false)
+  whatsappMessageCount         Int      @default(0)
+  whatsappLastMessageDate      DateTime?
+  whatsappEngagementScore      Float    @default(100.0)
+  lastWhatsappInteraction      DateTime?
+  lastContactReminderDate      DateTime?
+  whatsappContactReminderCount Int      @default(0)
+  isContactSavedByBot          Boolean  @default(false)
+
+  whatsappMessageLogs          WhatsAppMessageLog[]
+
+  createdAt                    DateTime @default(now())
+  updatedAt                    DateTime @updatedAt
+}
+
 model WhatsAppMessageLog {
   id             String   @id @default(auto()) @map("_id") @db.ObjectId
   userId         String?  @db.ObjectId
   user           User?    @relation(fields: [userId], references: [id])
+  botContactId   String?  @db.ObjectId
+  botContact     BotContact? @relation(fields: [botContactId], references: [id])
   messageSid     String   @unique
   status         String
   direction      String   // inbound, outbound

@@ -145,27 +145,27 @@ const WhatsAppService = {
     /**
      * Check and increment user's daily message count
      */
-    async checkRateLimit(userId) {
-        if (!userId) return { allowed: true, remaining: RATE_LIMIT_CONFIG.MAX_MESSAGES_PER_DAY };
+    async checkRateLimit(botContactId) {
+        if (!botContactId) return { allowed: true, remaining: RATE_LIMIT_CONFIG.MAX_MESSAGES_PER_DAY };
 
-        const user = await prisma.user.findUnique({
-            where: { id: userId },
+        const user = await prisma.botContact.findUnique({
+            where: { id: botContactId },
             select: {
                 whatsappMessageCount: true,
                 whatsappLastMessageDate: true,
             }
         });
 
-        if (!user) return { allowed: true, remaining: RATE_LIMIT_CONFIG.MAX_MESSAGES_PER_DAY };
+        if (!contact) return { allowed: true, remaining: RATE_LIMIT_CONFIG.MAX_MESSAGES_PER_DAY };
 
         const today = new Date().toDateString();
-        const lastMessageDate = user.whatsappLastMessageDate
-            ? new Date(user.whatsappLastMessageDate).toDateString()
+        const lastMessageDate = contact.whatsappLastMessageDate
+            ? new Date(contact.whatsappLastMessageDate).toDateString()
             : null;
 
         if (lastMessageDate !== today) {
-            await prisma.user.update({
-                where: { id: userId },
+            await prisma.botContact.update({
+                where: { id: botContactId },
                 data: {
                     whatsappMessageCount: 0,
                     whatsappLastMessageDate: new Date(),
@@ -174,7 +174,7 @@ const WhatsAppService = {
             return { allowed: true, remaining: RATE_LIMIT_CONFIG.MAX_MESSAGES_PER_DAY };
         }
 
-        if (user.whatsappMessageCount >= RATE_LIMIT_CONFIG.MAX_MESSAGES_PER_DAY) {
+        if (contact.whatsappMessageCount >= RATE_LIMIT_CONFIG.MAX_MESSAGES_PER_DAY) {
             return {
                 allowed: false,
                 remaining: 0,
@@ -184,18 +184,18 @@ const WhatsAppService = {
 
         return {
             allowed: true,
-            remaining: RATE_LIMIT_CONFIG.MAX_MESSAGES_PER_DAY - user.whatsappMessageCount
+            remaining: RATE_LIMIT_CONFIG.MAX_MESSAGES_PER_DAY - contact.whatsappMessageCount
         };
     },
 
     /**
      * Increment user's message count
      */
-    async incrementMessageCount(userId) {
-        if (!userId) return;
+    async incrementMessageCount(botContactId) {
+        if (!botContactId) return;
 
-        await prisma.user.update({
-            where: { id: userId },
+        await prisma.botContact.update({
+            where: { id: botContactId },
             data: {
                 whatsappMessageCount: { increment: 1 },
                 whatsappLastMessageDate: new Date(),
@@ -223,33 +223,33 @@ const WhatsAppService = {
     /**
      * Update user engagement score
      */
-    async updateEngagementScore(userId, isUserInitiated) {
-        if (!userId) return;
+    async updateEngagementScore(botContactId, isUserInitiated) {
+        if (!botContactId) return;
 
         const adjustment = isUserInitiated
             ? RATE_LIMIT_CONFIG.RESPONSE_REWARD
             : -RATE_LIMIT_CONFIG.NON_RESPONSE_PENALTY;
 
-        await prisma.user.update({
-            where: { id: userId },
+        await prisma.botContact.update({
+            where: { id: botContactId },
             data: {
                 whatsappEngagementScore: { increment: adjustment }
             }
         });
 
-        const user = await prisma.user.findUnique({
-            where: { id: userId },
+        const user = await prisma.botContact.findUnique({
+            where: { id: botContactId },
             select: { whatsappEngagementScore: true }
         });
 
-        if (user.whatsappEngagementScore > 100) {
-            await prisma.user.update({
-                where: { id: userId },
+        if (contact.whatsappEngagementScore > 100) {
+            await prisma.botContact.update({
+                where: { id: botContactId },
                 data: { whatsappEngagementScore: 100 }
             });
-        } else if (user.whatsappEngagementScore < 0) {
-            await prisma.user.update({
-                where: { id: userId },
+        } else if (contact.whatsappEngagementScore < 0) {
+            await prisma.botContact.update({
+                where: { id: botContactId },
                 data: { whatsappEngagementScore: 0 }
             });
         }
@@ -258,8 +258,8 @@ const WhatsAppService = {
     /**
      * Check if user can receive messages
      */
-    async canSendMessage(userId) {
-        if (!userId) return { allowed: false, reason: 'No user ID' };
+    async canSendMessage(botContactId) {
+        if (!botContactId) return { allowed: false, reason: 'No user ID' };
 
         const globalOk = await this.checkGlobalLimit();
         if (!globalOk) {
@@ -272,22 +272,22 @@ const WhatsAppService = {
             return { allowed: false, reason: 'Quiet hours' };
         }
 
-        const user = await prisma.user.findUnique({
-            where: { id: userId },
+        const user = await prisma.botContact.findUnique({
+            where: { id: botContactId },
             select: {
                 whatsappStopRequested: true,
                 whatsappEngagementScore: true,
             }
         });
 
-        if (!user) return { allowed: false, reason: 'User not found' };
+        if (!contact) return { allowed: false, reason: 'User not found' };
 
-        if (user.whatsappStopRequested) {
+        if (contact.whatsappStopRequested) {
             return { allowed: false, reason: 'User opted out' };
         }
 
-        if (user.whatsappEngagementScore < RATE_LIMIT_CONFIG.ENGAGEMENT_THRESHOLD) {
-            console.log(`⚠️ User engagement too low (${user.whatsappEngagementScore}). Skipping message.`);
+        if (contact.whatsappEngagementScore < RATE_LIMIT_CONFIG.ENGAGEMENT_THRESHOLD) {
+            console.log(`⚠️ User engagement too low (${contact.whatsappEngagementScore}). Skipping message.`);
             return { allowed: false, reason: 'Low engagement' };
         }
 
@@ -297,9 +297,9 @@ const WhatsAppService = {
     /**
      * Handle STOP command
      */
-    async handleStopCommand(userId, phone) {
-        await prisma.user.update({
-            where: { id: userId },
+    async handleStopCommand(botContactId, phone) {
+        await prisma.botContact.update({
+            where: { id: botContactId },
             data: { whatsappStopRequested: true }
         });
 
@@ -308,7 +308,7 @@ const WhatsAppService = {
 
         await this.sendMessage(phone, stopMessage);
 
-        console.log(`🛑 User ${userId} opted out via STOP command`);
+        console.log(`🛑 Contact ${botContactId} opted out via STOP command`);
     },
 
     /**
@@ -335,15 +335,10 @@ const WhatsAppService = {
      */
     async registerNewContact(phone, pushname) {
         try {
-            const randomPassword = crypto.randomBytes(16).toString('hex');
-            const hashedPassword = await bcrypt.hash(randomPassword, 10);
-            const email = `wa_${phone}@listup.bot`;
-
-            const newUser = await prisma.user.create({
+            
+            const newContact = await prisma.botContact.create({
                 data: {
                     name: pushname || 'WhatsApp Customer',
-                    email: email,
-                    password: hashedPassword,
                     phone: phone,
                     whatsappOptIn: true,
                     whatsappEngagementScore: 100,
@@ -354,17 +349,17 @@ const WhatsAppService = {
 
             try {
                 await addToGoogleSheet(
-                    newUser.name,
+                    newContact.name,
                     'WhatsApp Lead',
-                    newUser.email,
-                    newUser.phone,
+                    '',
+                    newContact.phone,
                     'Automatically added via WhatsApp Bot'
                 );
             } catch (sheetError) {
                 console.error('Failed to sync new contact to Google Sheets:', sheetError.message);
             }
 
-            return newUser;
+            return newContact;
         } catch (error) {
             console.error('Error in registerNewContact:', error);
             return null;
@@ -404,25 +399,25 @@ const WhatsAppService = {
         const cleanPhone = from.split('@')[0];
         const pushname = message.pushName || 'Customer';
 
-        let user = await prisma.user.findUnique({ where: { phone: cleanPhone } });
+        let contact = await prisma.botContact.findUnique({ where: { phone: cleanPhone } });
 
-        if (!user) {
-            user = await this.registerNewContact(cleanPhone, pushname);
+        if (!contact) {
+            contact = await this.registerNewContact(cleanPhone, pushname);
         }
 
-        const userId = user?.id;
-        const userName = user ? user.name : pushname;
+        const botContactId = contact?.id;
+        const contactName = contact ? contact.name : pushname;
 
-        if (userId) {
-            await prisma.user.update({
-                where: { id: userId },
+        if (botContactId) {
+            await prisma.botContact.update({
+                where: { id: botContactId },
                 data: { lastWhatsappInteraction: new Date() }
             });
         }
 
-        if (userId) {
+        if (botContactId) {
             await this.logMessage({
-                userId: userId,
+                botContactId: botContactId,
                 messageSid: message.key.id,
                 status: 'received',
                 direction: 'inbound',
@@ -432,19 +427,19 @@ const WhatsAppService = {
 
         const stopKeywords = ['stop', 'unsubscribe', 'stop bot', 'opt out', 'optout'];
         if (stopKeywords.some(keyword => messageContent.toLowerCase().includes(keyword))) {
-            if (userId) {
-                await this.handleStopCommand(userId, cleanPhone);
+            if (botContactId) {
+                await this.handleStopCommand(botContactId, cleanPhone);
             }
             return;
         }
 
-        const rateLimit = await this.checkRateLimit(userId);
+        const rateLimit = await this.checkRateLimit(botContactId);
         if (!rateLimit.allowed) {
             await this.sendMessage(from, rateLimit.message);
 
-            if (userId) {
+            if (botContactId) {
                 await this.logMessage({
-                    userId: userId,
+                    botContactId: botContactId,
                     messageSid: `throttled_${Date.now()}`,
                     status: 'throttled',
                     direction: 'outbound',
@@ -455,9 +450,9 @@ const WhatsAppService = {
             return;
         }
 
-        const canSend = await this.canSendMessage(userId);
+        const canSend = await this.canSendMessage(botContactId);
         if (!canSend.allowed && canSend.reason !== 'Quiet hours') {
-            console.log(`Cannot send to user ${userId}: ${canSend.reason}`);
+            console.log(`Cannot send to contact ${botContactId}: ${canSend.reason}`);
             return;
         }
 
@@ -467,15 +462,15 @@ const WhatsAppService = {
         }
 
         // Contact reminder (VCard)
-        if (userId && user.whatsappContactReminderCount < 2) {
+        if (userId && contact.whatsappContactReminderCount < 2) {
             const oneWeekAgo = new Date();
             oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
 
-            const lastReminder = user.lastContactReminderDate ? new Date(user.lastContactReminderDate) : null;
+            const lastReminder = contact.lastContactReminderDate ? new Date(contact.lastContactReminderDate) : null;
 
             if (!lastReminder || lastReminder < oneWeekAgo) {
                 try {
-                    console.log(`📇 Sending contact reminder to ${cleanPhone} (Reminder #${user.whatsappContactReminderCount + 1})`);
+                    console.log(`📇 Sending contact reminder to ${cleanPhone} (Reminder #${contact.whatsappContactReminderCount + 1})`);
 
                     const vcard = 'BEGIN:VCARD\n'
                         + 'VERSION:3.0\n'
@@ -491,11 +486,11 @@ const WhatsAppService = {
                         }
                     });
 
-                    const reminderText = `Hi ${userName}! I've saved your contact to my list. 🤝\n\nPlease save mine too so you can see our daily deals and market updates on my Status! 🧺✨`;
+                    const reminderText = `Hi ${contactName}! I've saved your contact to my list. 🤝\n\nPlease save mine too so you can see our daily deals and market updates on my Status! 🧺✨`;
                     await this.sendMessage(from, reminderText);
 
-                    await prisma.user.update({
-                        where: { id: userId },
+                    await prisma.botContact.update({
+                        where: { id: botContactId },
                         data: {
                             whatsappContactReminderCount: { increment: 1 },
                             lastContactReminderDate: new Date()
@@ -509,9 +504,9 @@ const WhatsAppService = {
 
         // Fetch chat history
         let history = [];
-        if (userId) {
+        if (botContactId) {
             history = await prisma.whatsAppMessageLog.findMany({
-                where: { userId: userId },
+                where: { botContactId: botContactId },
                 orderBy: { createdAt: 'desc' },
                 take: 10,
                 select: { body: true, direction: true }
@@ -523,7 +518,7 @@ const WhatsAppService = {
         console.log('Current Message:', messageContent);
         console.log('History Context:', JSON.stringify(history, null, 2));
 
-        const responseText = await GeminiService.generateResponse(userName, from, messageContent, history, audioData);
+        const responseText = await GeminiService.generateResponse(contactName, from, messageContent, history, audioData);
 
         const delay = this.calculateResponseDelay(responseText.length);
 
@@ -537,7 +532,7 @@ const WhatsAppService = {
 
             if (userId && result) {
                 await this.logMessage({
-                    userId: userId,
+                    botContactId: botContactId,
                     messageSid: result.key.id,
                     status: 'sent',
                     direction: 'outbound',
@@ -580,7 +575,7 @@ const WhatsAppService = {
      */
     async resetDailyCounters() {
         try {
-            await prisma.user.updateMany({
+            await prisma.botContact.updateMany({
                 where: {
                     whatsappMessageCount: { gt: 0 }
                 },

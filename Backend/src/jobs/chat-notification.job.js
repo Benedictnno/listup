@@ -1,6 +1,5 @@
 const cron = require('node-cron');
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const prisma = require('../lib/prisma');
 // const { sendEmail } = require('../lib/email'); // Placeholder for actual email service
 
 /**

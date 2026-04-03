@@ -339,15 +339,27 @@ router.post("/listing-package/initialize", auth, allow('VENDOR'), async (req, re
 });
 
 // Webhook for payment provider
-router.post("/webhook", express.json(), async (req, res) => {
+router.post("/webhook", async (req, res) => {
+  if (!req.rawBody) {
+    console.error("⚠️ No raw body found on webhook request");
+    return res.sendStatus(400);
+  }
+
   const hash = crypto
     .createHmac("sha512", process.env.PAYSTACK_SECRET_KEY)
-    .update(JSON.stringify(req.body))
+    .update(req.rawBody)
     .digest("hex");
 
   if (hash !== req.headers["x-paystack-signature"]) {
     console.error("⚠️ Invalid Paystack signature - possible fraud attempt");
     return res.sendStatus(401);
+  }
+
+  try {
+    req.body = JSON.parse(req.rawBody.toString('utf8'));
+  } catch (err) {
+    console.error("⚠️ Invalid JSON payload", err);
+    return res.sendStatus(400);
   }
 
   console.log("=== WEBHOOK RECEIVED (VERIFIED) ===");

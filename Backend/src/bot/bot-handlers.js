@@ -1,5 +1,4 @@
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const prisma = require('../lib/prisma');
 const { detectIntent, extractEntities } = require('./intent-detector');
 
 const FRONTEND_URL = process.env.FRONTEND_URL || 'https://listup.ng';
