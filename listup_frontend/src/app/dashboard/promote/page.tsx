@@ -136,7 +136,7 @@ export default function AdsPage() {
   }, []);
 
    useEffect(() => {
-      if (!isEnabled('Paid_Listing_Promotion')) {
+      if (!isEnabled('listing_promotion')) {
         router.push("/dashboard");
         return;
       }

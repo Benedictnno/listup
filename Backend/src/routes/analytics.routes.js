@@ -119,39 +119,44 @@ router.get('/vendors/:vendorId/listings-metrics', generalLimiter, auth, allow('V
       });
     }
 
-    const perListing = [];
+    const [viewCounts, saveCounts, clickCounts] = await Promise.all([
+      prisma.listingView.groupBy({
+        by: ['listingId'],
+        where: { listingId: { in: listingIds }, viewedAt: timeFilter },
+        _count: { _all: true },
+      }),
+      prisma.listingSaveEvent.groupBy({
+        by: ['listingId'],
+        where: { listingId: { in: listingIds }, savedAt: timeFilter },
+        _count: { _all: true },
+      }),
+      prisma.listingMessageClick.groupBy({
+        by: ['listingId'],
+        where: { listingId: { in: listingIds }, clickedAt: timeFilter },
+        _count: { _all: true },
+      }),
+    ]);
+
+    // Create maps for quick lookup
+    const viewsMap = Object.fromEntries(viewCounts.map(c => [c.listingId, c._count._all]));
+    const savesMap = Object.fromEntries(saveCounts.map(c => [c.listingId, c._count._all]));
+    const clicksMap = Object.fromEntries(clickCounts.map(c => [c.listingId, c._count._all]));
+
     let totalViews = 0;
     let totalSaves = 0;
     let totalMessages = 0;
 
-    for (const listingId of listingIds) {
-      const [views, saves, messages] = await Promise.all([
-        prisma.listingView.count({
-          where: {
-            listingId,
-            viewedAt: timeFilter,
-          },
-        }),
-        prisma.listingSaveEvent.count({
-          where: {
-            listingId,
-            savedAt: timeFilter,
-          },
-        }),
-        prisma.listingMessageClick.count({
-          where: {
-            listingId,
-            clickedAt: timeFilter,
-          },
-        }),
-      ]);
+    const perListing = listingIds.map(listingId => {
+      const views = viewsMap[listingId] || 0;
+      const saves = savesMap[listingId] || 0;
+      const messages = clicksMap[listingId] || 0;
 
       totalViews += views;
       totalSaves += saves;
       totalMessages += messages;
 
-      perListing.push({ listingId, views, saves, messages });
-    }
+      return { listingId, views, saves, messages };
+    });
 
     res.json({
       range,

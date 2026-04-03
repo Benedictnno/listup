@@ -457,24 +457,29 @@ exports.checkListingLimit = async (req, res, next) => {
   try {
     const userId = req.user.id;
 
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        id: true,
-        isKYCVerified: true,
-        listingLimit: true,
-        listings: {
-          select: { id: true },
-        },
-        vendorKYC: {
-          select: {
-            validUntil: true,
-            paymentStatus: true,
-            status: true,
+    const [user, kycFlag] = await Promise.all([
+      prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          id: true,
+          isKYCVerified: true,
+          listingLimit: true,
+          vendorProfile: {
+            select: { canCreateUnlimitedListings: true }
+          },
+          vendorKYC: {
+            select: {
+              validUntil: true,
+              paymentStatus: true,
+              status: true,
+            },
           },
         },
-      },
-    });
+      }),
+      prisma.featureFlag.findUnique({
+        where: { key: 'kyc_system' }
+      })
+    ]);
 
     if (!user) {
       return res.status(404).json({
@@ -482,8 +487,11 @@ exports.checkListingLimit = async (req, res, next) => {
         message: 'User not found'
       });
     }
+
+    const isKycEnabled = kycFlag && kycFlag.isEnabled;
     const kyc = user.vendorKYC;
 
+    // KYC-verified unlimited vendors
     if (kyc && user.isKYCVerified) {
       const now = new Date();
       const validUntil = kyc.validUntil ? new Date(kyc.validUntil) : null;
@@ -507,20 +515,30 @@ exports.checkListingLimit = async (req, res, next) => {
       return next();
     }
 
-    if (user.listingLimit === -1) {
+    // Admin-granted unlimited access flag
+    if (user.listingLimit === -1 || user.vendorProfile?.canCreateUnlimitedListings) {
       return next();
     }
 
-    const currentCount = user.listings.length;
+    // Count only active listings against the quota
+    const currentCount = await prisma.listing.count({
+      where: { sellerId: userId, isActive: true },
+    });
 
     if (currentCount >= user.listingLimit) {
+      const message = isKycEnabled
+        ? `You have reached your listing limit of ${user.listingLimit}. Purchase a listing package (₦1,000 for 3 listings) to continue, or complete KYC verification to unlock unlimited listings.`
+        : `You have reached your listing limit of ${user.listingLimit}. Purchase a listing package to continue posting.`;
+
       return res.status(403).json({
         success: false,
-        message: `You have reached the maximum of ${user.listingLimit} listings. Complete KYC verification to unlock unlimited listings.`,
+        message,
         currentCount,
         limit: user.listingLimit,
-        redirectTo: '/kyc/submit',
+        redirectTo: '/dashboard/buy-listings',
         kycStatus: kyc?.status || 'NOT_SUBMITTED',
+        canPurchasePackage: true,
+        isKycEnabled
       });
     }
 

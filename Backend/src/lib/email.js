@@ -221,10 +221,21 @@ async function sendWelcomeEmail(email, userName) {
       text: `Welcome to ListUp, ${userName}! 🎉\n\nThank you for joining our community marketplace.\nStart exploring and discover amazing deals!`
     };
 
-    const info = await transporter.sendMail(mailOptions);
+    const { data, error } = await resend.emails.send({
+      from: 'ListUp <noreply@listup.ng>',
+      to: email,
+      subject: mailOptions.subject,
+      html: mailOptions.html,
+      text: mailOptions.text
+    });
+
+    if (error) {
+      console.error('❌ Failed to send welcome email:', error);
+      return false;
+    }
 
     console.log(`✅ Welcome email sent to: ${email}`);
-    console.log(`📧 Message ID: ${info.messageId}`);
+    console.log(`📧 Message ID: ${data?.id}`);
 
     // Log Mailtrap info if using it
     if (process.env.EMAIL_SERVICE === 'mailtrap') {
@@ -257,9 +268,21 @@ async function testEmailService() {
       html: '<h1>ListUp Email Service Test</h1><p>This is a test email to verify the email service is working correctly.</p>'
     };
 
-    const info = await transporter.sendMail(mailOptions);
+    const { data, error } = await resend.emails.send({
+      from: 'ListUp <noreply@listup.ng>',
+      to: mailOptions.to,
+      subject: mailOptions.subject,
+      html: mailOptions.html,
+      text: mailOptions.text
+    });
+
+    if (error) {
+      console.error('❌ Email service test failed:', error);
+      return false;
+    }
+
     console.log('✅ Email service test successful');
-    console.log(`📧 Test message ID: ${info.messageId}`);
+    console.log(`📧 Test message ID: ${data?.id}`);
 
     // Log Mailtrap info if using it
     if (process.env.EMAIL_SERVICE === 'mailtrap') {
@@ -280,17 +303,13 @@ async function testEmailService() {
  */
 async function verifyEmailConfig() {
   try {
-    await transporter.verify();
-    console.log('✅ Email service configuration verified');
+    if (!process.env.RESEND_API_KEY) {
+      throw new Error('RESEND_API_KEY is missing');
+    }
+    console.log('✅ Email service configuration verified (Resend API Key present)');
 
     // Log current email service
-    if (process.env.EMAIL_SERVICE === 'mailtrap') {
-      console.log('📧 Using Mailtrap for email testing');
-    } else if (process.env.NODE_ENV === 'production') {
-      console.log('📧 Using production SMTP');
-    } else {
-      console.log('📧 Using Gmail SMTP');
-    }
+      console.log('📧 Using Resend Email Service');
 
     return true;
   } catch (error) {
@@ -453,7 +472,7 @@ try {
   const isDev = process.env.NODE_ENV !== 'production';
   const recipientEmail = isDev ? 'benedictnnaoma0@gmail.com' : email;
 
-  const { data, error } = resend.emails.send({
+  const { data, error } = await resend.emails.send({
     from: 'ListUp <noreply@listup.ng>',
     to: recipientEmail,
     subject,

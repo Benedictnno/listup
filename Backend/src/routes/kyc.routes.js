@@ -1,13 +1,14 @@
 const express = require('express');
 const router = express.Router();
 const { auth } = require('../middleware/auth');
+const { checkFeature } = require('../middleware/featureFlag');
 const kycController = require('../controllers/kyc.controller');
 
 // Submit KYC
-router.post('/submit', auth, kycController.submitKYC);
+router.post('/submit', auth, checkFeature('kyc_system'), kycController.submitKYC);
 
 // Get user's KYC status
-router.get('/status', auth, kycController.getKYCStatus);
+router.get('/status', auth, checkFeature('kyc_system'), kycController.getKYCStatus);
 
 // Admin: Get all KYC submissions
 router.get('/admin/submissions', auth, kycController.getAllKYCSubmissions);

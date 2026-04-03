@@ -21,8 +21,9 @@ export function FeatureFlagProvider({ children }: { children: React.ReactNode })
     // Set default fallbacks if API fails or during initial load
     // True by default for now to avoid breaking existing flows unless explicitly disabled in DB
     const defaults: FeatureFlags = {
-        'kyc_system': true,
-        'referral_system': true,
+        'kyc_system': false,
+        'referral_system': false,
+        'listing_promotion': false,
     };
 
     const refreshFlags = async () => {

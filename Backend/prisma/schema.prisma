@@ -187,6 +187,10 @@ model VendorProfile {
   canCreateUnlimitedListings Boolean @default(false)
   currentListingsCount       Int     @default(0)
 
+  // Custom listing package pricing overrides (set by admin per-vendor)
+  customListingPackagePrice Float?  // Override global price for this vendor
+  customListingPackageCount Int?    // Override global listing slots for this vendor
+
   @@index([storeName])
   @@index([businessCategory])
 }
@@ -739,6 +743,11 @@ model SystemSettings {
   listingRewardAmount Float    @default(25)
   clickRewardAmount   Float    @default(15)
   minimumPayoutAmount Float    @default(1000)
+
+  // Listing package pricing
+  listingPackagePrice Float    @default(1000) // Default: ₦1,000 per package
+  listingPackageCount Int      @default(3)    // Default: 3 listing slots per package
+
   updatedAt           DateTime @updatedAt
 }
 
@@ -863,4 +872,16 @@ model BotNotification {
 
   @@index([userId])
   @@index([sentAt])
+}
+
+// Tracks each listing package purchase for idempotency & audit trail
+model ListingPackagePurchase {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  vendorId        String   @db.ObjectId
+  paystackRef     String   @unique // Ensures each Paystack charge is processed only once
+  slotsAdded      Int
+  amountPaid      Float
+  processedAt     DateTime @default(now())
+
+  @@index([vendorId])
 }

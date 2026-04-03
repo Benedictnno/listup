@@ -3,13 +3,87 @@ const express = require("express");
 const axios = require("axios");
 const prisma = require("../lib/prisma");
 const { auth, allow } = require("../middleware/auth");
+const { checkFeature } = require("../middleware/featureFlag");
 const KYCCtrl = require("../controllers/kyc.controller");
 const crypto = require("crypto");
 
 const router = express.Router();
 
+// ─── Listing Package Helpers ────────────────────────────────────────────────
+
+/**
+ * Get the effective listing package price & slot count for a vendor.
+ * Admin can set custom overrides per-vendor on VendorProfile;
+ * otherwise the global SystemSettings values are used.
+ */
+async function getListingPackageConfig(vendorId) {
+  const [settings, profile] = await Promise.all([
+    prisma.systemSettings.findFirst(),
+    prisma.vendorProfile.findUnique({
+      where: { userId: vendorId },
+      select: { customListingPackagePrice: true, customListingPackageCount: true },
+    }),
+  ]);
+
+  const globalPrice = settings?.listingPackagePrice ?? 1000;
+  const globalCount = settings?.listingPackageCount ?? 3;
+
+  return {
+    price: profile?.customListingPackagePrice ?? globalPrice,
+    count: profile?.customListingPackageCount ?? globalCount,
+  };
+}
+
+/**
+ * Internal: credit a vendor with extra listing slots after successful payment.
+ * Idempotent — uses paystackRef to ensure a charge is only processed once.
+ * Safe — never increments if the vendor already has unlimited access (listingLimit = -1).
+ * @returns {{ alreadyProcessed: boolean }}
+ */
+async function _processListingPackagePaymentInternal(vendorId, slotsToAdd, paystackRef, amountPaid) {
+  // 1. Idempotency: check if this Paystack reference was already processed
+  const existing = await prisma.listingPackagePurchase.findUnique({
+    where: { paystackRef },
+  });
+
+  if (existing) {
+    console.log(`ℹ️ Listing package payment ${paystackRef} already processed — skipping`);
+    return { alreadyProcessed: true };
+  }
+
+  // 2. Guard: don't touch unlimited vendors (listingLimit = -1 or KYC-verified)
+  const user = await prisma.user.findUnique({
+    where: { id: vendorId },
+    select: { listingLimit: true, isKYCVerified: true },
+  });
+
+  if (!user) throw new Error(`Vendor ${vendorId} not found`);
+
+  if (user.isKYCVerified || user.listingLimit === -1) {
+    console.log(`ℹ️ Vendor ${vendorId} already has unlimited access — recording purchase but skipping limit increment`);
+    await prisma.listingPackagePurchase.create({
+      data: { vendorId, paystackRef, slotsAdded: 0, amountPaid: amountPaid ?? 0 },
+    });
+    return { alreadyProcessed: false };
+  }
+
+  // 3. Credit slots and record purchase atomically
+  await prisma.$transaction([
+    prisma.user.update({
+      where: { id: vendorId },
+      data: { listingLimit: { increment: slotsToAdd } },
+    }),
+    prisma.listingPackagePurchase.create({
+      data: { vendorId, paystackRef, slotsAdded: slotsToAdd, amountPaid: amountPaid ?? 0 },
+    }),
+  ]);
+
+  return { alreadyProcessed: false };
+}
+
+
 // Initialize payment for an ad
-router.post("/initialize", auth, async (req, res) => {
+router.post("/initialize", auth, checkFeature('listing_promotion'), async (req, res) => {
   const { adId, email, amount } = req.body;
 
   if (!adId || !email || !amount) {
@@ -54,7 +128,7 @@ router.post("/initialize", auth, async (req, res) => {
 });
 
 // Initialize KYC payment
-router.post("/kyc/initialize", auth, allow('VENDOR'), async (req, res) => {
+router.post("/kyc/initialize", auth, allow('VENDOR'), checkFeature('kyc_system'), async (req, res) => {
   try {
     const vendorId = req.user.id;
 
@@ -193,6 +267,77 @@ router.get("/ad/:adId/status", auth, async (req, res) => {
   }
 });
 
+// ─── Listing Package: How much does it cost? (vendor can preview) ───────────
+router.get("/listing-package/config", auth, allow('VENDOR'), async (req, res) => {
+  try {
+    const config = await getListingPackageConfig(req.user.id);
+    res.json({
+      success: true,
+      data: {
+        price: config.price,
+        listingSlots: config.count,
+        description: `Purchase ${config.count} listing slots for ₦${config.price.toLocaleString()}`,
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching listing package config:", error);
+    res.status(500).json({ error: "Failed to fetch listing package config" });
+  }
+});
+
+// ─── Listing Package: Initialize Paystack payment ───────────────────────────
+router.post("/listing-package/initialize", auth, allow('VENDOR'), async (req, res) => {
+  try {
+    const vendorId = req.user.id;
+
+    // KYC-verified vendors don't need to buy packages
+    const user = await prisma.user.findUnique({
+      where: { id: vendorId },
+      select: { email: true, isKYCVerified: true },
+    });
+
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    if (user.isKYCVerified) {
+      return res.status(400).json({
+        error: "KYC-verified vendors have unlimited listings and do not need to purchase packages",
+      });
+    }
+
+    const config = await getListingPackageConfig(vendorId);
+
+    const response = await axios.post(
+      "https://api.paystack.co/transaction/initialize",
+      {
+        email: user.email,
+        amount: Math.round(config.price * 100), // Paystack expects kobo
+        metadata: {
+          type: "listing_package",
+          vendorId,
+          listingSlotsToAdd: config.count,
+        },
+        callback_url: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/dashboard/buy-listings/success`,
+      },
+      {
+        headers: { Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}` },
+      }
+    );
+
+    return res.json({
+      success: true,
+      authorizationUrl: response.data.data.authorization_url,
+      reference: response.data.data.reference,
+      packageDetails: {
+        price: config.price,
+        listingSlots: config.count,
+      },
+    });
+  } catch (error) {
+    console.error("Listing package payment init failed:", error.response?.data || error.message);
+    return res.status(500).json({ error: "Listing package payment initialization failed" });
+  }
+});
+
 // Webhook for payment provider
 router.post("/webhook", express.json(), async (req, res) => {
   const hash = crypto
@@ -213,9 +358,27 @@ router.post("/webhook", express.json(), async (req, res) => {
 
   if (event.event === "charge.success") {
     const metadata = event.data.metadata || {};
-    const { adId, kycId, kycRenewal } = metadata;
+    const { adId, kycId, kycRenewal, type, vendorId, listingSlotsToAdd } = metadata;
 
-    // Handle KYC payments
+    // ── Handle Listing Package payments ──────────────────────────────────────
+    if (type === "listing_package" && vendorId) {
+      try {
+        const slots = listingSlotsToAdd || 3;
+        const paystackRef = event.data.reference;
+        const amountPaid = (event.data.amount || 0) / 100; // convert from kobo to naira
+        console.log(`🔄 Crediting ${slots} listing slots to vendor: ${vendorId} (ref: ${paystackRef})`);
+        const result = await _processListingPackagePaymentInternal(vendorId, slots, paystackRef, amountPaid);
+        if (result.alreadyProcessed) {
+          console.log(`ℹ️ Duplicate webhook for ref ${paystackRef} — already processed, ignoring`);
+        } else {
+          console.log(`✅ Listing package payment processed for vendor: ${vendorId} (+${slots} slots)`);
+        }
+      } catch (error) {
+        console.error(`❌ Error processing listing package payment for vendor ${vendorId}:`, error);
+      }
+    }
+
+    // ── Handle KYC payments ───────────────────────────────────────────────────
     if (kycId) {
       try {
         if (kycRenewal) {
@@ -300,8 +463,8 @@ router.post("/webhook", express.json(), async (req, res) => {
   res.sendStatus(200);
 });
 
-// Manual payment verification (for testing/debugging)
-router.post("/verify-payment/:adId", async (req, res) => {
+// Manual payment verification (for testing/debugging) - ADMIN ONLY
+router.post("/verify-payment/:adId", auth, allow('ADMIN'), async (req, res) => {
   try {
     const { adId } = req.params;
     console.log(`🔍 Manual payment verification for ad: ${adId}`);

@@ -13,7 +13,7 @@ router.post('/send-otp', auth, async (req, res, next) => {
     const code = String(Math.floor(100000 + Math.random()*900000)); // 6-digit
     const expiresAt = new Date(Date.now() + OTP_TTL_MIN*60*1000);
 
-    await prisma.otp.create({
+    await prisma.phoneVerification.create({
       data: { userId: req.user.id, phone, code, expiresAt }
     });
 
@@ -32,7 +32,7 @@ router.post('/verify', auth, async (req, res, next) => {
     const { phone, code } = req.body;
     if (!phone || !code) return res.status(400).json({ message: 'phone and code are required' });
 
-    const entry = await prisma.otp.findFirst({
+    const entry = await prisma.phoneVerification.findFirst({
       where: { userId: req.user.id, phone },
       orderBy: { createdAt: 'desc' }
     });
@@ -42,11 +42,11 @@ router.post('/verify', auth, async (req, res, next) => {
     if (new Date() > entry.expiresAt) return res.status(400).json({ message: 'Code expired' });
 
     if (entry.code !== code) {
-      await prisma.otp.update({ where: { id: entry.id }, data: { attempts: { increment: 1 } } });
+      await prisma.phoneVerification.update({ where: { id: entry.id }, data: { attempts: { increment: 1 } } });
       return res.status(400).json({ message: 'Invalid code' });
     }
 
-    await prisma.otp.update({ where: { id: entry.id }, data: { verified: true } });
+    await prisma.phoneVerification.update({ where: { id: entry.id }, data: { verified: true } });
 
     // (optional) persist verified phone on user
     await prisma.user.update({

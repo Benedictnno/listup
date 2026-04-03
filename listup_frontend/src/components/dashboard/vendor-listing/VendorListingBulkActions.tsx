@@ -73,7 +73,7 @@ export function VendorListingBulkActions({
                         >
                             Deactivate All
                         </Button>
-                        {isEnabled('Paid_Listing_Promotion') && <Button
+                        {isEnabled('listing_promotion') && <Button
                             variant="default"
                             size="sm"
                             onClick={handlePromoteProducts}

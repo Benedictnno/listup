@@ -10,6 +10,14 @@ const prisma = new PrismaClient({
 });
 
 // Handle graceful shutdown
+const shutdown = async () => {
+    console.log('📦 Disconnecting Prisma Client...');
+    await prisma.$disconnect();
+    process.exit(0);
+};
+
+process.on('SIGINT', shutdown);
+process.on('SIGTERM', shutdown);
 process.on('beforeExit', async () => {
   await prisma.$disconnect();
 });

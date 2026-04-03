@@ -1,8 +1,7 @@
 const { default: makeWASocket, DisconnectReason, useMultiFileAuthState, fetchLatestBaileysVersion, downloadContentFromMessage } = require('@whiskeysockets/baileys');
 const { Boom } = require('@hapi/boom');
 const qrcode = require('qrcode-terminal');
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const prisma = require('../lib/prisma');
 const GeminiService = require('./geminiService');
 const { addToGoogleSheet } = require('../utils/googleSheets');
 const bcrypt = require('bcryptjs');
