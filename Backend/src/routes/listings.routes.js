@@ -17,6 +17,9 @@ router.get("/stores/:storeName", generalLimiter, ListingsCtrl.getVendorListingsB
 
 router.get("/vendors/:vendorId/listings", generalLimiter, auth, allow('VENDOR'), ListingsCtrl.getByVendorId);
 
+// Phase 1: Content-Based Filtering
+router.get('/:id/similar', generalLimiter, ListingsCtrl.getSimilarListings);
+
 // Generic :id route
 router.get('/:id', generalLimiter, ListingsCtrl.getOne);
 

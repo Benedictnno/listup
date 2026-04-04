@@ -21,8 +21,10 @@ export function useInfiniteScroll(
   const [hasMore, setHasMore] = useState(true);
   const [currentPage, setCurrentPage] = useState(initialPage);
 
-  // Use ref to track if we're already loading to prevent multiple calls
+  // Use ref to track if we're already loading to prevent multiple calls for appending
   const loadingRef = useRef(false);
+  // Ref to track latest fetch to prevent race condition overwrites resulting from rapid parameter changes
+  const fetchIdRef = useRef(0);
 
   // Subscribe to filter/search state from the global store so the hook reacts
   const search = useFilterStore(state => state.search);
@@ -31,13 +33,15 @@ export function useInfiniteScroll(
   const categoryId = useFilterStore(state => state.category);
 
   const loadListings = useCallback(async (page: number, append = false) => {
-    // Prevent multiple simultaneous calls
-    if (loadingRef.current) return;
+    // Prevent multiple simultaneous calls, but allow filter overrides (page 1) to interrupt
+    if (loadingRef.current && append) return;
 
     try {
       loadingRef.current = true;
       setLoading(true);
       setError(null);
+      
+      const currentFetchId = ++fetchIdRef.current;
 
       // Request server-side paginated & filtered data
       const data = await fetchListingsWithFilters({
@@ -49,12 +53,16 @@ export function useInfiniteScroll(
         categoryId: categoryId || undefined,
       });
 
-      // Defensive programming: extract items array
       const items = Array.isArray(data)
         ? data
         : data && Array.isArray(data.items)
         ? data.items
         : [];
+
+      // If a newer fetch has been triggered, discard this result
+      if (currentFetchId !== fetchIdRef.current) {
+        return;
+      }
 
       // Append with dedupe by id (safety net for duplicate items)
       if (append) {

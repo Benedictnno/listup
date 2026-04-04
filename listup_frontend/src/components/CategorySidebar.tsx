@@ -85,7 +85,7 @@ export default function CategorySidebar() {
                     return (
                         <Link
                             key={cat.id}
-                            href={`/categories/${cat.slug}`}
+                            href={`/listings?category=${cat.id}`}
                             className="flex items-center justify-between px-4 py-2 text-slate-300 hover:text-white hover:bg-white/5 transition-all group font-montserrat text-sm rounded-md"
                         >
                             <div className="flex items-center gap-3">
@@ -96,7 +96,7 @@ export default function CategorySidebar() {
                         </Link>
                     );
                 })}
-                <Link href="/categories" className="mt-4 px-4 text-xs font-medium text-lime-500 hover:text-lime-400 hover:underline font-montserrat">
+                <Link href="/listings" className="mt-4 px-4 text-xs font-medium text-lime-500 hover:text-lime-400 hover:underline font-montserrat">
                     View All Categories
                 </Link>
             </nav>

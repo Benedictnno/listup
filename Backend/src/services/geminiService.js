@@ -207,14 +207,58 @@ const GeminiService = {
         },
 
         async get_hot_deals() {
-            const deals = await prisma.listing.findMany({
-                where: { isActive: true, boostScore: { gt: 0 } },
-                orderBy: { boostScore: 'desc' },
-                take: 3,
-                select: { id: true, title: true, price: true }
-            });
+            const since = new Date(Date.now() - 48 * 60 * 60 * 1000); // 48h limit
 
-            return deals.map(d => ({
+            const [views, saves, clicks] = await Promise.all([
+              prisma.listingView.groupBy({
+                by: ['listingId'],
+                where: { viewedAt: { gte: since } },
+                _count: { _all: true }
+              }),
+              prisma.listingSaveEvent.groupBy({
+                by: ['listingId'],
+                where: { savedAt: { gte: since } },
+                _count: { _all: true }
+              }),
+              prisma.listingMessageClick.groupBy({
+                by: ['listingId'],
+                where: { clickedAt: { gte: since } },
+                _count: { _all: true }
+              }),
+            ]);
+
+            const scores = new Map();
+            views.forEach(v => scores.set(v.listingId, (scores.get(v.listingId) || 0) + v._count._all));
+            saves.forEach(s => scores.set(s.listingId, (scores.get(s.listingId) || 0) + s._count._all * 2));
+            clicks.forEach(c => scores.set(c.listingId, (scores.get(c.listingId) || 0) + c._count._all * 3));
+
+            const topIds = [...scores.entries()]
+              .sort((a, b) => b[1] - a[1])
+              .slice(0, 3) // Return top 3 deals
+              .map(([id]) => id);
+
+            let topDeals = [];
+
+            if (topIds.length > 0) {
+              const fetched = await prisma.listing.findMany({
+                where: { id: { in: topIds }, isActive: true },
+                select: { id: true, title: true, price: true }
+              });
+              // Preserve score order
+              topDeals = topIds.map(id => fetched.find(l => l && l.id === id)).filter(Boolean);
+            }
+
+            // Fallback if no interacting interactions exist for cold start
+            if (topDeals.length === 0) {
+                topDeals = await prisma.listing.findMany({
+                    where: { isActive: true },
+                    orderBy: [{ boostScore: 'desc' }, { createdAt: 'desc' }],
+                    take: 3,
+                    select: { id: true, title: true, price: true }
+                });
+            }
+
+            return topDeals.map(d => ({
                 ...d,
                 link: `https://listup.ng/listings/${d.id}`
             }));

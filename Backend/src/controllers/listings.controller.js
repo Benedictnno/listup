@@ -522,6 +522,53 @@ exports.getVendorListingsByStore = async (req, res) => {
 
 
 
+// Phase 1 - Content-Based Filtering
+exports.getSimilarListings = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    
+    const listing = await prisma.listing.findUnique({
+      where: { id },
+      select: { categoryId: true, price: true, sellerId: true, location: true }
+    });
+
+    if (!listing) return res.status(404).json({ message: 'Not found' });
+
+    // Price band: ±40% of current price
+    const minPrice = listing.price * 0.6;
+    const maxPrice = listing.price * 1.4;
+
+    const similar = await prisma.listing.findMany({
+      where: {
+        isActive: true,
+        id: { not: id },                    // exclude current
+        sellerId: { not: listing.sellerId }, // exclude same vendor
+        categoryId: listing.categoryId,
+        price: { gte: minPrice, lte: maxPrice }
+      },
+      orderBy: [
+        { boostScore: 'desc' },
+        { createdAt: 'desc' }
+      ],
+      take: 8,
+      select: {
+        id: true, title: true, price: true,
+        images: true, location: true, condition: true,
+        seller: {
+          select: {
+            id: true, name: true,
+            vendorProfile: { select: { storeName: true, logo: true } }
+          }
+        }
+      }
+    });
+
+    res.json(similar);
+  } catch (e) {
+    next(e);
+  }
+};
+
 // Admin-only endpoints
 
 // Get all listings for admin (with vendor info, filters, pagination)

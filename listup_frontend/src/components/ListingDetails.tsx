@@ -11,6 +11,9 @@ import { useAuthStore } from "@/store/authStore";
 import LoginPromptDialog from "@/components/LoginPromptDialog";
 import { copyToClipboard } from "@/utils/copyText";
 import { SectionEyebrow } from "@/utils/helpers";
+import SimilarListings from "./SimilarListings";
+import MoreFromVendor from "./MoreFromVendor";
+import { useRecentlyViewed } from "@/hooks/useRecentlyViewed";
 
 type Seller = {
   id: string;
@@ -46,6 +49,7 @@ export default function ListingDetails({ listing }: { listing: Listing }) {
   const [selectedQuickMessage, setSelectedQuickMessage] = useState<string>("Is this still available?");
   const [customMessage, setCustomMessage] = useState<string>("");
   const { user } = useAuthStore();
+  const { addViewed } = useRecentlyViewed();
 
   console.log(listing);
 
@@ -85,6 +89,7 @@ export default function ListingDetails({ listing }: { listing: Listing }) {
       }
 
       trackListingView(listing.id, sessionId);
+      addViewed(listing as any); // Track as recently viewed
     } catch (e) {
       console.error('Failed to track listing view', e);
     }
@@ -194,7 +199,7 @@ export default function ListingDetails({ listing }: { listing: Listing }) {
               className="mt-1 block text-green-600 hover:text-green-700 font-medium cursor-pointer hover:underline transition-colors"
             >
               <div className="flex items-center gap-3">
-                <div className="relative w-10 h-10 rounded-full overflow-hidden bg-gray-200 flex-shrink-0">
+                <div className="relative w-10 h-10 rounded-full overflow-hidden bg-gray-200 shrink-0">
                   {(listing.seller.vendorProfile?.logo || listing.seller.profileImage) ? (
                     <Image
                       src={listing.seller.vendorProfile?.logo || listing.seller.profileImage || ''}
@@ -287,6 +292,9 @@ export default function ListingDetails({ listing }: { listing: Listing }) {
         </div>
       </div>
       <LoginPromptDialog open={showLoginPrompt} onOpenChange={setShowLoginPrompt} />
+      
+      <MoreFromVendor vendorId={listing.seller.id} currentListingId={listing.id} />
+      <SimilarListings listingId={listing.id} />
     </>
   );
 }

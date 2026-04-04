@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import ListingCard from "@/components/ListingCard";
+import MasonryGrid from "@/components/MasonryGrid";
 import SearchBar from "@/components/SearchBar";
 import { Filter, SortAsc, SortDesc, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -191,7 +192,8 @@ function PriceFilterSection({
 
 function ListingsPageContent() {
   const searchParams = useSearchParams();
-  const { search, minPrice, maxPrice, setSearch } = useFilterStore();
+  const router = useRouter();
+  const { search, minPrice, maxPrice, setSearch, category, setCategory } = useFilterStore();
 
   // Use infinite scroll hook with proper error handling
   const {
@@ -239,13 +241,19 @@ function ListingsPageContent() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [hasMore, loading, loadMore]);
 
-  // Handle URL query parameters for search
+  // Handle URL query parameters for search and category
   useEffect(() => {
     const query = searchParams.get('q') || '';
     if (query !== search) {
       setSearch(query);
     }
-  }, [searchParams, setSearch, search]);
+
+    const catParam = searchParams.get('category') || '';
+    // Use getState to avoid loops if setCategory hasn't updated yet, or just check direct match
+    if (catParam !== useFilterStore.getState().category) {
+      setCategory(catParam);
+    }
+  }, [searchParams, setSearch, search, setCategory]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -341,12 +349,19 @@ function ListingsPageContent() {
     // Reset min/max to null so inputs clear and filtering resets
     useFilterStore.getState().setMinPrice(null);
     useFilterStore.getState().setMaxPrice(null);
+    useFilterStore.getState().setCategory('');
+
+    // If there is a search param in the URL, clear it so it doesn't auto-re-apply
+    if (searchParams.toString()) {
+      router.replace('/listings');
+    }
   };
 
   const hasActiveFilters = () => {
-    // Consider search, minPrice or maxPrice as active filters
+    // Consider search, minPrice, maxPrice, or category as active filters
     const hasSearch = typeof search === 'string' && search.trim().length > 0;
-    return hasSearch || minPrice !== null || maxPrice !== null;
+    const hasCategory = typeof category === 'string' && category.trim().length > 0;
+    return hasSearch || hasCategory || minPrice !== null || maxPrice !== null;
   };
 
   // Show error state
@@ -426,7 +441,7 @@ function ListingsPageContent() {
               Filters
               {hasActiveFilters() && (
                 <Badge variant="secondary" className="ml-2">
-                  {[search, minPrice, maxPrice]
+                  {[search, category, minPrice, maxPrice]
                     .filter(v => v !== '' && v !== null).length}
                 </Badge>
               )}
@@ -507,6 +522,11 @@ function ListingsPageContent() {
                   Search: &quot;{search}&quot;
                 </Badge>
               )}
+              {category && (
+                <Badge variant="secondary" className="text-xs">
+                  Category Filter Applied
+                </Badge>
+              )}
               {(minPrice !== null || maxPrice !== null) && (
                 <Badge variant="secondary" className="text-xs">
                   Price: ₦{minPrice || 10} - ₦{maxPrice || '∞'}
@@ -517,11 +537,7 @@ function ListingsPageContent() {
         </div>
 
         {/* Listings Masonry Layout */}
-        <div className="columns-2 md:columns-3 lg:columns-5 gap-6 space-y-6">
-          {filteredListings?.map((listing) => (
-            <ListingCard key={listing.id} listing={listing} />
-          ))}
-        </div>
+        <MasonryGrid listings={filteredListings} />
 
         {/* Infinite Scroll Trigger and Loading States */}
         {hasMore && (

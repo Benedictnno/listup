@@ -12,6 +12,8 @@ import { GhostButton } from "@/utils/helpers";
 import { useAuthStore } from "@/store/authStore";
 import OutsideAd from "@/components/OutsideAd";
 import CategorySidebar from "@/components/CategorySidebar";
+import RecentlyViewed from "@/components/RecentlyViewed";
+import TrendingListings from "@/components/TrendingListings";
 // import HeroCarousel from "@/components/HeroCarousel"; // Replaced with dynamic import
 import PromoCards from "@/components/PromoCards";
 import { useRouter } from "next/navigation";
@@ -139,8 +141,11 @@ export default function MarketplaceLanding() {
       {/* <PromoCards /> */}
 
       {/* <AdsPage/> */}
+      
+      <TrendingListings />
+      <RecentlyViewed />
 
-      < MiniListings />
+      <MiniListings />
 
       {/* <Category /> */}
 

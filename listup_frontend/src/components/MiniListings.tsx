@@ -2,6 +2,7 @@
 import React from "react";
 import Link from "next/link";
 import ListingCard from "@/components/ListingCard";
+import MasonryGrid from "@/components/MasonryGrid";
 import { fetchListings } from "@/lib/api/listing";
 import { useQuery } from "@tanstack/react-query";
 
@@ -57,21 +58,7 @@ export default function MiniListings() {
         ) : listings.length === 0 ? (
           <div className="text-sm text-slate-600">No listings available.</div>
         ) : (
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-6">
-            {listings.map(raw => {
-              // normalize category/seller null -> undefined to match ListingCard props
-              const listing = {
-                ...raw,
-                category: raw.category ?? undefined,
-                seller: raw.seller ?? undefined,
-              } as Listing;
-              return (
-                <div key={listing.id} className="col-span-1">
-                  <ListingCard listing={listing} />
-                </div>
-              );
-            })}
-          </div>
+          <MasonryGrid listings={listings as Listing[]} />
         )}
 
         {/* extra CTA for small screens */}

@@ -29,6 +29,7 @@ router.use('/chat', require('./chat.routes'));
 router.use('/admin/whatsapp', require('./whatsapp-analytics.routes'));
 router.use('/listing-tiers', require('./listing-tiers.routes'));
 router.use('/listing-topup', require('./listing-topup.routes'));
+router.use('/recommendations', require('./recommendations.routes'));
 
 
 module.exports = router;
