@@ -76,3 +76,31 @@ initSocket(server, {
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
     credentials: true
 });
+
+// Graceful shutdown
+const gracefulShutdown = async (signal) => {
+    console.log(`\n🛑 Received ${signal}. Starting graceful shutdown...`);
+    
+    server.close(async () => {
+        console.log('HTTP server closed.');
+        
+        try {
+            const prisma = require('./lib/prisma');
+            await prisma.$disconnect();
+            console.log('Database connection closed.');
+            process.exit(0);
+        } catch (err) {
+            console.error('Error during database disconnect:', err);
+            process.exit(1);
+        }
+    });
+
+    // If server takes too long to close, force exit
+    setTimeout(() => {
+        console.error('Could not close connections in time, forcefully shutting down');
+        process.exit(1);
+    }, 10000);
+};
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));

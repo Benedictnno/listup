@@ -99,8 +99,12 @@ exports.createAd = async (req, res, next) => {
 
 
 // Get all ads (for debugging - remove in production)
+// Get all ads (locked to admin)
 exports.getAllAds = async (req, res, next) => {
   try {
+    if (req.user?.role !== 'ADMIN') {
+        return res.status(403).json({ message: "Admin access required" });
+    }
     const ads = await prisma.ad.findMany({
       select: {
         id: true,
@@ -177,10 +181,17 @@ exports.getActiveAds = async (req, res, next) => {
 };
 
 // Get vendor's ads
-exports.getVendorsAds = async (req, res, next) => {
+exports.getAdsByVendor = async (req, res, next) => {
   try {
+    const { vendorId } = req.params;
+    
+    // Security check: only admins or the vendor themselves can view these ads
+    if (req.user.role !== 'ADMIN' && req.user.id !== vendorId) {
+        return res.status(403).json({ message: "Unauthorized to view these ads" });
+    }
+
     const ads = await prisma.ad.findMany({
-      where: { vendorId: req.user.id },
+      where: { vendorId: vendorId },
       include: {
         store: {
           select: {

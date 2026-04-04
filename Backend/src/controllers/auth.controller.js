@@ -315,10 +315,10 @@ exports.login = async (req, res, next) => {
       name: fullUser.name,
       role: fullUser.role
     });
-    console.log("Signed token:", token);
+    
     res.cookie("accessToken", token, {
       httpOnly: true,
-      secure: false,          // keep false on http://localhost, true in HTTPS prod
+      secure: process.env.NODE_ENV === 'production',
       sameSite: "lax",        // good default for SPA on same site / localhost
       // domain: not needed for localhost; omit it
       maxAge: 7 * 24 * 60 * 60 * 1000, // example: 7 days

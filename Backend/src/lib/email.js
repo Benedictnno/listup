@@ -329,15 +329,12 @@ async function sendEmailVerification(email, verificationLink, userName = null) {
   const template = EMAIL_TEMPLATES.EMAIL_VERIFICATION;
 
   try {
-    // In development with Resend sandbox, only send to verified email
-    const isDevelopment = process.env.NODE_ENV !== 'production';
-    const verifiedEmail = 'benedictnnaoma0@gmail.com'; // Your verified Resend email
-    const recipientEmail = isDevelopment ? verifiedEmail : email;
+    const recipientEmail = email;
 
-    // Log if we're redirecting the email in development
-    if (isDevelopment && email !== verifiedEmail) {
-      console.log(`📧 [DEV MODE] Redirecting email from ${email} to ${verifiedEmail}`);
-      console.log(`🔗 Verification link: ${verificationLink}`);
+    // Log the link in dev mode
+    const isDevelopment = process.env.NODE_ENV !== 'production';
+    if (isDevelopment) {
+      console.log(`🔗 Verification link for ${email}: ${verificationLink}`);
     }
 
     const { data, error } = await resend.emails.send({
@@ -494,6 +491,49 @@ try {
 
 
 /**
+ * Send chat notification email
+ */
+async function sendChatNotification(email, name, messageCount, lastSenderName, lastMessageContent, conversationId) {
+  try {
+    const isDev = process.env.NODE_ENV !== 'production';
+    const recipientEmail = isDev ? 'benedictnnaoma0@gmail.com' : email;
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+
+    const { data, error } = await resend.emails.send({
+      from: 'ListUp <noreply@listup.ng>',
+      to: recipientEmail,
+      subject: `You have ${messageCount} new message${messageCount > 1 ? 's' : ''} on ListUp`,
+      html: `
+          <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+              <h1 style="color: #84cc16;">New messages on ListUp</h1>
+              <p>Hi ${name},</p>
+              <p>You have ${messageCount} unread message(s) in your ListUp inbox.</p>
+              <div style="padding: 15px; background: #f9fafb; border-left: 4px solid #84cc16; border-radius: 4px; margin: 20px 0;">
+                  <p style="margin: 0; font-weight: bold; color: #374151;">From ${lastSenderName}:</p>
+                  <p style="margin: 10px 0 0 0; color: #4b5563; font-style: italic;">
+                      "${lastMessageContent || 'Sent an image'}"
+                  </p>
+              </div>
+              <p style="text-align: center; margin-top: 30px;">
+                  <a href="${frontendUrl}/dashboard/chat/${conversationId}" style="display: inline-block; padding: 12px 24px; background: #84cc16; color: white; text-decoration: none; border-radius: 6px; font-weight: bold;">View Inbox</a>
+              </p>
+          </div>
+      `
+    });
+
+    if (error) {
+      console.error('❌ Chat notification email error:', error);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('❌ Chat notification email failed:', error);
+    return false;
+  }
+}
+
+/**
  * Send partner welcome email
  */
 async function sendPartnerWelcomeEmail(email, name, password, loginUrl) {
@@ -508,5 +548,6 @@ module.exports = {
   sendVendorPendingEmail,
   sendEmailVerification,
   sendKYCEmail,
-  sendPartnerWelcomeEmail
+  sendPartnerWelcomeEmail,
+  sendChatNotification
 };

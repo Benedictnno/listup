@@ -84,7 +84,7 @@ const tools = [
 ];
 
 const model = genAI.getGenerativeModel({
-    model: "gemini-flash-latest",
+    model: "gemini-1.5-flash-latest",
     systemInstruction: SYSTEM_INSTRUCTION,
     tools: tools,
 });
@@ -95,6 +95,11 @@ const GeminiService = {
      */
     async generateResponse(userName, phoneNumber, message, history = [], media = null) {
         try {
+            // Sanitize and cap input message
+            if (message && typeof message === 'string') {
+                message = message.trim().substring(0, 500);
+            }
+
             // Map existing history to Gemini format { role: "user" | "model", parts: [{ text: "..." }] }
             let formattedHistory = history.map(h => ({
                 role: h.direction === 'inbound' ? 'user' : 'model',

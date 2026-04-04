@@ -59,11 +59,17 @@ async function _processListingPackagePaymentInternal(vendorId, slotsToAdd, payst
 
   if (!user) throw new Error(`Vendor ${vendorId} not found`);
 
-  if (user.isKYCVerified || user.listingLimit === -1) {
-    console.log(`ℹ️ Vendor ${vendorId} already has unlimited access — recording purchase but skipping limit increment`);
-    await prisma.listingPackagePurchase.create({
-      data: { vendorId, paystackRef, slotsAdded: 0, amountPaid: amountPaid ?? 0 },
-    });
+  if (user.isKYCVerified) {
+    console.log(`ℹ️ Vendor ${vendorId} is KYC verified — recording purchase and incrementing limit`);
+    await prisma.$transaction([
+      prisma.user.update({
+        where: { id: vendorId },
+        data: { listingLimit: { increment: slotsToAdd } },
+      }),
+      prisma.listingPackagePurchase.create({
+        data: { vendorId, paystackRef, slotsAdded: slotsToAdd, amountPaid: amountPaid ?? 0 },
+      }),
+    ]);
     return { alreadyProcessed: false };
   }
 

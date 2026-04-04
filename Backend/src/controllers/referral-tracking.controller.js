@@ -22,8 +22,7 @@ class ReferralTrackingController {
                 // Secure cookie, 24h expiry
                 res.cookie('ref_click_id', clickId, {
                     maxAge: 24 * 60 * 60 * 1000,
-                    httpOnly: false, // Frontend needs to read it? Or we can check it via API? 
-                    // If httpOnly: false, frontend can read "ref_click_id" to start timer.
+                    httpOnly: true, // XSS protection - browser will auto-include it in requests
                     secure: process.env.NODE_ENV === 'production',
                     sameSite: 'lax'
                 });

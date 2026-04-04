@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = 'src/services/whatsappService.js';
 let content = fs.readFileSync(path, 'utf8');
 
-// Replacements
+// Global parameter & generic replacements
 content = content.replace(/async checkRateLimit\(userId\)/g, 'async checkRateLimit(botContactId)');
 content = content.replace(/where: { id: userId }/g, 'where: { id: botContactId }');
 content = content.replace(/if \(!userId\)/g, 'if (!botContactId)');
@@ -18,6 +18,10 @@ content = content.replace(/async canSendMessage\(userId\)/g, 'async canSendMessa
 content = content.replace(/user\.whatsappStopRequested/g, 'contact.whatsappStopRequested');
 content = content.replace(/async handleStopCommand\(userId/g, 'async handleStopCommand(botContactId');
 
+// Find variable issues
+content = content.replace(/const user = await prisma\.botContact\.findUnique/g, 'const contact = await prisma.botContact.findUnique');
+content = content.replace(/if \(!contact\) return/g, "if (!contact) return"); 
+
 // registerNewContact
 content = content.replace(/const email = `wa_\$\{phone\}@listup\.bot`;\s+const newUser = await prisma\.botContact\.create\(\{\s+data: \{\s+name: pushname \|\| 'WhatsApp Customer',\s+email: email,\s+password: hashedPassword,\s+phone: phone,\s+whatsappOptIn: true,\s+whatsappEngagementScore: 100,\s+\}\s+\}\);/g, 
 `const newUser = await prisma.botContact.create({
@@ -30,7 +34,6 @@ content = content.replace(/const email = `wa_\$\{phone\}@listup\.bot`;\s+const n
             });`);
 
 content = content.replace(/const randomPassword = crypto\.randomBytes\(16\)\.toString\('hex'\);\s+const hashedPassword = await bcrypt\.hash\(randomPassword, 10\);/g, '');
-
 
 // handleIncomingMessage user -> contact
 content = content.replace(/let user = await prisma\.botContact\.findUnique/g, 'let contact = await prisma.botContact.findUnique');
@@ -51,11 +54,14 @@ content = content.replace(/user\.whatsappContactReminderCount/g, 'contact.whatsa
 content = content.replace(/user\.lastContactReminderDate/g, 'contact.lastContactReminderDate');
 content = content.replace(/Hi \$\{userName\}/g, 'Hi ${contactName}');
 content = content.replace(/\(userName,/g, '(contactName,');
+
+// Remaining broken references in handleIncomingMessage
 content = content.replace(/await this\.handleStopCommand\(userId, cleanPhone\);/g, 'await this.handleStopCommand(botContactId, cleanPhone);');
 content = content.replace(/const rateLimit = await this\.checkRateLimit\(userId\);/g, 'const rateLimit = await this.checkRateLimit(botContactId);');
 content = content.replace(/const canSend = await this\.canSendMessage\(userId\);/g, 'const canSend = await this.canSendMessage(botContactId);');
 content = content.replace(/if \(userId && user\.whatsappContactReminderCount/g, 'if (botContactId && contact.whatsappContactReminderCount');
-
+content = content.replace(/if \(\!data\.userId\)/g, 'if (!data.botContactId)');
+content = content.replace(/userId: data\.userId/g, 'botContactId: data.botContactId');
 
 // Special register fix
 content = content.replace(/const email = `wa_\$\{phone\}@listup\.bot`;\s*/, '');

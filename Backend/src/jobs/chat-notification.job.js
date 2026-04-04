@@ -1,6 +1,6 @@
 const cron = require('node-cron');
 const prisma = require('../lib/prisma');
-// const { sendEmail } = require('../lib/email'); // Placeholder for actual email service
+const { sendChatNotification } = require('../lib/email');
 
 /**
  * Run every 5 minutes to check for unread messages and send email notifications
@@ -62,23 +62,19 @@ cron.schedule('*/5 * * * *', async () => {
 
             console.log(`📧 Sending chat notification to ${user.email} for ${messageCount} unread message(s).`);
 
-            // TODO: Actually send the email using the project's email service
-            /*
-            await sendEmail({
-                to: user.email,
-                subject: `You have ${messageCount} new message${messageCount > 1 ? 's' : ''} on ListUp`,
-                html: `
-                    <h1>New messages on ListUp</h1>
-                    <p>Hi ${user.name},</p>
-                    <p>You have ${messageCount} unread message(s) in your ListUp inbox.</p>
-                    <p><strong>Last message from ${lastMessage.sender.name}:</strong></p>
-                    <p style="padding: 10px; background: #f4f4f4; border-radius: 5px;">
-                        ${lastMessage.content || 'Sent an image'}
-                    </p>
-                    <p><a href="${process.env.FRONTEND_URL}/chat/${lastMessage.conversationId}" style="display: inline-block; padding: 10px 20px; background: #2563eb; color: white; text-decoration: none; border-radius: 5px;">View Messages</a></p>
-                `
-            });
-            */
+            try {
+                await sendChatNotification(
+                    user.email,
+                    user.name,
+                    messageCount,
+                    lastMessage.sender.name,
+                    lastMessage.content,
+                    lastMessage.conversationId
+                );
+            } catch (emailError) {
+                console.error(`❌ Failed to send chat notification for user ${userId}:`, emailError);
+                continue; // Move to next user
+            }
 
             // Mark as sent
             await prisma.message.updateMany({

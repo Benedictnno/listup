@@ -82,7 +82,7 @@ model User {
   emailVerifiedAt       DateTime?
 
   // KYC fields
-  listingLimit      Int      @default(3)
+  listingLimit      Int      @default(0)
   isKYCVerified     Boolean  @default(false)
   kycCompletedAt    DateTime?
 
@@ -436,6 +436,7 @@ model Category {
   listings Listing[]
 }
 
+
 model Listing {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
   title       String
@@ -771,6 +772,17 @@ model SystemSettings {
   listingPackageCount Int      @default(3)    // Default: 3 listing slots per package
 
   updatedAt           DateTime @updatedAt
+}
+
+model ListingTier {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  name        String   @unique // e.g., "Starter", "Professional", "Enterprise"
+  description String?
+  price       Float    // in Naira
+  slots       Int      // number of listing slots granted
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 // Chat System Models

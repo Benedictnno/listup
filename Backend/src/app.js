@@ -70,19 +70,15 @@ if (process.env.NODE_ENV === 'production') {
 // Handle CORS preflight requests
 app.options('*', cors(corsOptions));
 
-app.use((req, res, next) => {
-  if (req.originalUrl === '/api/payments/webhook') {
-    let raw = [];
-    req.on('data', chunk => raw.push(chunk));
-    req.on('end', () => {
-      req.rawBody = Buffer.concat(raw);
-      // We don't call express.json() here, we let the webhook handle things
-      next();
-    });
-  } else {
-    express.json({ limit: '2mb' })(req, res, next);
+app.use(express.json({
+  limit: '2mb',
+  verify: (req, res, buf) => {
+    if (req.originalUrl === '/api/payments/webhook') {
+      req.rawBody = buf;
+    }
   }
-});
+}));
+app.use(express.urlencoded({ extended: true }));
 app.use(morgan('dev'));
 app.use(passport.initialize());
 

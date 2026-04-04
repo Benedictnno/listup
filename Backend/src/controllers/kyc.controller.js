@@ -325,7 +325,7 @@ exports._processKYCPaymentInternal = async (kycId) => {
       where: { id: kyc.vendorId },
       data: {
         isKYCVerified: true,
-        listingLimit: -1,
+        listingLimit: { increment: 10 },
         kycCompletedAt: now,
       },
     });
@@ -333,7 +333,6 @@ exports._processKYCPaymentInternal = async (kycId) => {
     await tx.vendorProfile.updateMany({
       where: { userId: kyc.vendorId },
       data: {
-        canCreateUnlimitedListings: true,
         isVerified: true,
       },
     });
@@ -432,7 +431,7 @@ exports._processKYCRenewalPaymentInternal = async (kycId) => {
       where: { id: kyc.vendorId },
       data: {
         isKYCVerified: true,
-        listingLimit: -1,
+        listingLimit: { increment: 10 },
         kycCompletedAt: kyc.kycCompletedAt || now,
       },
     });
@@ -442,7 +441,6 @@ exports._processKYCRenewalPaymentInternal = async (kycId) => {
     await tx.vendorProfile.updateMany({
       where: { userId: kyc.vendorId },
       data: {
-        canCreateUnlimitedListings: true,
         isVerified: true,
       },
     });
@@ -516,7 +514,7 @@ exports.checkListingLimit = async (req, res, next) => {
     }
 
     // Admin-granted unlimited access flag
-    if (user.listingLimit === -1 || user.vendorProfile?.canCreateUnlimitedListings) {
+    if (user.vendorProfile?.canCreateUnlimitedListings) {
       return next();
     }
 

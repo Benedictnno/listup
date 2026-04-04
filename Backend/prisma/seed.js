@@ -1,5 +1,5 @@
-import prisma from "./client";
-import { seedCategories } from "./seed-categories.js";
+const prisma = require("./client");
+const { seedCategories } = require("./seed-categories.js");
 
 async function main() {
   // Seed categories first

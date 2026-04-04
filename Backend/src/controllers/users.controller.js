@@ -22,10 +22,14 @@ exports.me = async (req, res, next) => {
         zipCode: true,
         country: true,
         // vendor-specific fields
-        storeName: true,
-        storeAddress: true,
-        businessCategory: true,
-        coverImage: true
+        vendorProfile: {
+          select: {
+            storeName: true,
+            storeAddress: true,
+            businessCategory: true,
+            coverImage: true
+          }
+        }
       }
     });
 

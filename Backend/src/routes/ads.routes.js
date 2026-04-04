@@ -10,8 +10,8 @@ router.post("/", generalLimiter, auth, checkFeature('listing_promotion'), AdsCtr
 // get active ads (public)
 router.get("/active", generalLimiter, checkFeature('listing_promotion'), AdsCtrl.getActiveAds);
 
-// get all ads (for debugging - remove in production)
-router.get("/all",generalLimiter, AdsCtrl.getAllAds);
+// get all ads (for debugging - locked to admin)
+router.get("/all", generalLimiter, auth, require('../middleware/auth').allow('ADMIN'), AdsCtrl.getAllAds);
 
 // get vendor's ads
 router.get("/vendor/:vendorId",generalLimiter, auth, AdsCtrl.getAdsByVendor);

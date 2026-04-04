@@ -148,7 +148,7 @@ const WhatsAppService = {
     async checkRateLimit(botContactId) {
         if (!botContactId) return { allowed: true, remaining: RATE_LIMIT_CONFIG.MAX_MESSAGES_PER_DAY };
 
-        const user = await prisma.botContact.findUnique({
+        const contact = await prisma.botContact.findUnique({
             where: { id: botContactId },
             select: {
                 whatsappMessageCount: true,
@@ -237,7 +237,7 @@ const WhatsAppService = {
             }
         });
 
-        const user = await prisma.botContact.findUnique({
+        const contact = await prisma.botContact.findUnique({
             where: { id: botContactId },
             select: { whatsappEngagementScore: true }
         });
@@ -272,7 +272,7 @@ const WhatsAppService = {
             return { allowed: false, reason: 'Quiet hours' };
         }
 
-        const user = await prisma.botContact.findUnique({
+        const contact = await prisma.botContact.findUnique({
             where: { id: botContactId },
             select: {
                 whatsappStopRequested: true,
@@ -462,7 +462,7 @@ const WhatsAppService = {
         }
 
         // Contact reminder (VCard)
-        if (userId && contact.whatsappContactReminderCount < 2) {
+        if (botContactId && contact.whatsappContactReminderCount < 2) {
             const oneWeekAgo = new Date();
             oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
 
@@ -552,11 +552,11 @@ const WhatsAppService = {
      */
     async logMessage(data) {
         try {
-            if (!data.userId) return;
+            if (!data.botContactId) return;
 
             await prisma.whatsAppMessageLog.create({
                 data: {
-                    userId: data.userId,
+                    botContactId: data.botContactId,
                     messageSid: data.messageSid,
                     status: data.status,
                     direction: data.direction,

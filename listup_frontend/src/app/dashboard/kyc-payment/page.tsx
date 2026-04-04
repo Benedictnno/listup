@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Script from "next/script";
 import { useAuthStore } from "@/store/authStore";
 import { CheckCircle, XCircle, Loader2, CreditCard } from "lucide-react";
 
@@ -159,7 +160,7 @@ export default function KYCPaymentPage() {
                         Already Verified!
                     </h1>
                     <p className="text-gray-600 mb-6">
-                        Your account is already verified. You have unlimited listing access.
+                        Your account is already verified. You have been granted 10 listing slots.
                     </p>
                     <button
                         onClick={() => router.push("/dashboard")}
@@ -225,7 +226,7 @@ export default function KYCPaymentPage() {
                         Complete Your Verification
                     </h1>
                     <p className="text-gray-600">
-                        Pay the one-time verification fee to unlock unlimited listings
+                        Pay the one-time verification fee to unlock 10 listing slots
                     </p>
                 </div>
 
@@ -272,8 +273,11 @@ export default function KYCPaymentPage() {
                 </p>
             </div>
 
-            {/* Load Paystack script */}
-            <script src="https://js.paystack.co/v1/inline.js" async></script>
+            {/* Load Paystack script securely */}
+            <Script
+                src="https://js.paystack.co/v1/inline.js"
+                strategy="lazyOnload"
+            />
         </div>
     );
 }

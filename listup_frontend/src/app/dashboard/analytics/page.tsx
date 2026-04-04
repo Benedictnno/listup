@@ -199,8 +199,13 @@ export default function AnalyticsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Analytics Dashboard</h1>
-          <p className="text-gray-600">Track your store performance and insights</p>
+          <h1 className="text-2xl font-bold flex items-center gap-2">
+            Analytics Dashboard
+            <span className="text-[10px] bg-amber-100 text-amber-700 font-bold px-2 py-0.5 rounded-full uppercase tracking-wider border border-amber-200">
+              Demo Mode
+            </span>
+          </h1>
+          <p className="text-gray-600 italic text-sm">Reviewing sample store performance (Simulated Data)</p>
         </div>
         <div className="flex gap-2">
           <Select value={timeRange} onValueChange={setTimeRange}>

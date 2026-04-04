@@ -10,6 +10,7 @@ import { useRouter } from "next/navigation";
 import api from "@/utils/axios";
 import { safeLocalStorage } from "@/utils/helpers";
 import { useFeatureFlag } from "@/context/FeatureFlagContext";
+import { useAuthStore } from "@/store/authStore";
 
 type AdPlan = {
   type: string;
@@ -53,6 +54,7 @@ export default function AdsPage() {
   const [productId, setProductId] = useState<string>("");
   const [duration, setDuration] = useState<number>(7);
   const { isEnabled } = useFeatureFlag();
+  const user = useAuthStore((state) => state.user);
 
 
 
@@ -70,15 +72,14 @@ export default function AdsPage() {
   // Function to refresh ads list
   const refreshAds = async () => {
     try {
-      const token = safeLocalStorage.getItem("token");
-      const id = safeLocalStorage.getItem("id");
-      
-      if (!token || !id) {
-        console.error("No token or ID found");
+      if (!user?.id) {
+        console.error("No user ID found");
         return;
       }
+      
+      const token = safeLocalStorage.getItem("token");
 
-      const adsRes = await api.get(`/ads/vendor/${id}`);
+      const adsRes = await api.get(`/ads/vendor/${user.id}`);
 
       console.log("Ads refreshed:", adsRes.data);
       setAds(adsRes.data);
@@ -91,19 +92,18 @@ export default function AdsPage() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const token = safeLocalStorage.getItem("token");
-        const id = safeLocalStorage.getItem("id");
-        
-        if (!token || !id) {
-          console.error("No token or ID found");
+        if (!user?.id) {
+          console.error("No user ID found");
           return;
         }
 
+        const token = safeLocalStorage.getItem("token");
+        
         // Fire requests in parallel
         const [adsRes, storesRes, productsRes, categoriesRes] = await Promise.all([
-          api.get(`/ads/vendor/${id}`),
-          api.get(`/stores/vendor/${id}`),
-          api.get(`/products/vendor/${id}`),
+          api.get(`/ads/vendor/${user.id}`),
+          api.get(`/stores/vendor/${user.id}`),
+          api.get(`/products/vendor/${user.id}`),
           fetchCategories(),
         ]);
 
@@ -133,7 +133,7 @@ export default function AdsPage() {
     }
 
     fetchData();
-  }, []);
+  }, [user?.id]);
 
    useEffect(() => {
       if (!isEnabled('listing_promotion')) {
@@ -158,7 +158,7 @@ export default function AdsPage() {
         type: selectedPlan,
         startDate: new Date().toISOString(),
         endDate: new Date(Date.now() + duration * 24 * 60 * 60 * 1000).toISOString(),
-        vendorId: safeLocalStorage.getItem("id") || "",
+        vendorId: user?.id || "",
         amount: amount,
         status: "PENDING",
         paymentStatus: "PENDING",
@@ -167,12 +167,11 @@ export default function AdsPage() {
       };
 
       if (selectedPlan === "STOREFRONT") {
-        const storeId = safeLocalStorage.getItem("id");
-        if (!storeId) {
+        if (!user?.id) {
           alert("Store ID not found. Please login again.");
           return;
         }
-        payload.storeId = storeId;
+        payload.storeId = user.id;
       }
       if (selectedPlan === "PRODUCT_PROMOTION") {
         if (!productId) {

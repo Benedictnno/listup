@@ -677,7 +677,10 @@ export default function VendorListingsPage() {
       />
 
       {filteredListings.length === 0 ? (
-        <VendorListingEmptyState hasFilters={!!filters.search || !!filters.status || !!filters.category} />
+        <VendorListingEmptyState 
+            hasFilters={!!filters.search || !!filters.status || !!filters.category} 
+            isLimitReached={user?.listingLimit !== undefined && user.listingLimit <= 0 && listings.length === 0}
+        />
       ) : (
         <VendorListingGrid
           listings={filteredListings}

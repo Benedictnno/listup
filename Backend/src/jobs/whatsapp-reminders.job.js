@@ -1,6 +1,6 @@
 const cron = require('node-cron');
 const prisma = require('../lib/prisma');
-const { sendMessage } = require('../services/whatsappService');
+const WhatsAppService = require('../services/whatsappService');
 
 /**
  * Hourly cron job to remind sellers of unreplied messages
@@ -75,8 +75,12 @@ Hi ${seller.name}, you have ${unreadCount} unread message${unreadCount > 1 ? 's'
 
 🔗 https://listup.ng/messages`;
 
-            await sendMessage(seller.phone, body);
-            console.log(`[WhatsApp Reminder] Sent to ${seller.name} (${seller.phone})`);
+            const result = await WhatsAppService.sendMessage(seller.phone, body);
+            if (result) {
+                console.log(`[WhatsApp Reminder] Sent to ${seller.name} (${seller.phone})`);
+            } else {
+                console.warn(`[WhatsApp Reminder] FAILED to send to ${seller.name} (${seller.phone}) - Bot likely disconnected`);
+            }
         }
 
     } catch (error) {

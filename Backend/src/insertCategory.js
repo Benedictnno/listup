@@ -1,36 +1,35 @@
-const { MongoClient } = require("mongodb");
+const prisma = require('./lib/prisma');
 
 async function insertCategories() {
-  const uri = process.env.MOGODB_URI// Replace with your MongoDB URI
-  const client = new MongoClient(uri);
-
   const categories = [
     { name: "All Categories", slug: "all-categories" },
     { name: "Food & Snacks", slug: "food-snacks" },
     { name: "Beauty & Personal Care", slug: "beauty-personal-care" },
     { name: "Fashion & Clothing", slug: "fashion-clothing" },
-    { name: "electronics", slug: "electronics" },
-    { name: "computers", slug: "computers" },
-    { name: "mobile-phones", slug: "mobile-phones" },
-    { name: "audio", slug: "audio" },
+    { name: "Electronics", slug: "electronics" },
+    { name: "Computers", slug: "computers" },
+    { name: "Mobile Phones", slug: "mobile-phones" },
+    { name: "Audio", slug: "audio" },
     { name: "Handmade & Crafts", slug: "handmade-crafts" }
   ];
 
-  const categoriesWithDates = categories.map(category => ({
-    ...category,
-    createdDate: new Date(),
-    updatedDate: new Date(),
-  }));
-
   try {
-    await client.connect();
-    const database = client.db("ListUP"); // Replace with your DB name
-    const collection = database.collection("Category"); // Replace with your collection name
+    console.log("🌱 Inserting categories...");
+    
+    // Use upsert to avoid unique constraint errors if some already exist
+    for (const cat of categories) {
+        await prisma.category.upsert({
+            where: { slug: cat.slug },
+            update: { name: cat.name },
+            create: cat
+        });
+    }
 
-    const result = await collection.insertMany(categoriesWithDates);
-    console.log(`${result.insertedCount} documents were inserted.`);
+    console.log(`✅ Categories inserted/updated successfully.`);
+  } catch (error) {
+    console.error('❌ Error inserting categories:', error);
   } finally {
-    await client.close();
+    await prisma.$disconnect();
   }
 }
 

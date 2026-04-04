@@ -11,6 +11,7 @@ import { createListing } from "@/lib/api/listing";
 import { uploadImage } from "@/lib/api/upload";
 import { fetchCategories, Category } from "@/lib/api/categories";
 import { useRouter } from "next/navigation";
+import { LimitReachedModal } from "@/components/dashboard/LimitReachedModal";
 
 export default function CreateListing() {
   const { user } = useAuthStore();
@@ -29,6 +30,7 @@ export default function CreateListing() {
   const [error, setError] = useState("");
   const [categories, setCategories] = useState<Category[]>([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
+  const [showLimitModal, setShowLimitModal] = useState(false);
 
   // Auto-populate location from user's signup data
   useEffect(() => {
@@ -114,6 +116,13 @@ export default function CreateListing() {
       router.push("/dashboard");
     } catch (err: any) {
       console.error("Error creating listing:", err);
+      
+      // Handle listing limit reached (403 or specific error message)
+      if (err.message?.toLowerCase().includes("limit") || err.response?.status === 403) {
+        setShowLimitModal(true);
+        return;
+      }
+
       if (err.message) {
         setError(err.message);
       } else if (err.response?.data?.message) {
@@ -355,6 +364,11 @@ export default function CreateListing() {
           </ul>
         </div>
       </div>
+
+      <LimitReachedModal 
+        isOpen={showLimitModal} 
+        onClose={() => setShowLimitModal(false)} 
+      />
     </div>
   );
 }

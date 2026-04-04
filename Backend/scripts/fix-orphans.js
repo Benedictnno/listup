@@ -5,31 +5,37 @@ async function cleanOrphanReferrals() {
     try {
         console.log('🔍 Checking for orphan referrals...');
 
-        // Find referrals where the user does not exist
+        // 1. Get all user IDs currently in the Referral table
         const allReferrals = await prisma.referral.findMany({
-            select: { id: true, userId: true }
+            select: { userId: true }
         });
+        const referralUserIds = [...new Set(allReferrals.map(r => r.userId))];
 
-        console.log(`Found ${allReferrals.length} total referrals. Verifying users...`);
+        console.log(`Checking ${referralUserIds.length} unique user IDs across ${allReferrals.length} referrals...`);
 
-        let deletedCount = 0;
+        // 2. Find which of those users actually exist
+        const existingUsers = await prisma.user.findMany({
+            where: { id: { in: referralUserIds } },
+            select: { id: true }
+        });
+        const existingUserIds = new Set(existingUsers.map(u => u.id));
 
-        for (const ref of allReferrals) {
-            const user = await prisma.user.findUnique({
-                where: { id: ref.userId }
-            });
+        // 3. Identify orphan user IDs
+        const orphanUserIds = referralUserIds.filter(id => !existingUserIds.has(id));
 
-            if (!user) {
-                console.warn(`❌ Referral ${ref.id} has missing user ${ref.userId}. Deleting...`);
-                // Use deleteMany to avoid error if it's already gone or has issues
-                await prisma.referral.deleteMany({
-                    where: { id: ref.id }
-                });
-                deletedCount++;
-            }
+        if (orphanUserIds.length === 0) {
+            console.log('✅ No orphan referrals found.');
+            return;
         }
 
-        console.log(`✅ Cleanup complete. Deleted ${deletedCount} orphan referrals.`);
+        console.warn(`❌ Found ${orphanUserIds.length} orphan user IDs. Deleting associated referrals...`);
+
+        // 4. Delete all referrals for those orphan user IDs
+        const result = await prisma.referral.deleteMany({
+            where: { userId: { in: orphanUserIds } }
+        });
+
+        console.log(`✅ Cleanup complete. Deleted ${result.count} orphan referrals.`);
 
     } catch (error) {
         console.error('Error cleaning orphans:', error);
