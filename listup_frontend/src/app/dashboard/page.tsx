@@ -45,26 +45,23 @@ export default function DashboardOverview() {
   const router = useRouter();
   const { isEnabled } = useFeatureFlag();
 
-  // Additional protection at page level
+  // Unified Auth and Redirect Protection
   useEffect(() => {
+    // 1. Check Authentication
     if (user === null) {
       router.push("/login");
       return;
     }
 
+    // 2. Check Role
     if (user.role !== "VENDOR") {
       router.push("/");
       return;
     }
-  }, [user, router]);
 
-  // Check if vendor needs to pay for KYC
-  useEffect(() => {
+    // 3. Check Payment Status (if KYC is enabled)
     const checkPaymentStatus = async () => {
-      // If KYC system is disabled, skip payment check
       if (!isEnabled("kyc_system")) return;
-
-      if (!user || user.role !== "VENDOR") return;
 
       try {
         const token = safeLocalStorage.getItem("token");
@@ -76,21 +73,21 @@ export default function DashboardOverview() {
         });
 
         if (response.ok) {
-          const data = await response.json();
+          const result = await response.json();
 
           // If vendor can pay (KYC approved but not verified), redirect to payment page
-          if (data.success && data.data.canPay) {
+          // Use 'result' instead of 'data' to avoid shadowing DashboardData
+          if (result.success && result.data.canPay) {
             router.push("/dashboard/kyc-payment");
           }
         }
       } catch (error) {
         console.error("Error checking payment status:", error);
-        // Don't block dashboard access on error
       }
     };
 
     checkPaymentStatus();
-  }, [user, router]);
+  }, [user, router, isEnabled]);
 
   const vendorId = user?.id || safeLocalStorage.getItem("id");
   const vendorName = user?.name || safeLocalStorage.getItem("name") || "Vendor";

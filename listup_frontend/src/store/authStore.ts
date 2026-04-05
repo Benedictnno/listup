@@ -41,20 +41,24 @@ export const useAuthStore = create<AuthState>((set) => ({
   isInitialized: false,
 
   initializeAuth: () => {
-    if (typeof window === "undefined") return; // Server-side check
+    if (typeof window === "undefined") return;
 
-    // Cookie-based auth: ask backend who the current user is
+    // Use a unique request ID to handle race conditions during hot reloads
+    const requestId = Math.random().toString(36).substring(7);
+    (window as any)._lastAuthRequestId = requestId;
+
     api
       .get("/auth/me")
       .then((response) => {
+        // If another initialization started, ignore this one
+        if ((window as any)._lastAuthRequestId !== requestId) return;
+
         if (!response.data?.success || !response.data?.data) {
           set({ user: null, isInitialized: true });
           return;
         }
 
         const userData = response.data.data;
-        console.log(userData);
-
         const user: User = {
           id: userData.id,
           name: userData.name,
@@ -66,7 +70,7 @@ export const useAuthStore = create<AuthState>((set) => ({
           ...(userData.vendorProfile && {
             vendorProfile: {
               ...userData.vendorProfile,
-              logo: userData.vendorProfile.logo // explicitly ensure logo is included
+              logo: userData.vendorProfile.logo
             },
           }),
         };
@@ -74,11 +78,11 @@ export const useAuthStore = create<AuthState>((set) => ({
         set({ user, isInitialized: true });
       })
       .catch((error) => {
-        // Don't log 401 errors as they're expected for non-logged-in users
+        if ((window as any)._lastAuthRequestId !== requestId) return;
+        
         if (error.response?.status !== 401) {
           console.error("Error initializing auth:", error);
         }
-        // On 401 or any error, treat as logged out but mark initialized
         set({ user: null, isInitialized: true });
       });
   },

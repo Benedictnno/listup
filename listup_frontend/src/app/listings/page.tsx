@@ -30,6 +30,8 @@ interface FilterState {
 interface PriceFilterSectionProps {
   minPrice: number | null;
   maxPrice: number | null;
+  setMinPrice: (value: number | null) => void;
+  setMaxPrice: (value: number | null) => void;
   clearFilters: () => void;
   hasActiveFilters: () => boolean;
   isOpen: boolean;
@@ -39,6 +41,8 @@ interface PriceFilterSectionProps {
 function PriceFilterSection({
   minPrice,
   maxPrice,
+  setMinPrice,
+  setMaxPrice,
   clearFilters,
   hasActiveFilters,
   isOpen,
@@ -93,15 +97,15 @@ function PriceFilterSection({
                     onChange={(e) => {
                       const value = e.target.value ? Number(e.target.value) : null;
                       if (value !== null && value < 10) {
-                        useFilterStore.getState().setMinPrice(10);
+                        setMinPrice(10);
                       } else {
-                        useFilterStore.getState().setMinPrice(value);
+                        setMinPrice(value);
                       }
                     }}
                     onBlur={(e) => {
                       const value = e.target.value ? Number(e.target.value) : null;
                       if (value !== null && value < 10) {
-                        useFilterStore.getState().setMinPrice(10);
+                        setMinPrice(10);
                       }
                     }}
                     className="w-full pl-8 pr-4 py-3 border-gray-200 focus:border-lime-500 focus:ring-lime-500"
@@ -193,7 +197,16 @@ function PriceFilterSection({
 function ListingsPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { search, minPrice, maxPrice, setSearch, category, setCategory } = useFilterStore();
+  const { 
+    search, 
+    minPrice, 
+    maxPrice, 
+    setSearch, 
+    category, 
+    setCategory, 
+    setMinPrice, 
+    setMaxPrice 
+  } = useFilterStore();
 
   // Use infinite scroll hook with proper error handling
   const {
@@ -218,6 +231,17 @@ function ListingsPageContent() {
     sortOrder: 'desc'
   });
   const [isPriceFilterOpen, setIsPriceFilterOpen] = useState(false);
+
+  const handleClearFilters = () => {
+    setMinPrice(null);
+    setMaxPrice(null);
+    setCategory('');
+    router.push("/listings");
+  };
+
+  const hasActiveFilters = () => {
+    return search !== '' || category !== '' || minPrice !== null || maxPrice !== null;
+  };
 
   // Scroll listener for infinite scroll
   useEffect(() => {
@@ -249,11 +273,10 @@ function ListingsPageContent() {
     }
 
     const catParam = searchParams.get('category') || '';
-    // Use getState to avoid loops if setCategory hasn't updated yet, or just check direct match
-    if (catParam !== useFilterStore.getState().category) {
+    if (catParam !== category) {
       setCategory(catParam);
     }
-  }, [searchParams, setSearch, search, setCategory]);
+  }, [searchParams, setSearch, search, setCategory, category]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -494,7 +517,9 @@ function ListingsPageContent() {
         <PriceFilterSection
           minPrice={minPrice}
           maxPrice={maxPrice}
-          clearFilters={clearFilters}
+          setMinPrice={setMinPrice}
+          setMaxPrice={setMaxPrice}
+          clearFilters={handleClearFilters}
           hasActiveFilters={hasActiveFilters}
           isOpen={isPriceFilterOpen}
           toggleOpen={() => setIsPriceFilterOpen(prev => !prev)}

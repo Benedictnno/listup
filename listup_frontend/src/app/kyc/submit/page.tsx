@@ -5,8 +5,9 @@ import { useRouter } from "next/navigation";
 import api from "@/utils/axios";
 import { useAuthStore } from "@/store/authStore";
 import { parseApiError, parseValidationErrors } from "@/utils/errorHandler";
-import { CheckCircle2, AlertCircle, Loader2, Link2, PhoneCall } from "lucide-react";
+import { CheckCircle2, AlertCircle, Loader2, Link2, PhoneCall, Upload } from "lucide-react";
 import Link from "next/link";
+import { uploadImage } from "@/lib/api/upload";
 
 interface ValidationError {
   field: string;
@@ -202,9 +203,18 @@ export default function KYCSubmitPage() {
       }
 
       // Add document if uploaded
-      if (documentFile && documentPreview) {
+      if (documentFile) {
         payload.documentType = documentType;
-        payload.documentUrl = documentPreview; // Base64 encoded image
+        try {
+          const uploadRes = await uploadImage(documentFile);
+          payload.documentUrl = uploadRes.url;
+          console.log("Document uploaded to Cloudinary:", payload.documentUrl);
+        } catch (uploadError) {
+          console.error("Cloudinary upload failed", uploadError);
+          setErrorMessage("Failed to upload identity document. Please try again or use a smaller image.");
+          setSubmitting(false);
+          return;
+        }
       }
 
       const res = await api.post("/kyc/submit", payload);

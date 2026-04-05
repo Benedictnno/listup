@@ -72,6 +72,12 @@ export default function SettingsPage() {
     personalPhone: "",
   });
 
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+
   const tabs = [
     { id: 'store', label: 'Store Settings', icon: Store },
     { id: 'personal', label: 'Personal Info', icon: User },
@@ -180,9 +186,7 @@ export default function SettingsPage() {
 
         setMessage({ type: 'success', text: 'Personal settings updated successfully!' });
       } else if (section === 'Security') {
-        const currentPassword = (document.getElementById('currentPassword') as HTMLInputElement)?.value || '';
-        const newPassword = (document.getElementById('newPassword') as HTMLInputElement)?.value || '';
-        const confirmPassword = (document.getElementById('confirmPassword') as HTMLInputElement)?.value || '';
+        const { currentPassword, newPassword, confirmPassword } = passwordForm;
 
         if (!currentPassword || !newPassword || !confirmPassword) {
           setMessage({ type: 'error', text: 'Please fill in all password fields.' });
@@ -202,9 +206,11 @@ export default function SettingsPage() {
         await updatePassword({ currentPassword, newPassword });
 
         // Clear password fields after successful update
-        (document.getElementById('currentPassword') as HTMLInputElement).value = '';
-        (document.getElementById('newPassword') as HTMLInputElement).value = '';
-        (document.getElementById('confirmPassword') as HTMLInputElement).value = '';
+        setPasswordForm({
+          currentPassword: "",
+          newPassword: "",
+          confirmPassword: "",
+        });
 
         setMessage({ type: 'success', text: 'Password updated successfully!' });
       } else {
@@ -703,6 +709,8 @@ export default function SettingsPage() {
               type="password"
               placeholder="Enter current password"
               className="w-full"
+              value={passwordForm.currentPassword}
+              onChange={(e) => setPasswordForm(prev => ({ ...prev, currentPassword: e.target.value }))}
             />
           </div>
 
@@ -714,6 +722,8 @@ export default function SettingsPage() {
                 type="password"
                 placeholder="Enter new password"
                 className="w-full"
+                value={passwordForm.newPassword}
+                onChange={(e) => setPasswordForm(prev => ({ ...prev, newPassword: e.target.value }))}
               />
             </div>
             <div>
@@ -723,6 +733,8 @@ export default function SettingsPage() {
                 type="password"
                 placeholder="Confirm new password"
                 className="w-full"
+                value={passwordForm.confirmPassword}
+                onChange={(e) => setPasswordForm(prev => ({ ...prev, confirmPassword: e.target.value }))}
               />
             </div>
           </div>

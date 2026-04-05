@@ -8,6 +8,14 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button";
 import api from "@/utils/axios";
 
+interface ListingTier {
+    id: string;
+    name: string;
+    price: number;
+    slots: number;
+    description?: string;
+}
+
 export default function BuyListingsPage() {
     const router = useRouter();
     const user = useAuthStore((state) => state.user);

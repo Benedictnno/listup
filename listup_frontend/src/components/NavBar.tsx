@@ -62,9 +62,11 @@ function NavBar() {
       const cached = localStorage.getItem('listup_categories');
       if (cached) {
         try {
-          const parsed = JSON.parse(cached);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            setCategories(parsed);
+          const { data, timestamp } = JSON.parse(cached);
+          const isStale = Date.now() - (timestamp || 0) > 24 * 60 * 60 * 1000;
+          
+          if (Array.isArray(data) && data.length > 0 && !isStale) {
+            setCategories(data);
           }
         } catch (e) {
           console.error("Error parsing cached categories", e);
@@ -76,7 +78,10 @@ function NavBar() {
         const fetched = await fetchCategories();
         if (fetched && fetched.length > 0) {
           setCategories(fetched);
-          localStorage.setItem('listup_categories', JSON.stringify(fetched));
+          localStorage.setItem('listup_categories', JSON.stringify({
+            data: fetched,
+            timestamp: Date.now()
+          }));
         }
       } catch (error) {
         console.error("Failed to update categories from API", error);

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { fetchVendorListings, updateListing, deleteListing } from "@/lib/api/listing";
+import { createAd } from "@/lib/api/ad";
 import { uploadImage } from "@/lib/api/upload";
 import { fetchCategories, Category } from "@/lib/api/categories";
 import { fetchVendorListingMetrics, VendorListingMetricsResponse } from "@/lib/api/analytics";
@@ -572,7 +573,7 @@ export default function VendorListingsPage() {
       const totalAmount = calculatePromotionCost();
 
       // Create ads for each selected product
-      const adPromises = promoteListings.map(async (listingId) => {
+      const adResults = await Promise.all(promoteListings.map(async (listingId) => {
         const payload = {
           type: promotePlan,
           startDate: new Date().toISOString(),
@@ -585,18 +586,25 @@ export default function VendorListingsPage() {
           appliesToAllProducts: false
         };
 
-        // Call your createAd API function here
-        // const ad = await createAd(payload);
-        return payload;
-      });
+        return await createAd(payload);
+      }));
 
-      await Promise.all(adPromises);
-      alert(`Promotion ads created for ${promoteListings.length} products. Total cost: ₦${totalAmount.toLocaleString()}`);
+      // Redirect to payment for the first ad if multiple created (business decision)
+      // Or show a bulk payment link if backend supports it. 
+      // For now, listup works by individual payments.
+      
+      alert(`${promoteListings.length} promotion ads created. Please complete payment for each to activate.`);
+      
       setShowPromoteModal(false);
       setPromoteListings([]);
       setPromotePlan("");
       setPromoteDuration(7);
       setSelectedListings([]);
+
+      // If only one ad, redirect directly to payment
+      if (adResults.length === 1 && adResults[0].id) {
+        router.push(`/dashboard/promote/payments/${adResults[0].id}`);
+      }
     } catch (error) {
       console.error('Error creating promotion ads:', error);
       alert('Failed to create promotion ads. Please try again.');

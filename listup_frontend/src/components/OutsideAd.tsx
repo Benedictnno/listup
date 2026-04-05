@@ -22,10 +22,21 @@ export default function FloatingAd() {
 
   // Fetch all active advertisements on component mount
   useEffect(() => {
-    // Guard against React StrictMode double-invoking effects in development
-    if (hasFetchedRef.current) return;
-    hasFetchedRef.current = true;
-    fetchAllAds();
+    const controller = new AbortController();
+    
+    // Only fetch once even if StrictMode runs this twice, but allow for proper re-mounting
+    if (!hasFetchedRef.current) {
+      hasFetchedRef.current = true;
+      fetchAllAds(controller.signal);
+    }
+
+    return () => {
+      controller.abort();
+      // We don't reset hasFetchedRef because we really only want to fetch once per app session 
+      // or until next full reload if the component stays alive.
+      // But if it's unmounted/remounted, we might actually WANT it to refetch.
+      // user requirement: fixed double-fetches.
+    };
   }, []);
 
   // Slideshow: Change ad every 5 seconds
@@ -53,12 +64,13 @@ export default function FloatingAd() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const fetchAllAds = async () => {
+  const fetchAllAds = async (signal?: AbortSignal) => {
     try {
       setLoading(true);
       // Fetch a single random advertisement to avoid excessive API calls
       const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_URL || 'https://api.listup.ng/api'}/advertisements/random`
+        `${process.env.NEXT_PUBLIC_API_URL || 'https://api.listup.ng/api'}/advertisements/random`,
+        { signal }
       );
 
       if (response.data?.success && response.data.data?.advertisement) {

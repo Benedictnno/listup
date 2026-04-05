@@ -13,8 +13,14 @@ import {
   Users,
   ShoppingCart,
   Download,
-  RefreshCw
+  RefreshCw,
+  Eye,
+  Heart,
+  MessageSquare,
+  BarChart3
 } from "lucide-react";
+import { fetchVendorListingMetrics, VendorListingMetricsResponse } from "@/lib/api/analytics";
+import { useAuthStore } from "@/store/authStore";
 
 // Dynamic imports for heavy chart components
 const SalesCharts = dynamic(() => import('@/components/dashboard/analytics/SalesCharts'), {
@@ -77,70 +83,16 @@ export default function AnalyticsPage() {
   const [timeRange, setTimeRange] = useState('30d');
   const [chartType, setChartType] = useState('daily');
 
+  const { user } = useAuthStore();
+
   useEffect(() => {
     async function loadAnalyticsData() {
+      if (!user?.id) return;
+      
       try {
-        // Mock data for demonstration - in real app, this would come from API
-        const mockData: AnalyticsData = {
-          overview: {
-            totalRevenue: 1250000,
-            totalOrders: 89,
-            totalCustomers: 156,
-            averageOrderValue: 14045,
-            revenueGrowth: 12.5,
-            orderGrowth: 8.2,
-            customerGrowth: 15.3,
-            aovGrowth: 3.8
-          },
-          salesPerformance: {
-            daily: Array.from({ length: 30 }, (_, i) => ({
-              date: new Date(Date.now() - (29 - i) * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-              revenue: Math.floor(Math.random() * 50000) + 20000,
-              orders: Math.floor(Math.random() * 10) + 2
-            })),
-            weekly: Array.from({ length: 12 }, (_, i) => ({
-              week: `Week ${i + 1}`,
-              revenue: Math.floor(Math.random() * 300000) + 150000,
-              orders: Math.floor(Math.random() * 50) + 20
-            })),
-            monthly: Array.from({ length: 12 }, (_, i) => ({
-              month: new Date(2024, i, 1).toLocaleDateString('en-US', { month: 'short' }),
-              revenue: Math.floor(Math.random() * 150000) + 80000,
-              orders: Math.floor(Math.random() * 30) + 15
-            }))
-          },
-          topProducts: [
-            { id: '1', name: 'iPhone 13 Pro', revenue: 450000, orders: 15, views: 1240, conversionRate: 1.21, image: '/placeholder.svg' },
-            { id: '2', name: 'MacBook Pro M2', revenue: 320000, orders: 8, views: 980, conversionRate: 0.82, image: '/placeholder.svg' },
-            { id: '3', name: 'Samsung Galaxy S23', revenue: 280000, orders: 12, views: 756, conversionRate: 1.59, image: '/placeholder.svg' },
-            { id: '4', name: 'iPad Air', revenue: 180000, orders: 9, views: 520, conversionRate: 1.73, image: '/placeholder.svg' },
-            { id: '5', name: 'AirPods Pro', revenue: 120000, orders: 18, views: 890, conversionRate: 2.02, image: '/placeholder.svg' }
-          ],
-          customerMetrics: {
-            lifetimeValue: [
-              { segment: 'High Value', value: 75000, count: 25 },
-              { segment: 'Medium Value', value: 25000, count: 68 },
-              { segment: 'Low Value', value: 8000, count: 63 }
-            ],
-            retention: Array.from({ length: 12 }, (_, i) => ({
-              month: new Date(2024, i, 1).toLocaleDateString('en-US', { month: 'short' }),
-              rate: Math.random() * 0.3 + 0.6
-            })),
-            demographics: [
-              { age: '18-24', count: 25, revenue: 180000 },
-              { age: '25-34', count: 68, revenue: 520000 },
-              { age: '35-44', count: 45, revenue: 380000 },
-              { age: '45+', count: 18, revenue: 170000 }
-            ]
-          },
-          performanceComparison: [
-            { category: 'Electronics', revenue: 850000, orders: 45, conversionRate: 1.2, avgPrice: 18889 },
-            { category: 'Clothing', revenue: 280000, orders: 28, conversionRate: 0.8, avgPrice: 10000 },
-            { category: 'Furniture', revenue: 120000, orders: 16, conversionRate: 0.6, avgPrice: 7500 }
-          ]
-        };
-
-        setData(mockData);
+        setLoading(true);
+        const metrics = await fetchVendorListingMetrics(user.id, timeRange as any);
+        setData(metrics as any);
       } catch (error) {
         console.error('Error loading analytics data:', error);
       } finally {
@@ -149,7 +101,7 @@ export default function AnalyticsPage() {
     }
 
     loadAnalyticsData();
-  }, []);
+  }, [user?.id, timeRange]);
 
   if (loading) {
     return (
@@ -231,74 +183,47 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Overview Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="hover:shadow-lg transition-shadow">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <Card className="hover:shadow-lg transition-shadow border-l-4 border-l-blue-500">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Total Revenue</p>
-                <p className="text-2xl font-bold text-gray-900">{formatCurrency(data.overview.totalRevenue)}</p>
-                <p className={`text-xs flex items-center gap-1 ${getGrowthColor(data.overview.revenueGrowth)}`}>
-                  {getGrowthIcon(data.overview.revenueGrowth)}
-                  {formatPercentage(data.overview.revenueGrowth)} vs last period
-                </p>
+                <p className="text-sm font-medium text-gray-600">Total Views</p>
+                <p className="text-3xl font-black text-gray-900 mt-1">{(data as any).totals?.views?.toLocaleString() || 0}</p>
+                <p className="text-xs text-gray-400 mt-1 italic">Total listing impressions</p>
               </div>
-              <div className="p-3 bg-green-100 rounded-full">
-                <DollarSign className="h-6 w-6 text-green-600" />
+              <div className="p-3 bg-blue-50 rounded-2xl">
+                <Eye className="h-7 w-7 text-blue-600" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="hover:shadow-lg transition-shadow">
+        <Card className="hover:shadow-lg transition-shadow border-l-4 border-l-pink-500">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Total Orders</p>
-                <p className="text-2xl font-bold text-gray-900">{data.overview.totalOrders}</p>
-                <p className={`text-xs flex items-center gap-1 ${getGrowthColor(data.overview.orderGrowth)}`}>
-                  {getGrowthIcon(data.overview.orderGrowth)}
-                  {formatPercentage(data.overview.orderGrowth)} vs last period
-                </p>
+                <p className="text-sm font-medium text-gray-600">Total Saves</p>
+                <p className="text-3xl font-black text-gray-900 mt-1">{(data as any).totals?.saves?.toLocaleString() || 0}</p>
+                <p className="text-xs text-gray-400 mt-1 italic">Items added to favorites</p>
               </div>
-              <div className="p-3 bg-blue-100 rounded-full">
-                <ShoppingCart className="h-6 w-6 text-blue-600" />
+              <div className="p-3 bg-pink-50 rounded-2xl">
+                <Heart className="h-7 w-7 text-pink-600" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="hover:shadow-lg transition-shadow">
+        <Card className="hover:shadow-lg transition-shadow border-l-4 border-l-lime-500">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Total Customers</p>
-                <p className="text-2xl font-bold text-gray-900">{data.overview.totalCustomers}</p>
-                <p className={`text-xs flex items-center gap-1 ${getGrowthColor(data.overview.customerGrowth)}`}>
-                  {getGrowthIcon(data.overview.customerGrowth)}
-                  {formatPercentage(data.overview.customerGrowth)} vs last period
-                </p>
+                <p className="text-sm font-medium text-gray-600">Message Clicks</p>
+                <p className="text-3xl font-black text-gray-900 mt-1">{(data as any).totals?.messages?.toLocaleString() || 0}</p>
+                <p className="text-xs text-gray-400 mt-1 italic">Direct inquiries via WhatsApp/Chat</p>
               </div>
-              <div className="p-3 bg-purple-100 rounded-full">
-                <Users className="h-6 w-6 text-purple-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="hover:shadow-lg transition-shadow">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Avg Order Value</p>
-                <p className="text-2xl font-bold text-gray-900">{formatCurrency(data.overview.averageOrderValue)}</p>
-                <p className={`text-xs flex items-center gap-1 ${getGrowthColor(data.overview.aovGrowth)}`}>
-                  {getGrowthIcon(data.overview.aovGrowth)}
-                  {formatPercentage(data.overview.aovGrowth)} vs last period
-                </p>
-              </div>
-              <div className="p-3 bg-orange-100 rounded-full">
-                <TrendingUp className="h-6 w-6 text-orange-600" />
+              <div className="p-3 bg-lime-50 rounded-2xl">
+                <MessageSquare className="h-7 w-7 text-lime-600" />
               </div>
             </div>
           </CardContent>

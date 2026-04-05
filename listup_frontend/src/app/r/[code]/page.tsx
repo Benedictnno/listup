@@ -11,10 +11,8 @@ interface PageProps {
 
 export default function ReferralRedirectPage({ params }: PageProps) {
     useEffect(() => {
-        // Use the backend URL from environment or default to localhost
-        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000";
-        // Redirect to the backend tracking endpoint
-        window.location.href = `${backendUrl}/api/referrals/r/${params.code}`;
+        // Redirect to our internal proxy that handles the backend redirect
+        window.location.href = `/api/r/${params.code}`;
     }, [params.code]);
 
     return (
