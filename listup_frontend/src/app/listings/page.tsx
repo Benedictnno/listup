@@ -239,10 +239,6 @@ function ListingsPageContent() {
     router.push("/listings");
   };
 
-  const hasActiveFilters = () => {
-    return search !== '' || category !== '' || minPrice !== null || maxPrice !== null;
-  };
-
   // Scroll listener for infinite scroll
   useEffect(() => {
     const handleScroll = () => {
