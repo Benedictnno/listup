@@ -145,7 +145,6 @@ exports.updateStoreSettings = async (req, res, next) => {
   }
 };
 
-// Update personal information
 exports.updatePersonalInfo = async (req, res, next) => {
   try {
     const userId = req.user.id;
@@ -160,7 +159,8 @@ exports.updatePersonalInfo = async (req, res, next) => {
       city,
       state,
       zipCode,
-      country
+      country,
+      email // Added email for change handling
     } = req.body;
 
     // Validate required fields
@@ -171,22 +171,39 @@ exports.updatePersonalInfo = async (req, res, next) => {
       });
     }
 
+    const updateData = {
+      name,
+      phone,
+      profileImage,
+      bio,
+      dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : null,
+      gender,
+      address,
+      city,
+      state,
+      zipCode,
+      country
+    };
+
+    let emailChanged = false;
+    if (email && email.toLowerCase() !== req.user.email.toLowerCase()) {
+      // Check if new email is already taken
+      const existingUser = await prisma.user.findUnique({
+        where: { email: email.toLowerCase() }
+      });
+      if (existingUser) {
+        return res.status(409).json({ success: false, message: 'Email address is already in use' });
+      }
+
+      updateData.email = email.toLowerCase().trim();
+      updateData.isEmailVerified = false;
+      emailChanged = true;
+    }
+
     // Update user profile
     const updatedUser = await prisma.user.update({
       where: { id: userId },
-      data: {
-        name,
-        phone,
-        profileImage,
-        bio,
-        dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : null,
-        gender,
-        address,
-        city,
-        state,
-        zipCode,
-        country
-      },
+      data: updateData,
       select: {
         id: true,
         name: true,
@@ -205,6 +222,34 @@ exports.updatePersonalInfo = async (req, res, next) => {
         createdAt: true
       }
     });
+
+    if (emailChanged) {
+      // Generate new verification token
+      const { generateVerificationToken } = require('../utils/tokens');
+      const { sendEmailVerification } = require('../lib/email');
+      
+      const verificationToken = generateVerificationToken();
+      await prisma.emailVerification.create({
+        data: {
+          userId,
+          token: verificationToken,
+          expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000)
+        }
+      });
+
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+      const verificationLink = `${frontendUrl}/verify-email?token=${verificationToken}`;
+      await sendEmailVerification(updatedUser.email, verificationLink, updatedUser.name);
+
+      // Force logout by clearing the cookie
+      res.clearCookie('accessToken');
+      
+      return res.json({
+        success: true,
+        message: "Email updated successfully. You have been logged out. Please verify your new email address to continue.",
+        emailChanged: true
+      });
+    }
 
     res.json({
       success: true,

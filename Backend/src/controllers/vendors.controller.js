@@ -12,11 +12,16 @@ exports.getVendorProfile = async (req, res, next) => {
         email: true,
         phone: true,
         role: true,
-        storeName: true,
-        storeAddress: true,
-        businessCategory: true,
-        coverImage: true,
         createdAt: true,
+        vendorProfile: {
+          select: {
+            storeName: true,
+            storeAddress: true,
+            businessCategory: true,
+            coverImage: true,
+            logo: true,
+          }
+        },
         listings: {
           select: {
             id: true,

@@ -68,7 +68,7 @@ cron.schedule('*/5 * * * *', async () => {
                     user.name,
                     messageCount,
                     lastMessage.sender.name,
-                    lastMessage.content,
+                    lastMessage.content || (lastMessage.messageType === 'IMAGE' ? "Sent an image" : "New message"),
                     lastMessage.conversationId
                 );
             } catch (emailError) {

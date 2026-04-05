@@ -40,10 +40,7 @@ router.post(
       .isLength({ min: 10, max: 15 })
       .withMessage('Phone number must be between 10 and 15 characters'),
 
-    body('role')
-      .optional()
-      .isIn(['USER', 'VENDOR'])
-      .withMessage('Role must be either USER or VENDOR'),
+    // role field removed to prevent escalation - default is USER
 
     // Vendor-specific validation (only if role is VENDOR)
     body('storeName')
@@ -70,12 +67,58 @@ router.post(
       .isLength({ min: 2, max: 50 })
       .withMessage('Business category must be between 2 and 50 characters'),
 
-    body('referralCode')
-      .optional()
-      .isString()
-      .withMessage('Referral code must be a string'),
   ],
   AuthCtrl.register
+);
+
+// VENDOR registration (Strictly Validated)
+router.post(
+  '/register/vendor', loginLimiter,
+  [
+    body('name')
+      .trim()
+      .notEmpty()
+      .withMessage('Name is required')
+      .isLength({ min: 2, max: 100 }),
+
+    body('email')
+      .trim()
+      .notEmpty()
+      .isEmail()
+      .normalizeEmail()
+      .withMessage('Valid email required'),
+
+    body('password')
+      .notEmpty()
+      .isLength({ min: 6 })
+      .withMessage('Password must be at least 6 characters'),
+
+    body('phone')
+      .trim()
+      .notEmpty()
+      .withMessage('Phone number is required for vendors')
+      .isLength({ min: 10, max: 15 }),
+
+    body('storeName')
+      .trim()
+      .notEmpty()
+      .withMessage('Store name is required'),
+
+    body('storeAddress')
+      .trim()
+      .notEmpty()
+      .withMessage('Store address is required'),
+
+    body('businessCategory')
+      .trim()
+      .notEmpty()
+      .withMessage('Business category is required'),
+    
+    body('referralCode')
+      .optional()
+      .isString(),
+  ],
+  AuthCtrl.registerVendor
 );
 
 router.post('/login', loginLimiter,

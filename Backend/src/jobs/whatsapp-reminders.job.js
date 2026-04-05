@@ -9,6 +9,12 @@ cron.schedule('0 * * * *', async () => {
     try {
         console.log('🤖 Running WhatsApp Seller Reminders Job...');
 
+        // 0. Circuit Breaker: Check if bot is connected
+        if (!WhatsAppService.sock || !WhatsAppService.sock.user) {
+            console.warn('⚠️ WhatsApp bot is not connected. Skipping reminders job.');
+            return;
+        }
+
         const oneDayAgo = new Date();
         oneDayAgo.setDate(oneDayAgo.getDate() - 1);
 

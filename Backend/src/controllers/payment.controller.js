@@ -39,7 +39,7 @@ const PaymentCtrl = {
       await prisma.ad.update({
         where: { id: adId },
         data: {
-          paymentStatus: "PAID",
+          paymentStatus: "SUCCESS",
           status: "ACTIVE",
           transactionId: event.data.reference,
         },

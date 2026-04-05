@@ -527,10 +527,10 @@ const WhatsAppService = {
         try {
             const result = await sock.sendMessage(from, { text: responseText });
 
-            await this.incrementMessageCount(userId);
-            await this.updateEngagementScore(userId, true);
+            await this.incrementMessageCount(botContactId);
+            await this.updateEngagementScore(botContactId, true);
 
-            if (userId && result) {
+            if (botContactId && result) {
                 await this.logMessage({
                     botContactId: botContactId,
                     messageSid: result.key.id,

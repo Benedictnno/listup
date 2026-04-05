@@ -27,9 +27,9 @@ export default function MasonryGrid({ listings }: { listings: Listing[] }) {
   });
 
   return (
-    <div className="flex w-full gap-2 md:gap-4 lg:gap-6">
+    <div className="flex w-full gap-2 md:gap-4 lg:gap-6 overflow-hidden">
       {columns.map((col, idx) => (
-        <div key={idx} className="flex flex-col flex-1 gap-4 md:gap-6">
+        <div key={idx} className="flex flex-col flex-1 min-w-0 gap-4 md:gap-6">
           {col.map((listing) => (
             <ListingCard key={listing.id} listing={listing} />
           ))}

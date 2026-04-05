@@ -80,13 +80,11 @@ exports.register = async (req, res, next) => {
       email,
       password,
       phone,
-      role = 'USER', // Default to USER if not specified
-      storeName,
-      storeAddress,
-      businessCategory,
       referralCode,
       whatsappOptIn,
     } = req.body;
+    
+    const role = 'USER'; // Strictly enforced for this route
 
     // Check if email already exists
     const existingUser = await prisma.user.findUnique({
@@ -127,7 +125,7 @@ exports.register = async (req, res, next) => {
       whatsappOptIn: !!whatsappOptIn,
     };
 
-    // If referral code was provided, validate it before creating the user
+    // Referral logic for USER (if applicable)
     let referral = null;
     if (referralCode) {
       referral = await prisma.referral.findUnique({
@@ -142,54 +140,10 @@ exports.register = async (req, res, next) => {
       }
     }
 
-    // Create user with or without vendor profile
-    let user;
-    if (role === 'VENDOR') {
-      // Validate vendor-specific fields
-      if (!storeName || !storeAddress || !businessCategory) {
-        return res.status(400).json({
-          success: false,
-          message: 'Vendor accounts require store name, address, and business category'
-        });
-      }
-
-      user = await prisma.user.create({
-        data: {
-          ...userData,
-          vendorProfile: {
-            create: {
-              storeName: storeName.trim(),
-              storeAddress: storeAddress.trim(),
-              businessCategory: businessCategory.trim(),
-              // ensure pending defaults (schema already defaults)
-            },
-          },
-        },
-        include: {
-          vendorProfile: true
-        },
-      });
-
-      // If vendor signed up with a valid referral code, create referral use via Service
-      if (referral) {
-        try {
-          const ReferralService = require('../services/referral.service');
-          await ReferralService.createReferralUse(user.id, referral.code);
-        } catch (e) {
-          console.error('Error creating referral use during registration:', e);
-        }
-      }
-      // Fire-and-forget pending email
-      try {
-        const { sendVendorPendingEmail } = require('../lib/email');
-        sendVendorPendingEmail(email.toLowerCase().trim(), name.trim(), storeName?.trim());
-      } catch (e) { console.warn('Email send failed (vendor pending):', e?.message || e); }
-    } else {
-      // Create regular user
-      user = await prisma.user.create({
-        data: userData,
-      });
-    }
+    // Create regular user
+    const user = await prisma.user.create({
+      data: userData,
+    });
 
     // Generate email verification token
     const verificationToken = generateVerificationToken();
@@ -230,7 +184,6 @@ exports.register = async (req, res, next) => {
       console.error('Failed to sync new user to Google Sheets:', sheetError.message);
     }
 
-    // Return success response WITHOUT token - user must verify email before logging in
     res.status(201).json({
       success: true,
       message: 'Account created successfully! Please check your email to verify your account before logging in.',
@@ -260,6 +213,152 @@ exports.register = async (req, res, next) => {
       success: false,
       message: 'Internal server error during registration'
     });
+  }
+};
+
+exports.registerVendor = async (req, res, next) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: errors.array().map(err => ({ field: err.path, message: err.msg }))
+      });
+    }
+
+    const {
+      name,
+      email,
+      password,
+      phone,
+      storeName,
+      storeAddress,
+      businessCategory,
+      referralCode,
+      whatsappOptIn,
+    } = req.body;
+
+    const role = 'VENDOR';
+
+    // Check if email already exists
+    const existingUser = await prisma.user.findUnique({
+      where: { email: email.toLowerCase() }
+    });
+
+    if (existingUser) {
+      return res.status(409).json({
+        success: false,
+        message: 'Email address is already registered'
+      });
+    }
+
+    // Check if phone already exists
+    const existingPhone = await prisma.user.findUnique({
+      where: { phone }
+    });
+
+    if (existingPhone) {
+      return res.status(409).json({
+        success: false,
+        message: 'Phone number is already registered'
+      });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 12);
+
+    const userData = {
+      name: name.trim(),
+      email: email.toLowerCase().trim(),
+      password: hashedPassword,
+      phone: phone.trim(),
+      role: 'VENDOR',
+      whatsappOptIn: !!whatsappOptIn,
+    };
+
+    let referral = null;
+    if (referralCode) {
+      referral = await prisma.referral.findUnique({
+        where: { code: referralCode },
+      });
+
+      if (!referral || !referral.isActive) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid or inactive referral code',
+        });
+      }
+    }
+
+    const user = await prisma.user.create({
+      data: {
+        ...userData,
+        vendorProfile: {
+          create: {
+            storeName: storeName.trim(),
+            storeAddress: storeAddress.trim(),
+            businessCategory: businessCategory.trim(),
+          },
+        },
+      },
+      include: {
+        vendorProfile: true
+      },
+    });
+
+    if (referral) {
+      try {
+        const ReferralService = require('../services/referral.service');
+        await ReferralService.createReferralUse(user.id, referral.code);
+      } catch (e) {
+        console.error('Error creating referral use during vendor registration:', e);
+      }
+    }
+
+    // Generate Verification token
+    const verificationToken = generateVerificationToken();
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); 
+
+    await prisma.emailVerification.create({
+      data: {
+        userId: user.id,
+        token: verificationToken,
+        expiresAt: expiresAt
+      }
+    });
+
+    // Send emails (fire and forget)
+    try {
+      const { sendEmailVerification, sendVendorPendingEmail } = require('../lib/email');
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+      const verificationLink = `${frontendUrl}/verify-email?token=${verificationToken}`;
+      
+      sendEmailVerification(user.email, verificationLink, user.name).catch(e => console.error(e));
+      sendVendorPendingEmail(user.email, user.name, storeName.trim()).catch(e => console.error(e));
+    } catch (e) { console.error(e); }
+
+    try {
+      await addToGoogleSheet(name, storeName, email, phone, 'VENDOR (Direct Registration)');
+    } catch (sheetError) {
+      console.error('Failed to sync new vendor to Google Sheets:', sheetError.message);
+    }
+
+    res.status(201).json({
+      success: true,
+      message: 'Vendor account created successfully! Please verify your email.',
+      requiresEmailVerification: true,
+      data: {
+        user: {
+          email: user.email,
+          name: user.name,
+          role: user.role,
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('Vendor Registration error:', error);
+    res.status(500).json({ success: false, message: 'Internal server error during vendor registration' });
   }
 };
 

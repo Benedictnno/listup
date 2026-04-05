@@ -298,40 +298,4 @@ exports.updateAdStatus = async (req, res, next) => {
     next(e);
   }
 };
-
-// Get ads by vendor ID
-exports.getAdsByVendor = async (req, res, next) => {
-  try {
-    const { vendorId } = req.params;
-  
-
-    const ads = await prisma.ad.findMany({
-      where: { vendorId },
-      include: {
-        store: {
-          select: {
-            id: true,
-            storeName: true,
-            businessCategory: true,
-          }
-        },
-        product: {
-          select: {
-            id: true,
-            title: true,
-            price: true,
-          }
-        },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
-
-    res.json(ads);
-  } catch (e) {
-    console.error(`❌ Error fetching ads for vendor ${req.params.vendorId}:`, e);
-    res.status(500).json({ 
-      message: "Failed to fetch vendor ads",
-      error: process.env.NODE_ENV === 'development' ? e.message : 'Internal server error'
-    });
-  }
-};
+

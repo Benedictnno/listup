@@ -115,12 +115,7 @@ class ReferralService {
     /**
      * Records a Signup Event (Referred Vendor).
      */
-    async extractReferralCode(code) {
-        const referral = await prisma.referral.findUnique({
-            where: { code }
-        });
-        return referral;
-    }
+
 
     async createReferralUse(userId, referralCode) {
         // 1. Validate Code

@@ -40,7 +40,13 @@ const storage = new CloudinaryStorage({
     transformation: [{ quality: 'auto', fetch_format: 'auto' }]
   })
 });
-const upload = multer({ storage });
+const upload = multer({ 
+  storage,
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB limit
+    files: 1
+  }
+});
 
 router.post('/image',generalLimiter, auth, upload.single('image'), (req, res) => {
   // req.file.path is the secure_url

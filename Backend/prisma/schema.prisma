@@ -172,8 +172,8 @@ model WhatsAppMessageLog {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  @@index([userId])
-  @@index([createdAt])
+  @@index([userId, createdAt])
+  @@index([direction, createdAt])
 }
 
 model VendorProfile {

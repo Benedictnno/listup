@@ -188,36 +188,59 @@ function NavBar() {
               {/* Scrollable Categories List */}
               <div className="flex-1 overflow-y-auto px-10 py-12 scrollbar-hide">
                 <nav className="flex flex-col gap-8 items-end">
-                  {[
-                    { name: "Audio", href: "/categories/audio" },
-                    { name: "Electronics", href: "/categories/electronics" },
-                    { name: "Computers", href: "/categories/computers" },
-                    { name: "Mobile", href: "/categories/mobile" },
-                    { name: "Beauty & Care", href: "/categories/beauty-personal-care" },
-                    { name: "Fashion", href: "/categories/fashion-clothing" },
-                    { name: "Food", href: "/categories/food-snacks" },
-                    { name: "Handmade", href: "/categories/handmade-crafts" },
-                    { name: "Utensils", href: "/categories/utensils" }
-                  ].map((cat, i) => (
-                    <motion.div
-                      key={cat.href}
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: i * 0.05 }}
-                    >
-                      <Link
-                        href={cat.href}
-                        onClick={() => setOpen(false)}
-                        className="text-[22px] font-bold text-slate-800 hover:text-lime-600 transition-all group relative flex items-center gap-4"
+                  {categories.length > 0 ? (
+                    categories.slice(0, 10).map((cat, i) => (
+                      <motion.div
+                        key={cat.id}
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: i * 0.05 }}
                       >
-                        <span className="text-[12px] text-slate-400 font-mono font-medium group-hover:text-lime-500 transition-colors">
-                          0{i + 1}
-                        </span>
-                        {cat.name}
-                        <span className="absolute -bottom-1 -right-1 w-0 h-1 bg-lime-400/20 transition-all group-hover:w-[calc(100%+8px)]" />
-                      </Link>
-                    </motion.div>
-                  ))}
+                        <Link
+                          href={`/listings?category=${cat.id}`}
+                          onClick={() => setOpen(false)}
+                          className="text-[22px] font-bold text-slate-800 hover:text-lime-600 transition-all group relative flex items-center gap-4"
+                        >
+                          <span className="text-[12px] text-slate-400 font-mono font-medium group-hover:text-lime-500 transition-colors">
+                            0{i + 1}
+                          </span>
+                          {cat.name}
+                          <span className="absolute -bottom-1 -right-1 w-0 h-1 bg-lime-400/20 transition-all group-hover:w-[calc(100%+8px)]" />
+                        </Link>
+                      </motion.div>
+                    ))
+                  ) : (
+                    // Fallback to static if loading or empty
+                    [
+                      { name: "Audio", slug: "audio" },
+                      { name: "Electronics", slug: "electronics" },
+                      { name: "Computers", slug: "computers" },
+                      { name: "Mobile", slug: "mobile-phones" },
+                      { name: "Beauty & Care", slug: "beauty-personal-care" },
+                      { name: "Fashion", slug: "fashion-clothing" },
+                      { name: "Food", slug: "food-snacks" },
+                      { name: "Handmade", slug: "handmade-crafts" }
+                    ].map((cat, i) => (
+                      <motion.div
+                        key={cat.slug}
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: i * 0.05 }}
+                      >
+                        <Link
+                          href={`/listings?category=${cat.slug}`}
+                          onClick={() => setOpen(false)}
+                          className="text-[22px] font-bold text-slate-800 hover:text-lime-600 transition-all group relative flex items-center gap-4"
+                        >
+                          <span className="text-[12px] text-slate-400 font-mono font-medium group-hover:text-lime-500 transition-colors">
+                            0{i + 1}
+                          </span>
+                          {cat.name}
+                          <span className="absolute -bottom-1 -right-1 w-0 h-1 bg-lime-400/20 transition-all group-hover:w-[calc(100%+8px)]" />
+                        </Link>
+                      </motion.div>
+                    ))
+                  )}
                 </nav>
               </div>
 

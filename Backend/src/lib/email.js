@@ -161,7 +161,7 @@ async function sendVendorPendingEmail(email, userName, storeName) {
 // ==========================
 async function sendPasswordResetCode(email, code, userName = null) {
   const template = EMAIL_TEMPLATES.PASSWORD_RESET;
-  console.log(email, code, userName);
+  // console.log(email, code, userName); // Removed sensitive log
 
   try {
     const { data, error } = await resend.emails.send({
@@ -171,7 +171,7 @@ async function sendPasswordResetCode(email, code, userName = null) {
       html: template.html(code, userName),
       text: template.text(code, userName),
     });
-    console.log(email, code, userName);
+    // console.log(email, code, userName); // Removed sensitive log
 
     if (error) {
       console.error('❌ Resend API Error:', error);
@@ -467,7 +467,7 @@ try {
 
   const { subject, html } = template(...args);
   const isDev = process.env.NODE_ENV !== 'production';
-  const recipientEmail = isDev ? 'benedictnnaoma0@gmail.com' : email;
+  const recipientEmail = (isDev && process.env.DEV_EMAIL_REDIRECT) ? process.env.DEV_EMAIL_REDIRECT : email;
 
   const { data, error } = await resend.emails.send({
     from: 'ListUp <noreply@listup.ng>',
@@ -496,7 +496,7 @@ try {
 async function sendChatNotification(email, name, messageCount, lastSenderName, lastMessageContent, conversationId) {
   try {
     const isDev = process.env.NODE_ENV !== 'production';
-    const recipientEmail = isDev ? 'benedictnnaoma0@gmail.com' : email;
+    const recipientEmail = (isDev && process.env.DEV_EMAIL_REDIRECT) ? process.env.DEV_EMAIL_REDIRECT : email;
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
 
     const { data, error } = await resend.emails.send({

@@ -361,13 +361,8 @@ router.post("/webhook", async (req, res) => {
     return res.sendStatus(401);
   }
 
-  try {
-    req.body = JSON.parse(req.rawBody.toString('utf8'));
-  } catch (err) {
-    console.error("⚠️ Invalid JSON payload", err);
-    return res.sendStatus(400);
-  }
-
+  // Raw body is already parsed by express.json() with verify into req.body
+  // Just use req.body directly to avoid double parsing and potential inconsistencies
   console.log("=== WEBHOOK RECEIVED (VERIFIED) ===");
   console.log("Event:", req.body.event);
   console.log("Data:", JSON.stringify(req.body.data, null, 2));
@@ -439,7 +434,10 @@ router.post("/webhook", async (req, res) => {
           const endDate = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days from now
 
           const updatedAd = await prisma.ad.update({
-            where: { id: adId },
+            where: { 
+              id: adId,
+              paymentStatus: { not: "SUCCESS" } // Atomic idempotency check
+            },
             data: {
               status: "ACTIVE",
               paymentStatus: "SUCCESS",

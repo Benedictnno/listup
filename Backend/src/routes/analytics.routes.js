@@ -38,6 +38,17 @@ router.post('/listings/:listingId/save', generalLimiter, auth, async (req, res, 
       return res.status(400).json({ message: 'Missing listingId' });
     }
 
+    const existingSave = await prisma.listingSaveEvent.findFirst({
+      where: {
+        listingId,
+        userId: req.user.id
+      }
+    });
+
+    if (existingSave) {
+      return res.status(200).json({ success: true, message: 'Already saved' });
+    }
+
     await prisma.listingSaveEvent.create({
       data: {
         listingId,

@@ -18,7 +18,7 @@ export default function ListingCard({ listing }: ListingCardProps) {
     : null;
 
   return (
-    <Link href={`/listings/${listing.id}`} className="group block break-inside-avoid mb-6">
+    <Link href={`/listings/${listing.id}`} className="group block h-full">
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-all duration-200 h-full flex flex-col">
         {/* Image */}
         <div className="aspect-[3/3] relative overflow-hidden bg-gray-100">

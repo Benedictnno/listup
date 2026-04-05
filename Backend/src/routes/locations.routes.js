@@ -7,12 +7,12 @@ const { auth, allow } = require('../middleware/auth');
 router.get('/', async (req, res, next) => {
   try {
     // Verify prisma client is properly initialized
-    if (!prisma || !prisma.Address) {
+    if (!prisma || !prisma.address) {
       console.error('Prisma client or Address model is undefined');
       return res.status(500).json({ error: 'Database connection error' });
     }
     
-    const rows = await prisma.Address.findMany({
+    const rows = await prisma.address.findMany({
       where: { active: true },
       orderBy: { name: 'asc' }
     });
@@ -26,12 +26,12 @@ router.get('/', async (req, res, next) => {
 // Admin: list all
 router.get('/admin', auth, allow('ADMIN'), async (req, res, next) => {
   try {
-    if (!prisma || !prisma.Address) {
+    if (!prisma || !prisma.address) {
       console.error('Prisma client or Address model is undefined');
       return res.status(500).json({ error: 'Database connection error' });
     }
     
-    const rows = await prisma.Address.findMany({ orderBy: { name: 'asc' } });
+    const rows = await prisma.address.findMany({ orderBy: { name: 'asc' } });
     res.json(rows);
   } catch (e) {
     console.error('Error fetching admin locations:', e);
@@ -42,7 +42,7 @@ router.get('/admin', auth, allow('ADMIN'), async (req, res, next) => {
 // Admin: create
 router.post('/admin', auth, allow('ADMIN'), body('name').isString().isLength({ min: 2 }), async (req, res, next) => {
   try {
-    if (!prisma || !prisma.Address) {
+    if (!prisma || !prisma.address) {
       console.error('Prisma client or Address model is undefined');
       return res.status(500).json({ error: 'Database connection error' });
     }
@@ -50,7 +50,7 @@ router.post('/admin', auth, allow('ADMIN'), body('name').isString().isLength({ m
     const errors = validationResult(req);
     if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
     const { name, active = true } = req.body;
-    const row = await prisma.Address.create({ data: { name, active } });
+    const row = await prisma.address.create({ data: { name, active } });
     res.status(201).json(row);
   } catch (e) {
     console.error('Error creating location:', e);
@@ -61,14 +61,14 @@ router.post('/admin', auth, allow('ADMIN'), body('name').isString().isLength({ m
 // Admin: update
 router.patch('/admin/:id', auth, allow('ADMIN'), async (req, res, next) => {
   try {
-    if (!prisma || !prisma.Address) {
+    if (!prisma || !prisma.address) {
       console.error('Prisma client or Address model is undefined');
       return res.status(500).json({ error: 'Database connection error' });
     }
     
     const { id } = req.params;
     const { name, active } = req.body;
-    const row = await prisma.Address.update({
+    const row = await prisma.address.update({
       where: { id },
       data: {
         ...(typeof name === 'string' ? { name } : {}),
@@ -85,13 +85,13 @@ router.patch('/admin/:id', auth, allow('ADMIN'), async (req, res, next) => {
 // Admin: delete
 router.delete('/admin/:id', auth, allow('ADMIN'), async (req, res, next) => {
   try {
-    if (!prisma || !prisma.Address) {
+    if (!prisma || !prisma.address) {
       console.error('Prisma client or Address model is undefined');
       return res.status(500).json({ error: 'Database connection error' });
     }
     
     const { id } = req.params;
-    await prisma.Address.delete({ where: { id } });
+    await prisma.address.delete({ where: { id } });
     res.status(204).send();
   } catch (e) {
     console.error('Error deleting location:', e);
