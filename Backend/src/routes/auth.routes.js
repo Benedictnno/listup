@@ -2,7 +2,7 @@ const router = require('express').Router();
 const { body } = require('express-validator');
 const passport = require('passport');
 const AuthCtrl = require('../controllers/auth.controller');
-const { loginLimiter } = require('../middleware/rateLimiter');
+const { loginLimiter, resendEmailLimiter } = require('../middleware/rateLimiter');
 
 // USER or VENDOR registration
 router.post(
@@ -182,7 +182,7 @@ router.post('/reset-password', loginLimiter,
 // Email verification routes
 router.get('/verify-email', AuthCtrl.verifyEmail);
 
-router.post('/resend-verification', loginLimiter,
+router.post('/resend-verification', resendEmailLimiter,
   [
     body('email')
       .isEmail()

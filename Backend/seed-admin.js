@@ -4,40 +4,37 @@ const bcrypt = require('bcryptjs');
 const prisma = new PrismaClient();
 
 async function seedAdmin() {
+  const adminEmail = process.env.ADMIN_EMAIL;
+  const adminPassword = process.env.ADMIN_PASSWORD;
+
+  if (!adminEmail || !adminPassword) {
+    console.error('\n❌ ADMIN_EMAIL and ADMIN_PASSWORD must be set as environment variables.');
+    console.error('   Example: ADMIN_EMAIL=you@example.com ADMIN_PASSWORD=strongPassword node seed-admin.js');
+    process.exit(1);
+  }
+
   try {
     console.log('🌱 Seeding admin user...');
 
-    const adminEmail = 'benedictnnaoma0@gmail.com';
-    const adminPassword = 'Chigozie0@';
-
-    // Check if admin already exists
     const existingAdmin = await prisma.user.findUnique({
       where: { email: adminEmail }
     });
 
     if (existingAdmin) {
       console.log('👤 Admin user already exists, updating role to ADMIN...');
-      
-      // Update existing user to admin
       const updatedAdmin = await prisma.user.update({
         where: { email: adminEmail },
-        data: { 
+        data: {
           role: 'ADMIN',
           password: await bcrypt.hash(adminPassword, 12)
         }
       });
-      
       console.log('✅ Admin user updated successfully!');
       console.log('📧 Email:', updatedAdmin.email);
       console.log('🔑 Role:', updatedAdmin.role);
-      
     } else {
       console.log('👤 Creating new admin user...');
-      
-      // Hash the password
       const hashedPassword = await bcrypt.hash(adminPassword, 12);
-      
-      // Create new admin user
       const adminUser = await prisma.user.create({
         data: {
           name: 'Admin User',
@@ -47,7 +44,6 @@ async function seedAdmin() {
           phone: null
         }
       });
-      
       console.log('✅ Admin user created successfully!');
       console.log('📧 Email:', adminUser.email);
       console.log('🔑 Role:', adminUser.role);
@@ -55,9 +51,7 @@ async function seedAdmin() {
     }
 
     console.log('\n🎉 Admin seeding completed!');
-    console.log('📝 You can now login to the admin panel with:');
-    console.log('   Email: benedictnnaoma0@gmail.com');
-    console.log('   Password: Chigozie0@');
+    console.log('   Email:', adminEmail);
     console.log('   URL: http://localhost:3001');
 
   } catch (error) {
@@ -68,7 +62,6 @@ async function seedAdmin() {
   }
 }
 
-// Run the seeding function
 seedAdmin()
   .then(() => {
     console.log('\n✅ Seeding process completed successfully!');

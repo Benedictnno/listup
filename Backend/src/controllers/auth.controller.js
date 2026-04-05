@@ -290,30 +290,46 @@ exports.registerVendor = async (req, res, next) => {
       }
     }
 
-    const user = await prisma.user.create({
-      data: {
-        ...userData,
-        vendorProfile: {
-          create: {
-            storeName: storeName.trim(),
-            storeAddress: storeAddress.trim(),
-            businessCategory: businessCategory.trim(),
+    const ReferralService = referral ? require('../services/referral.service') : null;
+
+    // Atomically create the user+profile and, if applicable, the referral-use record.
+    // If the referral creation throws, the user creation is rolled back too.
+    const user = await prisma.$transaction(async (tx) => {
+      const newUser = await tx.user.create({
+        data: {
+          ...userData,
+          vendorProfile: {
+            create: {
+              storeName: storeName.trim(),
+              storeAddress: storeAddress.trim(),
+              businessCategory: businessCategory.trim(),
+            },
           },
         },
-      },
-      include: {
-        vendorProfile: true
-      },
+        include: { vendorProfile: true },
+      });
+
+      if (referral && ReferralService) {
+        // createReferralUse uses the shared prisma instance — pass the tx reference
+        // by calling the service's inner logic directly if it supports tx, otherwise
+        // call it here inline so it runs within the same transaction context.
+        await tx.referralUse.create({
+          data: {
+            referralId: referral.id,
+            vendorId: newUser.id,
+            status: 'PENDING',
+            commission: 1000,
+          },
+        });
+        await tx.referral.update({
+          where: { id: referral.id },
+          data: { totalReferrals: { increment: 1 } },
+        });
+      }
+
+      return newUser;
     });
 
-    if (referral) {
-      try {
-        const ReferralService = require('../services/referral.service');
-        await ReferralService.createReferralUse(user.id, referral.code);
-      } catch (e) {
-        console.error('Error creating referral use during vendor registration:', e);
-      }
-    }
 
     // Generate Verification token
     const verificationToken = generateVerificationToken();

@@ -3,7 +3,6 @@ const { verify } = require('../lib/jwt');
 const auth = (req, res, next) => {
   const header = req.headers.authorization || '';
   let token = header.startsWith('Bearer ') ? header.slice(7) : null;
-console.log(token);
 
   // Fallback to cookie-based token if no Authorization header
   if (!token && req.cookies && req.cookies.accessToken) {
@@ -11,7 +10,6 @@ console.log(token);
   }
 
   if (!token) {
-    console.log('Auth Failed: No token found');
     return res.status(401).json({ message: 'Missing token' });
   }
 

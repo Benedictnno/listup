@@ -376,7 +376,9 @@ router.post("/webhook", async (req, res) => {
     // ── Handle Listing Package payments ──────────────────────────────────────
     if (type === "listing_package" && vendorId) {
       try {
-        const slots = listingSlotsToAdd || 3;
+        // SECURITY: Never trust slot count from client metadata.
+        // Always derive from the server-side configuration for this vendor.
+        const { count: slots } = await getListingPackageConfig(vendorId);
         const paystackRef = event.data.reference;
         const amountPaid = (event.data.amount || 0) / 100; // convert from kobo to naira
         console.log(`🔄 Crediting ${slots} listing slots to vendor: ${vendorId} (ref: ${paystackRef})`);

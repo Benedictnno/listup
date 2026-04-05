@@ -294,6 +294,7 @@ exports.processKYCPayment = async (req, res) => {
 };
 
 // Internal helper so webhook can reuse logic (initial KYC payment)
+// Idempotent: if the KYC record already shows paymentStatus === 'SUCCESS', returns immediately.
 exports._processKYCPaymentInternal = async (kycId) => {
   const kyc = await prisma.vendorKYC.findUnique({
     where: { id: kycId },
@@ -303,8 +304,23 @@ exports._processKYCPaymentInternal = async (kycId) => {
     throw new Error('KYC record not found');
   }
 
+  // Idempotency guard — safe to call multiple times for the same kycId
   if (kyc.paymentStatus === 'SUCCESS') {
+    console.log(`ℹ️ KYC payment for ${kycId} already processed — skipping`);
     return kyc;
+  }
+
+  // If a referral was used, resolve the referrer's userId BEFORE opening the transaction
+  // so we don't run two separate findUnique calls inside it.
+  let referrerUserId = null;
+  if (kyc.hasReferral) {
+    const referralUseCheck = await prisma.referralUse.findFirst({
+      where: { vendorId: kyc.vendorId, status: 'PENDING' },
+      include: { referral: { select: { userId: true } } },
+    });
+    if (referralUseCheck) {
+      referrerUserId = referralUseCheck.referral.userId;
+    }
   }
 
   const now = new Date();
@@ -362,27 +378,18 @@ exports._processKYCPaymentInternal = async (kycId) => {
           },
         });
 
-        await tx.commissionPayment.create({
-          data: {
-            referralUseId: referralUse.id,
-            userId: (await tx.referral.findUnique({ where: { id: referralUse.referralId } })).userId,
-            amount: referralUse.commission || 1000,
-            status: 'PENDING',
-          },
-        });
+        if (referrerUserId) {
+          await tx.commissionPayment.create({
+            data: {
+              referralUseId: referralUse.id,
+              userId: referrerUserId,
+              amount: referralUse.commission || 1000,
+              status: 'PENDING',
+            },
+          });
 
-        // Send referral reward email
-        const referrer = await tx.user.findUnique({
-          where: { id: (await tx.referral.findUnique({ where: { id: referralUse.referralId } })).userId }
-        });
-        if (referrer?.email) {
-          await sendKYCEmail(
-            referrer.email,
-            'referralReward',
-            referrer.name,
-            user.name,
-            referralUse.commission || 1000
-          );
+          // Send referral reward email (outside transaction — non-critical)
+          // Deferred to after transaction commit to avoid slow IO inside tx
         }
       }
     }

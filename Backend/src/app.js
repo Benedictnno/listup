@@ -19,7 +19,7 @@ const error = require('./middleware/error');
 const { cloudflareSecurity } = require('./middleware/security');
 const cookieParser = require('cookie-parser');
 require('./config/passport'); // init strategies
-// const whatsappService = require('./services/whatsappService'); // Moved to server.js
+const whatsappService = require('./services/whatsappService');
 
 const app = express();
 app.get('/health', (req, res) => {
@@ -32,14 +32,11 @@ const corsOptions = {
     'https://listup.ng',
     'https://www.listup.ng',
     'https://api.listup.ng',
-    'https://www.listup.ng',
     'https://listup-admin.vercel.app',
+    'https://listup-three.vercel.app', // Legacy Vercel project
     'http://localhost:3000', // Local development
-    'http://localhost:3001', // Local development
-    'https://listup-three.vercel.app', // Old Vercel project
-    // Add your new Vercel project domain here
-    // You can also use a wildcard for all Vercel subdomains (less secure but more flexible)
-    /^https:\/\/.*\.vercel\.app$/, // All Vercel subdomains
+    'http://localhost:3001', // Local development (admin)
+    // Add new Vercel preview/deployment URLs here explicitly — never use a wildcard
   ],
 
 
@@ -61,9 +58,9 @@ app.use((req, res, next) => {
 });
 
 if (process.env.NODE_ENV === 'production') {
-  // Cloudflare requires this to forward real IP addresses
-  //app.set("trust proxy", true);
-  app.set('trust proxy', 1); // trust first proxy only
+  // Trust Cloudflare + Render's proxy chain so req.ip resolves to the real client IP.
+  // 'loopback, linklocal, uniquelocal' covers internal/loopback addresses.
+  app.set('trust proxy', 'loopback, linklocal, uniquelocal');
   // Activate global backend protection
   app.use(cloudflareSecurity);
 }
@@ -85,6 +82,41 @@ app.use(passport.initialize());
 // Moved to server.js
 
 app.use('/api', routes);
+
+app.get('/whatsapp/qr', (req, res) => {
+  const qr = whatsappService.getQR();
+  if (!qr) {
+    return res.send(`
+            <html>
+                <body style="font-family: sans-serif; text-align: center; padding: 50px;">
+                    <h1>Validating WhatsApp Session...</h1>
+                    <p>Status: No QR Code available yet.</p>
+                    <p>Possible reasons:</p>
+                    <ul>
+                        <li>Bot is starting up (wait 1-2 mins)</li>
+                        <li>Bot is already logged in</li>
+                        <li>QR generation failed</li>
+                    </ul>
+                    <script>setTimeout(() => window.location.reload(), 5000);</script>
+                </body>
+            </html>
+        `);
+  }
+
+  // Serve QR code using public API
+  res.send(`
+        <html>
+            <body style="font-family: sans-serif; text-align: center; padding: 50px;">
+                <h1>Scan to Pair WhatsApp</h1>
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qr)}" alt="WhatsApp QR Code" />
+                <p>Status: Waiting for scan...</p>
+                <div style="margin-top: 20px; font-size: 12px; color: #666; word-break: break-all;">
+                    Raw Code: ${qr.substring(0, 50)}...
+                </div>
+            </body>
+        </html>
+    `);
+});
 
 app.use(error.notFound);
 app.use(error.handler);

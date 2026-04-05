@@ -1,5 +1,7 @@
 const prisma = require('../lib/prisma');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
+const { sendEmailVerification } = require('../lib/email');
 
 // Get all settings for a user
 exports.getUserSettings = async (req, res, next) => {
@@ -224,11 +226,8 @@ exports.updatePersonalInfo = async (req, res, next) => {
     });
 
     if (emailChanged) {
-      // Generate new verification token
-      const { generateVerificationToken } = require('../utils/tokens');
-      const { sendEmailVerification } = require('../lib/email');
-      
-      const verificationToken = generateVerificationToken();
+      // Generate new verification token using crypto (no external dependency)
+      const verificationToken = crypto.randomBytes(32).toString('hex');
       await prisma.emailVerification.create({
         data: {
           userId,

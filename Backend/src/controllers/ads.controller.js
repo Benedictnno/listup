@@ -5,28 +5,15 @@ exports.createAd = async (req, res, next) => {
   try {
     // Defensive auth checks in case the auth middleware is bypassed
     if (!req.user) {
-      console.log('Unauthenticated ad creation attempt');
       return res.status(401).json({ message: 'Authentication required' });
     }
     if (req.user.role !== 'VENDOR') {
-      console.log('Non-vendor attempted to create an ad');
       return res.status(403).json({ message: 'Only vendors may create ads' });
     }
 
-    console.log("=== AD CREATION REQUEST ===");
-    console.log("Request body:", req.body);
-    console.log("User ID:", req.user.id);
-    console.log("User role:", req.user.role);
-
     const { type, storeId, productId, startDate, endDate, amount } = req.body;
 
-    // Validation
     if (!type || !startDate || !endDate || !amount) {
-      console.log("❌ Validation failed - missing required fields");
-      console.log("Type:", type);
-      console.log("StartDate:", startDate);
-      console.log("EndDate:", endDate);
-      console.log("Amount:", amount);
       return res.status(400).json({ 
         message: "Type, startDate, endDate, and amount are required" 
       });
@@ -42,57 +29,36 @@ exports.createAd = async (req, res, next) => {
       paymentStatus: "PENDING",
     };
 
-    console.log("✅ Basic data prepared:", data);
-
     if (type === "STOREFRONT") {
       if (!storeId) {
-        console.log("❌ Store ID missing for STOREFRONT ad");
         return res.status(400).json({ message: "Store ID required" });
       }
       data.storeId = storeId;
-      console.log("✅ Store ID added:", storeId);
     }
 
     if (type === "PRODUCT_PROMOTION") {
       if (!productId) {
-        console.log("❌ Product ID missing for PRODUCT_PROMOTION ad");
         return res.status(400).json({ message: "Product ID required" });
       }
       data.productId = productId;
-      console.log("✅ Product ID added:", productId);
     }
 
     if (type === "SEARCH_BOOST") {
       data.appliesToAllProducts = true;
-      console.log("✅ SEARCH_BOOST - applies to all products");
     }
 
-    console.log("🎯 Final data object for Prisma:", JSON.stringify(data, null, 2));
-
-    // Create the ad
-    console.log("🚀 Attempting to create ad with Prisma...");
     const ad = await prisma.ad.create({ data });
-    
-    console.log("✅ Ad created successfully!");
-    console.log("Created ad:", JSON.stringify(ad, null, 2));
-
     res.status(201).json(ad);
   } catch (e) {
-    console.error("❌ ERROR CREATING AD:");
-    console.error("Error type:", e.constructor.name);
-    console.error("Error message:", e.message);
-    console.error("Error code:", e.code);
-    console.error("Error details:", e);
+    console.error("Error creating ad:", e.message, e.code);
     
     if (e.code === 'P2002') {
       return res.status(400).json({ message: "Ad already exists" });
     }
     
-    // Send detailed error for debugging
     res.status(500).json({ 
-      message: "Failed to create ad", 
-      error: e.message,
-      code: e.code 
+      message: "Failed to create ad",
+      error: process.env.NODE_ENV === 'development' ? e.message : undefined,
     });
   }
 };

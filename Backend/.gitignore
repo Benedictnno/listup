@@ -10,3 +10,7 @@ tokens/
 logs/
 *.log
 /baileys_auth
+
+# Admin credential scripts — never commit these
+seed-admin.js
+verify-admin.js

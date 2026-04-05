@@ -1,48 +1,50 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const prisma = require("../lib/prisma");
+const GroqService = require("./groqService");
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 const SYSTEM_INSTRUCTION = `
-You are the "ListUp Scout", a shopping assistant for the ListUp Marketplace.
-Your goal is to help users find products, categories, and vendors ONLY on ListUp.
+You are the "ListUp Scout" — the ultimate, most hyped shopping assistant for the ListUp Marketplace! 🚀✨
 
-### CRITICAL RULES (Follow these or you will fail):
-1. **NO General Knowledge**: Do NOT answer general questions (e.g., "Recommend a book", "What is the capital of France?", "How do I fix my phone?").
-   - If a user asks for a product (e.g., "Recommend a book"), you MUST use the \`search_listings\` tool to see if it exists on ListUp.
-   - If the search returns nothing, say: "I couldn't find that on ListUp."
+Your mission is to find the absolute best deals, products, and vendors ONLY on ListUp. You aren't just an assistant; you're the user's personal shopping "plug" with massive energy and ginger!
+
+### 🇳🇬 NAIJA VIBE & PERSONALITY:
+- **Energy Level**: 100/100! Use excitement, hype, and passion.
+- **Language**: Mix professional English with vibrant Nigerian flair and Pidgin where appropriate ("How far?", "Oshey!", "No shaking", "I get you covered!").
+- **Hyper-Supportive**: You believe ListUp is the best place on earth to shop. You're hyped to help!
+
+### 💥 CRITICAL RULES:
+1. **NO General Knowledge**: Don't waste time on non-ListUp stuff. If it's not on ListUp, it doesn't exist to you!
+   - If they ask for "iPhone 15", Shout: "Oya, let me scout ListUp for that deal sharp-sharp!" then call \`search_listings\`.
+   - If nothing is found, say: "Ehya, I search everywhere for ListUp but I no see am. Check back soon o!"
    - NEVER invent or recommend items that are not returned by the tool.
 
 2. **Context Awareness**:
-   - If the user says "proceed", "yes", "go ahead", or "show me", look at the *previous message* in the history.
-   - If you previously offered to search for something, DO IT NOW. Call the relevant tool.
+   - If they say "yes", "proceed", or "show me", it's time for ACTION! Call the tool immediately.
 
-3. **Search First Policy**:
-   - You cannot know what is in the store without checking.
-   - ALWAYS call \`search_listings\` before making any claims about product availability.
+3. **Search First**:
+   - You're a Scout! You scout first, talk later. ALWAYS call the relevant tool before making any claims.
 
-4. **Opt-Out Requests**:
-   - If a user expresses a desire to stop receiving messages or unsubscribe (e.g., "STOP", "Unsubscribe", "Don't message me anymore"), acknowledge it politely and inform them that they can reply with "STOP" to be removed from the list.
-   - Note: The system handles the literal "STOP" command automatically.
+4. **Opt-Out**:
+   - If they want to stop, let them know they can reply "STOP" anytime.
 
-### Personality:
-- Friendly, efficient, Nigerian flair ("How far?", "Welcome o!").
-- Professional but lively.
-
-### Capabilities:
-1. ** Search Products **: \`search_listings\` (Keywords, Price, Category).
+### 🔥 CAPABILITIES:
+1. **Search Products**: \`search_listings\` (Keywords, Price, Category).
 2. **Browse Categories**: \`get_categories\`.
 3. **Hot Deals**: \`get_hot_deals\`.
 4. **Vendor Info**: \`get_store_details\`.
-5. **Become a Vendor**: If a user asks how to sell on ListUp or become a vendor, "put them on" by explaining that they can reach thousands of customers! Direct them to sign up at https://listup.ng/signup and tell them to select the "Vendor" account type.
+5. **Recommend Vendors**: \`search_vendors\` (Category or Name).
+6. **Become a Vendor**: If they ask to sell: "Ah! You want to join the winning team? Sharp! Sign up as a Vendor at https://listup.ng/signup and start making that massive bag! 💰"
 
-### Constraints:
-- Only discuss marketplace related topics.
-- When presenting products, summarize the top 3-5 results with their prices and a link to view more.
-- Always provide the link to the product or store if available.
+### 📋 CONSTRAINTS:
+- Use emojis sparingly (only 1-2 per message to keep it clean).
+- Always include links for products and vendors.
+- Use bold text for names and sections, but keep it professional.
+- Summarize top 3-5 results with prices and links.
+- ALWAYS provide a conversational, hyped response. Never just send links or an empty message! If no results are found, say it with energy: "Ehya! I no see any vendor for that category o, but don't worry, ListUp always get new plugs coming in! 🔌🔥"
 `;
 
-// Tool definitions for Gemini
 const tools = [
     {
         functionDeclarations: [
@@ -78,13 +80,24 @@ const tools = [
                     },
                     required: ["storeName"]
                 }
+            },
+            {
+                name: "search_vendors",
+                description: "Search for or recommend vendors based on business category or name.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        category: { type: "STRING", description: "The business category (e.g., 'Fashion', 'Electronics')" },
+                        query: { type: "STRING", description: "Search term for the store name" }
+                    }
+                }
             }
         ]
     }
 ];
 
 const model = genAI.getGenerativeModel({
-    model: "gemini-1.5-flash-latest",
+    model: "gemini-3-flash-preview",
     systemInstruction: SYSTEM_INSTRUCTION,
     tools: tools,
 });
@@ -94,7 +107,20 @@ const GeminiService = {
      * Main entry point to generate a response for a user message
      */
     async generateResponse(userName, phoneNumber, message, history = [], media = null) {
+        // Priority selection from .env if defined
+        const provider = process.env.PRIMARY_AI_PROVIDER || 'GEMINI';
+        
+        if (provider === 'GROQ') {
+            console.log("⚡ Forcing Groq AI as primary provider...");
+            try {
+                return await GroqService.generateResponse(userName, phoneNumber, message, history);
+            } catch (error) {
+                console.error("Forced Groq Service Error:", error.message);
+            }
+        }
+
         try {
+            console.log("🌟 Using Gemini 3 Flash (Preview)...");
             // Sanitize and cap input message
             if (message && typeof message === 'string') {
                 message = message.trim().substring(0, 500);
@@ -149,6 +175,8 @@ const GeminiService = {
                         toolResult = await this.tools.get_hot_deals();
                     } else if (name === "get_store_details") {
                         toolResult = await this.tools.get_store_details(args);
+                    } else if (name === "search_vendors") {
+                        toolResult = await this.tools.search_vendors(args);
                     }
 
                     toolResponses.push({
@@ -161,13 +189,21 @@ const GeminiService = {
 
                 // Send tool results back to the model to get final text
                 result = await chat.sendMessage(toolResponses);
-                return result.response.text();
+                const finalResponse = result.response.text();
+                return finalResponse || "I found some info but I'm having trouble explaining it! Try asking specifically for the vendor names. 🤖";
             }
 
-            return response.text();
+            const textResponse = response.text();
+            return textResponse || "I'm here and ready to ginger! What are we looking for on ListUp today? 🚀";
         } catch (error) {
-            console.error("Gemini Service Error:", error);
-            return "I'm having a bit of trouble thinking right now. Could you try again in a moment? 🤖";
+            console.error("Gemini Service Error:", error.message);
+            console.log("🔄 Failover to Groq AI...");
+            try {
+                return await GroqService.generateResponse(userName, phoneNumber, message, history);
+            } catch (groqError) {
+                console.error("Groq Failover Error:", groqError.message);
+                return "I'm having a bit of trouble thinking right now. Could you try again in a moment? 🤖";
+            }
         }
     },
 
@@ -287,6 +323,28 @@ const GeminiService = {
                 ...vendor,
                 listings: recentListings.map(l => ({ ...l, link: `https://listup.ng/listings/${l.id}` }))
             };
+        },
+
+        async search_vendors({ category, query }) {
+            const filters = {};
+            if (category) filters.businessCategory = { contains: category, mode: 'insensitive' };
+            if (query) filters.storeName = { contains: query, mode: 'insensitive' };
+
+            const vendors = await prisma.vendorProfile.findMany({
+                where: filters,
+                take: 5,
+                select: {
+                    storeName: true,
+                    businessCategory: true,
+                    storeAddress: true,
+                    isVerified: true
+                }
+            });
+
+            return vendors.map(v => ({
+                ...v,
+                link: `https://listup.ng/stores/${encodeURIComponent(v.storeName.replace(/\s+/g, '-'))}`
+            }));
         }
     }
 };
