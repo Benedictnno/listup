@@ -43,6 +43,7 @@ function cloudflareSecurity(req, res, next) {
     if (!clientIp) {
       console.warn("Request without Cloudflare header from:", req.ip);
       if (process.env.NODE_ENV === 'production') {
+        console.warn(`[CLOUDFLARE-SECURITY-DENIED] No CF IP header from: ${req.ip}`);
         return res.status(403).json({ error: "Access Denied" });
       }
       return next(); // ← Allow instead of blocking
@@ -57,6 +58,7 @@ function cloudflareSecurity(req, res, next) {
     if (!isCloudflare) {
       console.warn("Request from non-Cloudflare IP:", edgeIp);
       if (process.env.NODE_ENV === 'production') {
+        console.warn(`[CLOUDFLARE-SECURITY-BLOCK] Non-Cloudflare IP attempted direct access: ${req.ip}`);
         return res.status(403).json({ error: "Direct IP access restricted" });
       }
       return next(); // ← Allow instead of blocking (for testing)

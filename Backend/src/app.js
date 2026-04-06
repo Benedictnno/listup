@@ -23,12 +23,26 @@ const whatsappService = require('./services/whatsappService');
 
 const app = express();
 
-// 1. Trust proxy configuration (Critical for Render/Cloudflare)
-if (process.env.NODE_ENV === 'production') {
-  app.set('trust proxy', true);
-}
+// 1. Trust proxy configuration (MUST BE ABSOLUTE TOP for accurate IP/Header resolution)
+app.set('trust proxy', true);
 
-// 2. Optimized CORS configuration
+// 2. Early Preflight Handshake (Bypasses all subsequent logic)
+app.use((req, res, next) => {
+  if (req.method === 'OPTIONS') {
+    const origin = req.get('origin');
+    console.log(`[PREFLIGHT-HANDSHAKE] Path: ${req.originalUrl}, Origin: ${origin}, IP: ${req.ip}`);
+    
+    // If you need manual header control for debugging, do it here
+    // res.header('Access-Control-Allow-Origin', origin || '*');
+    // res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+    // res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept');
+    // res.sendStatus(204);
+    // return;
+  }
+  next();
+});
+
+// 3. Optimized CORS configuration
 const whitelist = [
   'https://listup.ng',
   'https://www.listup.ng',
