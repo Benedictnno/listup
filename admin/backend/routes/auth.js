@@ -69,8 +69,8 @@ router.post('/login', [
     // Set token as HTTP-only cookie for cookie-based authentication
     res.cookie('token', token, {
       httpOnly: true,
-      secure: false,
-      domain: 'localhost', // Share cookie across all localhost ports
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
       path: '/',
       maxAge: 7 * 24 * 60 * 60 * 1000
     });
@@ -129,7 +129,9 @@ router.post('/logout', auth, (req, res) => {
   // Clear the authentication cookie
   res.clearCookie('token', {
     httpOnly: true,
-    secure: false
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    path: '/',
   });
 
   res.json({

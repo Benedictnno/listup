@@ -19,11 +19,61 @@ const uploadsRoutes = require('./routes/uploads');
 const kycRoutes = require('./routes/kyc');
 
 const app = express();
-const PORT = process.env.ADMIN_PORT || 4001; // Changed port to avoid conflict
+const PORT = process.env.ADMIN_PORT || 4001;
 
-// Security middleware
-app.use(helmet());
+// 1. Trust proxy configuration (MUST BE ABSOLUTE TOP for accurate IP/Header resolution)
+app.set('trust proxy', true);
+
+// 2. Early Preflight Handshake (Bypasses all subsequent logic)
+app.use((req, res, next) => {
+  if (req.method === 'OPTIONS') {
+    const origin = req.get('origin');
+    console.log(`[ADMIN-PREFLIGHT] Path: ${req.originalUrl}, Origin: ${origin}, IP: ${req.ip}`);
+  }
+  next();
+});
+
+// 3. Dynamic CORS configuration
+const whitelist = [
+  'http://localhost:3001', // Admin frontend
+  'http://localhost:3002', // Main frontend
+  'http://localhost:3000', // Main frontend
+  'https://listup-admin.vercel.app', // Admin production
+  'https://listup.ng',
+  'https://www.listup.ng',
+  'https://api.listup.ng'
+];
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps, curl, or server-to-server)
+    if (!origin) return callback(null, true);
+    
+    if (whitelist.indexOf(origin) !== -1 || origin.endsWith('.vercel.app')) {
+      callback(null, true);
+    } else {
+      console.warn('Admin CORS Blocked for origin:', origin);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+  credentials: true,
+  optionsSuccessStatus: 200
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
+
+// Cookie parsing middleware
+app.use(cookieParser());
+
+// 4. Security & Logging
+app.use(helmet({
+  crossOriginResourcePolicy: false,
+}));
 app.use(morgan('dev'));
+
 // Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -32,31 +82,7 @@ const limiter = rateLimit({
 });
 app.use('/api/', limiter);
 
-// CORS configuration
-const corsOptions = {
-  origin: [
-    'http://localhost:3001', // Admin frontend
-    'http://localhost:3002', // Main frontend
-    'http://localhost:3000', // Main frontend
-    'https://listup-admin.vercel.app', // Admin production
-    'http://listup.ng',
-    'https://listup.ng',
-    'http://www.listup.ng',
-    'https://www.listup.ng',
-    'listup-admin.vercel.app'
-  ],
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-  credentials: true,
-  optionsSuccessStatus: 200
-};
-
-app.use(cors(corsOptions));
-
-// Cookie parsing middleware
-app.use(cookieParser());
-
-// Body parsing middleware
+// 5. Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
