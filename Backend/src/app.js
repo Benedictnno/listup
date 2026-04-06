@@ -59,8 +59,7 @@ app.use((req, res, next) => {
 
 if (process.env.NODE_ENV === 'production') {
   // Trust Cloudflare + Render's proxy chain so req.ip resolves to the real client IP.
-  // 'loopback, linklocal, uniquelocal' covers internal/loopback addresses.
-  app.set('trust proxy', 'loopback, linklocal, uniquelocal');
+  app.set('trust proxy', true);
   // Activate global backend protection
   app.use(cloudflareSecurity);
 }

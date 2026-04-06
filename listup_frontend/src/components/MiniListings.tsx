@@ -2,7 +2,7 @@
 import React from "react";
 import Link from "next/link";
 import ListingCard from "@/components/ListingCard";
-import MasonryGrid from "@/components/MasonryGrid";
+import ListingGrid from "@/components/ListingGrid";
 import { fetchListings } from "@/lib/api/listing";
 import { useQuery } from "@tanstack/react-query";
 
@@ -58,7 +58,7 @@ export default function MiniListings() {
         ) : listings.length === 0 ? (
           <div className="text-sm text-slate-600">No listings available.</div>
         ) : (
-          <MasonryGrid listings={listings as Listing[]} />
+          <ListingGrid listings={listings as Listing[]} />
         )}
 
         {/* extra CTA for small screens */}

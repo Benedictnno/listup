@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import ListingCard from "@/components/ListingCard";
-import MasonryGrid from "@/components/MasonryGrid";
+import ListingGrid from "@/components/ListingGrid";
 import SearchBar from "@/components/SearchBar";
 import { Filter, SortAsc, SortDesc, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -557,8 +557,8 @@ function ListingsPageContent() {
           )}
         </div>
 
-        {/* Listings Masonry Layout */}
-        <MasonryGrid listings={filteredListings} />
+        {/* Listings Layout */}
+        <ListingGrid listings={filteredListings} />
 
         {/* Infinite Scroll Trigger and Loading States */}
         {hasMore && (

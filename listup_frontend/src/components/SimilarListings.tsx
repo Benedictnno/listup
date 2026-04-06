@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import MasonryGrid from "./MasonryGrid";
+import ListingGrid from "./ListingGrid";
 import { Listing } from "@/types/listing";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://api.listup.ng/api";
@@ -32,7 +32,7 @@ export default function SimilarListings({ listingId }: { listingId: string }) {
   return (
     <section className="px-4 py-8 lg:mx-24 border-t border-gray-100">
       <h2 className="text-xl font-bold mb-4 font-montserrat">Similar Listings</h2>
-      <MasonryGrid listings={similar} />
+      <ListingGrid listings={similar} />
     </section>
   );
 }

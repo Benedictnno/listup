@@ -31,6 +31,11 @@ function extractClientIp(req) {
  * Allow only Cloudflare-originated traffic.
  */
 function cloudflareSecurity(req, res, next) {
+  // Allow OPTIONS preflight requests to bypass security checks
+  if (req.method === 'OPTIONS') {
+    return next();
+  }
+
   try {
     const clientIp = extractClientIp(req);
 

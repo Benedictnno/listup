@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import MasonryGrid from "./MasonryGrid";
+import ListingGrid from "./ListingGrid";
 import { Listing } from "@/types/listing";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://api.listup.ng/api";
@@ -37,7 +37,7 @@ export default function MoreFromVendor({ vendorId, currentListingId }: { vendorI
   return (
     <section className="px-4 py-8 lg:mx-24 border-t border-gray-100">
       <h2 className="text-xl font-bold mb-4 font-montserrat">More From This Seller</h2>
-      <MasonryGrid listings={listings} />
+      <ListingGrid listings={listings} />
     </section>
   );
 }
