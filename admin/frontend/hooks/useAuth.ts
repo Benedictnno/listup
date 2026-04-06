@@ -13,12 +13,12 @@ export const useAuth = () => {
 
   // console.log( user, token, isAuthenticated, isLoading);
   
-  // Check if user is authenticated on mount
+  // Check if user is authenticated on mount (restores session from cookie)
   useEffect(() => {
-    if (token && !user && !isLoading) {
+    if (!user && !isLoading && !isAuthenticated) {
       dispatch(fetchCurrentUser() as any);
     }
-  }, [dispatch, token, user, isLoading]);
+  }, [dispatch, user, isLoading, isAuthenticated]);
 
   const loginUser = async (email: string, password: string) => {
     try {

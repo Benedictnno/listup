@@ -29,9 +29,17 @@ export function AuthGuard({ children }: AuthGuardProps) {
         await dispatch(fetchCurrentUser() as any).unwrap();
         // If successful, the store will update, and we stop checking
         setIsChecking(false);
-      } catch (error) {
-        // If failed, redirect to login
-        router.push("/");
+      } catch (error: any) {
+        // ONLY redirect to login if the error is explicitly 401 Unauthorized
+        // 503 or 500 errors could be temporary server issues and shouldn't log the user out
+        if (error?.status === 401 || error?.statusCode === 401 || error?.status === 403) {
+          console.error("[AuthGuard] Unauthorized. Redirecting to login.");
+          router.push("/");
+        } else {
+          console.warn("[AuthGuard] Session check failed but not 401. Staying on page.", error);
+          // Still stop checking so the UI can attempt to render
+          setIsChecking(false);
+        }
       }
     };
 
