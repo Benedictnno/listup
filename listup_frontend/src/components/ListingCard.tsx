@@ -46,9 +46,9 @@ export default function ListingCard({ listing }: ListingCardProps) {
         </div>
 
         {/* Content */}
-        <div className="p-4 bg-white">
+        <div className="p-4 bg-white flex-1 flex flex-col">
           {/* Title */}
-          <h3 className="font-bold text-slate-900 text-sm mb-2 line-clamp-1 font-montserrat group-hover:text-lime-600 transition-colors">
+          <h3 className="font-bold text-slate-900 text-sm mb-2 line-clamp-2 h-10 font-montserrat group-hover:text-lime-600 transition-colors">
             {listing.title}
           </h3>
 
@@ -68,7 +68,7 @@ export default function ListingCard({ listing }: ListingCardProps) {
           </div>
 
           {/* Meta information - vertical stack */}
-          <div className="space-y-2 pt-2 border-t border-slate-100">
+          <div className="space-y-2 pt-2 border-t border-slate-100 mt-auto">
             {/* Location */}
             {listing.location && (
               <div className="flex items-center gap-1.5 text-slate-400">
