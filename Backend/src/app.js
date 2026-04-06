@@ -22,49 +22,54 @@ require('./config/passport'); // init strategies
 const whatsappService = require('./services/whatsappService');
 
 const app = express();
+
+// 1. Trust proxy configuration (Critical for Render/Cloudflare)
+if (process.env.NODE_ENV === 'production') {
+  app.set('trust proxy', true);
+}
+
+// 2. Optimized CORS configuration
+const whitelist = [
+  'https://listup.ng',
+  'https://www.listup.ng',
+  'https://api.listup.ng',
+  'https://listup-admin.vercel.app',
+  'https://listup-three.vercel.app',
+  'http://localhost:3000',
+  'http://localhost:3001',
+];
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps, curl, or server-to-server)
+    if (!origin) return callback(null, true);
+    
+    if (whitelist.indexOf(origin) !== -1 || origin.endsWith('.vercel.app')) {
+      callback(null, true);
+    } else {
+      console.warn('CORS Blocked for origin:', origin);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+  credentials: true,
+  optionsSuccessStatus: 200
+};
+
+// 3. Global Middleware (CORS MUST BE FIRST)
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
+
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok' });
 });
-// CORS configuration
-const corsOptions = {
-  origin: [
-    // ListUp domain variations
-    'https://listup.ng',
-    'https://www.listup.ng',
-    'https://api.listup.ng',
-    'https://listup-admin.vercel.app',
-    'https://listup-three.vercel.app', // Legacy Vercel project
-    'http://localhost:3000', // Local development
-    'http://localhost:3001', // Local development (admin)
-    // Add new Vercel preview/deployment URLs here explicitly — never use a wildcard
-  ],
-
-
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-  credentials: true,
-  optionsSuccessStatus: 200 // Some legacy browsers choke on 204
-};
-
-app.use(cors(corsOptions));
 app.use(cookieParser());
 
-// Trust proxy configuration for Render and common reverse proxies
-
-// Add CORS debugging middleware
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  next();
-});
-
 if (process.env.NODE_ENV === 'production') {
-  // Trust Cloudflare + Render's proxy chain so req.ip resolves to the real client IP.
-  app.set('trust proxy', true);
   // Activate global backend protection
   app.use(cloudflareSecurity);
 }
-// Handle CORS preflight requests
-app.options('*', cors(corsOptions));
 
 app.use(express.json({
   limit: '2mb',
