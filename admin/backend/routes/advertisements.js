@@ -243,7 +243,22 @@ router.put(
           targetUrl && targetUrl.trim() ? targetUrl.trim() : null;
       if (req.body.position !== undefined)
         updateData.position = req.body.position;
-      if (isActive !== undefined) updateData.isActive = isActive;
+      if (isActive !== undefined) {
+        updateData.isActive = isActive;
+        
+        // If activating and currently expired, renew the dates starting from today
+        if (isActive === true) {
+          const now = new Date();
+          if (new Date(existingAd.expiryDate) < now) {
+            const startDate = now;
+            const expiryDate = new Date(startDate);
+            expiryDate.setDate(expiryDate.getDate() + (existingAd.duration || 7));
+            
+            updateData.startDate = startDate;
+            updateData.expiryDate = expiryDate;
+          }
+        }
+      }
 
       console.log(`[Ad Update] ID: ${id}, Payload:`, updateData);
 
