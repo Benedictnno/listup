@@ -55,32 +55,39 @@ function cloudflareSecurity(req, res, next) {
   try {
     // 3. Extract the IP provided by Cloudflare
     const cfIp = extractClientIp(req);
-    const edgeIp = req.ip.replace(/^::ffff:/, ""); // Normalize IPv4-mapped-IPv6
+
+    // We need to check the entire chain of IPs if we are behind multiple proxies (e.g. Cloudflare -> Vercel -> Backend)
+    // req.ips contains all IPs in X-Forwarded-For if 'trust proxy' is on
+    const ipChain =
+      req.ips.length > 0 ? req.ips : [req.ip.replace(/^::ffff:/, "")];
 
     // 4. Whitelist check (e.g. for development or specific internal tools)
     const allowedIps = (process.env.ALLOWED_DIRECT_IPS || "")
       .split(",")
       .map((ip) => ip.trim());
-    if (allowedIps.includes(edgeIp)) {
+    if (ipChain.some((ip) => allowedIps.includes(ip))) {
       return next();
     }
 
-    // 5. If we are in production, we MUST verify the source is Cloudflare
+    // 5. If we are in production, we MUST verify that at least ONE IP in the chain is from Cloudflare
     if (process.env.NODE_ENV === "production") {
-      const isCloudflare = CLOUDFLARE_IP_RANGES.some((range) =>
-        ipRangeCheck(edgeIp, range),
+      const hasCloudflareIp = ipChain.some((ip) =>
+        CLOUDFLARE_IP_RANGES.some((range) => ipRangeCheck(ip, range)),
       );
 
-      if (!isCloudflare) {
+      if (!hasCloudflareIp) {
         console.warn(
-          `[SECURITY-DENIED] Non-Cloudflare IP attempted direct access: ${edgeIp}`,
+          `[SECURITY-DENIED] No Cloudflare IP found in chain: ${ipChain.join(", ")}`,
         );
-        return res
-          .status(403)
-          .json({
-            error:
-              "Direct IP access restricted. Please access through the domain.",
-          });
+        console.warn(`Headers: ${JSON.stringify(req.headers)}`);
+        return res.status(403).json({
+          error:
+            "Direct IP access restricted. Please access through the domain.",
+          debug_info:
+            process.env.DEBUG_SECURITY === "true"
+              ? { ipChain, hasCloudflareIp }
+              : undefined,
+        });
       }
 
       if (!cfIp) {
