@@ -1,216 +1,227 @@
-const router = require('express').Router();
-const { body } = require('express-validator');
-const passport = require('passport');
-const AuthCtrl = require('../controllers/auth.controller');
-const { loginLimiter, resendEmailLimiter } = require('../middleware/rateLimiter');
+const router = require("express").Router();
+const { body } = require("express-validator");
+const passport = require("passport");
+const AuthCtrl = require("../controllers/auth.controller");
+const {
+  loginLimiter,
+  resendEmailLimiter,
+} = require("../middleware/rateLimiter");
+const { auditLog } = require("../middleware/audit.middleware");
 
 // USER or VENDOR registration
 router.post(
-  '/register', loginLimiter,
+  "/register",
+  loginLimiter,
+  auditLog("USER_REGISTER", "USER"),
   [
     // Basic user validation
-    body('name')
+    body("name")
       .trim()
       .notEmpty()
-      .withMessage('Name is required')
+      .withMessage("Name is required")
       .isLength({ min: 2, max: 100 })
-      .withMessage('Name must be between 2 and 100 characters'),
+      .withMessage("Name must be between 2 and 100 characters"),
 
-    body('email')
+    body("email")
       .trim()
       .notEmpty()
-      .withMessage('Email is required')
+      .withMessage("Email is required")
       .isEmail()
       .normalizeEmail()
-      .withMessage('Please provide a valid email address'),
+      .withMessage("Please provide a valid email address"),
 
-    body('password')
+    body("password")
       .notEmpty()
-      .withMessage('Password is required')
+      .withMessage("Password is required")
       .isLength({ min: 6 })
-      .withMessage('Password must be at least 6 characters long'),
+      .withMessage("Password must be at least 6 characters long"),
 
-    body('phone')
+    body("phone")
       .optional()
-      .customSanitizer(value => {
+      .customSanitizer((value) => {
         // Convert empty string to undefined so it's truly optional
-        return value === '' ? undefined : value;
+        return value === "" ? undefined : value;
       })
       .trim()
       .isLength({ min: 10, max: 15 })
-      .withMessage('Phone number must be between 10 and 15 characters'),
+      .withMessage("Phone number must be between 10 and 15 characters"),
 
     // role field removed to prevent escalation - default is USER
 
     // Vendor-specific validation (only if role is VENDOR)
-    body('storeName')
-      .if(body('role').equals('VENDOR'))
+    body("storeName")
+      .if(body("role").equals("VENDOR"))
       .trim()
       .notEmpty()
-      .withMessage('Store name is required for vendor accounts')
+      .withMessage("Store name is required for vendor accounts")
       .isLength({ min: 2, max: 100 })
-      .withMessage('Store name must be between 2 and 100 characters'),
+      .withMessage("Store name must be between 2 and 100 characters"),
 
-    body('storeAddress')
-      .if(body('role').equals('VENDOR'))
+    body("storeAddress")
+      .if(body("role").equals("VENDOR"))
       .trim()
       .notEmpty()
-      .withMessage('Store address is required for vendor accounts')
+      .withMessage("Store address is required for vendor accounts")
       .isLength({ min: 5, max: 200 })
-      .withMessage('Store address must be between 5 and 200 characters'),
+      .withMessage("Store address must be between 5 and 200 characters"),
 
-    body('businessCategory')
-      .if(body('role').equals('VENDOR'))
+    body("businessCategory")
+      .if(body("role").equals("VENDOR"))
       .trim()
       .notEmpty()
-      .withMessage('Business category is required for vendor accounts')
+      .withMessage("Business category is required for vendor accounts")
       .isLength({ min: 2, max: 50 })
-      .withMessage('Business category must be between 2 and 50 characters'),
-
+      .withMessage("Business category must be between 2 and 50 characters"),
   ],
-  AuthCtrl.register
+  AuthCtrl.register,
 );
 
 // VENDOR registration (Strictly Validated)
 router.post(
-  '/register/vendor', loginLimiter,
+  "/register/vendor",
+  loginLimiter,
+  auditLog("VENDOR_REGISTER", "USER"),
   [
-    body('name')
+    body("name")
       .trim()
       .notEmpty()
-      .withMessage('Name is required')
+      .withMessage("Name is required")
       .isLength({ min: 2, max: 100 }),
 
-    body('email')
+    body("email")
       .trim()
       .notEmpty()
       .isEmail()
       .normalizeEmail()
-      .withMessage('Valid email required'),
+      .withMessage("Valid email required"),
 
-    body('password')
+    body("password")
       .notEmpty()
       .isLength({ min: 6 })
-      .withMessage('Password must be at least 6 characters'),
+      .withMessage("Password must be at least 6 characters"),
 
-    body('phone')
+    body("phone")
       .trim()
       .notEmpty()
-      .withMessage('Phone number is required for vendors')
+      .withMessage("Phone number is required for vendors")
       .isLength({ min: 10, max: 15 }),
 
-    body('storeName')
-      .trim()
-      .notEmpty()
-      .withMessage('Store name is required'),
+    body("storeName").trim().notEmpty().withMessage("Store name is required"),
 
-    body('storeAddress')
+    body("storeAddress")
       .trim()
       .notEmpty()
-      .withMessage('Store address is required'),
+      .withMessage("Store address is required"),
 
-    body('businessCategory')
+    body("businessCategory")
       .trim()
       .notEmpty()
-      .withMessage('Business category is required'),
-    
-    body('referralCode')
-      .optional()
-      .isString(),
+      .withMessage("Business category is required"),
+
+    body("referralCode").optional().isString(),
   ],
-  AuthCtrl.registerVendor
+  AuthCtrl.registerVendor,
 );
 
-router.post('/login', loginLimiter,
+router.post(
+  "/login",
+  loginLimiter,
+  auditLog("USER_LOGIN", "USER"),
   [
-    body('email')
+    body("email")
       .isEmail()
       .normalizeEmail()
-      .withMessage('Please provide a valid email address'),
+      .withMessage("Please provide a valid email address"),
 
-    body('password')
-      .notEmpty()
-      .withMessage('Password is required'),
+    body("password").notEmpty().withMessage("Password is required"),
   ],
-  passport.authenticate('local', { session: false }),
-  AuthCtrl.login
+  passport.authenticate("local", { session: false }),
+  AuthCtrl.login,
 );
 
 // Get current authenticated user (cookie-based)
-router.get('/me', AuthCtrl.getMe);
+router.get("/me", AuthCtrl.getMe);
 
 // Password reset routes
-router.post('/forgot-password', loginLimiter,
+router.post(
+  "/forgot-password",
+  loginLimiter,
   [
-    body('email')
+    body("email")
       .isEmail()
       .normalizeEmail()
-      .withMessage('Please provide a valid email address'),
+      .withMessage("Please provide a valid email address"),
   ],
-  AuthCtrl.forgotPassword
+  AuthCtrl.forgotPassword,
 );
 
-router.post('/verify-reset-code', loginLimiter,
+router.post(
+  "/verify-reset-code",
+  loginLimiter,
   [
-    body('email')
+    body("email")
       .isEmail()
       .normalizeEmail()
-      .withMessage('Please provide a valid email address'),
-    body('code')
+      .withMessage("Please provide a valid email address"),
+    body("code")
       .isLength({ min: 6, max: 6 })
-      .withMessage('Verification code must be exactly 6 digits'),
+      .withMessage("Verification code must be exactly 6 digits"),
   ],
-  AuthCtrl.verifyResetCode
+  AuthCtrl.verifyResetCode,
 );
 
-router.post('/reset-password', loginLimiter,
+router.post(
+  "/reset-password",
+  loginLimiter,
   [
-    body('email')
+    body("email")
       .isEmail()
       .normalizeEmail()
-      .withMessage('Please provide a valid email address'),
-    body('code')
+      .withMessage("Please provide a valid email address"),
+    body("code")
       .isLength({ min: 6, max: 6 })
-      .withMessage('Verification code must be exactly 6 digits'),
-    body('newPassword')
+      .withMessage("Verification code must be exactly 6 digits"),
+    body("newPassword")
       .isLength({ min: 6 })
-      .withMessage('Password must be at least 6 characters long'),
+      .withMessage("Password must be at least 6 characters long"),
   ],
-  AuthCtrl.resetPassword
+  AuthCtrl.resetPassword,
 );
 
 // Email verification routes
-router.get('/verify-email', AuthCtrl.verifyEmail);
+router.get("/verify-email", AuthCtrl.verifyEmail);
 
-router.post('/resend-verification', resendEmailLimiter,
+router.post(
+  "/resend-verification",
+  resendEmailLimiter,
   [
-    body('email')
+    body("email")
       .isEmail()
       .normalizeEmail()
-      .withMessage('Please provide a valid email address'),
+      .withMessage("Please provide a valid email address"),
   ],
-  AuthCtrl.resendVerificationEmail
+  AuthCtrl.resendVerificationEmail,
 );
 
 // Logout route
-router.post('/logout', (req, res) => {
+router.post("/logout", (req, res) => {
   try {
     // Clear the authentication cookie
-    res.clearCookie('accessToken', {
+    res.clearCookie("accessToken", {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax'
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
     });
 
     res.json({
       success: true,
-      message: 'Logged out successfully'
+      message: "Logged out successfully",
     });
   } catch (error) {
-    console.error('Logout error:', error);
+    console.error("Logout error:", error);
     res.status(500).json({
       success: false,
-      message: 'Failed to logout'
+      message: "Failed to logout",
     });
   }
 });

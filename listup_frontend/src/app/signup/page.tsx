@@ -27,6 +27,7 @@ import {
   getSuccessMessage,
 } from "@/utils/errorHandler";
 import ErrorNotice from "@/components/ErrorNotice";
+import TermsModal from "@/components/TermsModal";
 
 interface ValidationError {
   field: string;
@@ -176,7 +177,12 @@ function SignupContent() {
       if (phoneErr) {
         setFieldError("phone", phoneErr);
         valid = false;
-      }
+    valid = false;
+    }
+
+    if (form.role === "USER" && !form.termsAccepted) {
+      setFieldError("termsAccepted", "You must accept the terms and conditions to continue");
+      valid = false;
     }
 
     if (!valid) setError("Please fix the errors below to continue");
@@ -211,6 +217,11 @@ function SignupContent() {
     );
     if (businessCategoryErr) {
       setFieldError("businessCategory", businessCategoryErr);
+      valid = false;
+    }
+
+    if (!form.termsAccepted) {
+      setFieldError("termsAccepted", "You must accept the terms and conditions to continue");
       valid = false;
     }
 
@@ -541,7 +552,6 @@ function SignupContent() {
                   id="whatsapp-optin"
                   type="checkbox"
                   checked={form.whatsappOptIn}
-
                   onChange={(e) => handleFieldChange("whatsappOptIn", e.target.checked)}
                   className="h-4 w-4 rounded border-slate-300 text-lime-600 focus:ring-lime-200"
                 />
@@ -553,6 +563,32 @@ function SignupContent() {
                 </p>
               </label>
             </div>
+
+            {/* Terms and Conditions (USER only on Step 1) */}
+            {form.role === "USER" && (
+              <div className="space-y-1">
+                <div className={`flex items-start gap-3 p-3 rounded-xl border transition-colors ${getFieldError("termsAccepted") ? "bg-red-50 border-red-200" : "bg-slate-50 border-slate-100"}`}>
+                  <div className="flex h-5 w-5 items-center justify-center">
+                    <input
+                      id="terms-accepted-user"
+                      type="checkbox"
+                      checked={form.termsAccepted}
+                      onChange={(e) => handleFieldChange("termsAccepted", e.target.checked)}
+                      className="h-4 w-4 rounded border-slate-300 text-lime-600 focus:ring-lime-200"
+                    />
+                  </div>
+                  <label htmlFor="terms-accepted-user" className="text-sm text-slate-700 cursor-pointer select-none">
+                    I agree to the <TermsModal />
+                  </label>
+                </div>
+                {getFieldError("termsAccepted") && (
+                  <p className="text-xs text-red-600 flex items-center gap-1 ml-1">
+                    <AlertCircle className="w-3 h-3" />
+                    {getFieldError("termsAccepted")}
+                  </p>
+                )}
+              </div>
+            )}
 
             {/* Tips */}
             <div className="p-3 bg-blue-50 rounded-lg border border-blue-200 text-xs text-blue-700">
@@ -723,6 +759,30 @@ function SignupContent() {
 
             <div className="p-3 bg-blue-50 rounded-lg border border-blue-200 text-blue-700 text-sm">
               💡 You can add your store logo and cover image later from your profile settings
+            </div>
+
+            {/* Terms and Conditions (VENDOR on Step 2) */}
+            <div className="space-y-1">
+              <div className={`flex items-start gap-3 p-3 rounded-xl border transition-colors ${getFieldError("termsAccepted") ? "bg-red-50 border-red-200" : "bg-slate-50 border-slate-100"}`}>
+                <div className="flex h-5 w-5 items-center justify-center">
+                  <input
+                    id="terms-accepted-vendor"
+                    type="checkbox"
+                    checked={form.termsAccepted}
+                    onChange={(e) => handleFieldChange("termsAccepted", e.target.checked)}
+                    className="h-4 w-4 rounded border-slate-300 text-lime-600 focus:ring-lime-200"
+                  />
+                </div>
+                <label htmlFor="terms-accepted-vendor" className="text-sm text-slate-700 cursor-pointer select-none">
+                  I agree to the <TermsModal />
+                </label>
+              </div>
+              {getFieldError("termsAccepted") && (
+                <p className="text-xs text-red-600 flex items-center gap-1 ml-1">
+                  <AlertCircle className="w-3 h-3" />
+                  {getFieldError("termsAccepted")}
+                </p>
+              )}
             </div>
 
             {/* Buttons */}

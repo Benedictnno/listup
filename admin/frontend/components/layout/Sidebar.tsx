@@ -1,8 +1,8 @@
- 'use client';
+"use client";
 
-import { useState } from 'react';
-import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { useState } from "react";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   Users,
@@ -20,12 +20,18 @@ import {
   Megaphone,
   ShieldCheck,
   Banknote,
-  Share2
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
-import Button from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { useAuth } from '@/hooks/useAuth';
+  Share2,
+  History,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import Button from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { useAuth } from "@/hooks/useAuth";
 
 interface SidebarProps {
   open: boolean;
@@ -47,69 +53,73 @@ export default function Sidebar({ open, setOpen }: SidebarProps) {
 
   const navItems: NavItem[] = [
     {
-      title: 'Dashboard',
-      href: '/dashboard',
+      title: "Dashboard",
+      href: "/dashboard",
       icon: <LayoutDashboard className="h-5 w-5" />,
     },
     {
-      title: 'Users',
-      href: '/dashboard/users',
+      title: "Users",
+      href: "/dashboard/users",
       icon: <Users className="h-5 w-5" />,
     },
     {
-      title: 'Vendors',
-      href: '/dashboard/vendors',
+      title: "Vendors",
+      href: "/dashboard/vendors",
       icon: <Tag className="h-5 w-5" />,
     },
     {
-      title: 'KYC',
-      href: '/dashboard/kyc',
+      title: "KYC",
+      href: "/dashboard/kyc",
       icon: <ShieldCheck className="h-5 w-5" />,
     },
     {
-      title: 'Listings',
-      href: '/dashboard/listings',
+      title: "Listings",
+      href: "/dashboard/listings",
       icon: <ShoppingBag className="h-5 w-5" />,
     },
     {
-      title: 'Advertisements',
-      href: '/dashboard/advertisements',
+      title: "Advertisements",
+      href: "/dashboard/advertisements",
       icon: <Megaphone className="h-5 w-5" />,
     },
     {
-      title: 'Commissions',
-      href: '/dashboard/commissions',
+      title: "Commissions",
+      href: "/dashboard/commissions",
       icon: <Banknote className="h-5 w-5" />,
     },
     {
-      title: 'Referrals',
-      href: '/dashboard/referrals',
+      title: "Referrals",
+      href: "/dashboard/referrals",
       icon: <Share2 className="h-5 w-5" />,
     },
     {
-      title: 'Analytics',
-      href: '/dashboard/analytics',
+      title: "Analytics",
+      href: "/dashboard/analytics",
       icon: <BarChart3 className="h-5 w-5" />,
     },
     {
-      title: 'Addresses',
-      href: '/dashboard/addresses',
+      title: "Addresses",
+      href: "/dashboard/addresses",
       icon: <MapPinHouse className="h-5 w-5" />,
     },
     {
-      title: 'Categories',
-      href: '/dashboard/categories',
+      title: "Categories",
+      href: "/dashboard/categories",
       icon: <CircleFadingPlus className="h-5 w-5" />,
     },
-
     {
-      title: 'Settings',
-      href: '/settings',
+      title: "Audit System",
+      href: "/dashboard/audit",
+      icon: <History className="h-5 w-5" />,
+    },
+    {
+      title: "Settings",
+      href: "/settings",
       icon: <Settings className="h-5 w-5" />,
       submenu: [
-        { title: 'General', href: '/settings' },
-        { title: 'Feature Flags', href: '/settings/features' }
-      ]
+        { title: "General", href: "/settings" },
+        { title: "Feature Flags", href: "/settings/features" },
+      ],
     },
   ];
 
@@ -118,7 +128,7 @@ export default function Sidebar({ open, setOpen }: SidebarProps) {
   };
 
   const isActive = (href: string) => {
-    return pathname === href || pathname.startsWith(href + '/');
+    return pathname === href || pathname.startsWith(href + "/");
   };
 
   return (
@@ -140,21 +150,25 @@ export default function Sidebar({ open, setOpen }: SidebarProps) {
           // Desktop: expand/collapse width
           "lg:relative lg:z-auto",
           open ? "w-64" : "lg:w-20 w-64",
-          !open && "lg:items-center"
+          !open && "lg:items-center",
         )}
       >
         {/* Logo and toggle */}
-        <div className={cn(
-          "flex items-center h-16 px-4 border-b border-gray-200",
-          !open && "lg:justify-center"
-        )}>
+        <div
+          className={cn(
+            "flex items-center h-16 px-4 border-b border-gray-200",
+            !open && "lg:justify-center",
+          )}
+        >
           {open ? (
             <div className="flex items-center w-full">
               <div className="flex items-center gap-2">
                 <div className="h-8 w-8 rounded-md bg-lime-500 flex items-center justify-center">
                   <span className="text-white font-bold text-lg">L</span>
                 </div>
-                <span className="text-xl font-semibold text-gray-800">ListUp Admin</span>
+                <span className="text-xl font-semibold text-gray-800">
+                  ListUp Admin
+                </span>
               </div>
               <Button
                 variant="ghost"
@@ -188,7 +202,7 @@ export default function Sidebar({ open, setOpen }: SidebarProps) {
                             isActive(item.href)
                               ? "bg-gray-100 text-lime-600"
                               : "text-gray-700 hover:bg-gray-100 hover:text-lime-600",
-                            !open && "lg:justify-center"
+                            !open && "lg:justify-center",
                           )}
                           onClick={(e) => {
                             if (item.submenu && item.submenu.length > 0) {
@@ -210,7 +224,8 @@ export default function Sidebar({ open, setOpen }: SidebarProps) {
                             <ChevronRight
                               className={cn(
                                 "ml-auto h-4 w-4 transition-transform",
-                                expandedItem === item.title && "transform rotate-90"
+                                expandedItem === item.title &&
+                                  "transform rotate-90",
                               )}
                             />
                           )}
@@ -218,9 +233,7 @@ export default function Sidebar({ open, setOpen }: SidebarProps) {
                       </div>
                     </TooltipTrigger>
                     {!open && (
-                      <TooltipContent side="right">
-                        {item.title}
-                      </TooltipContent>
+                      <TooltipContent side="right">{item.title}</TooltipContent>
                     )}
                   </Tooltip>
                 </TooltipProvider>
@@ -236,7 +249,7 @@ export default function Sidebar({ open, setOpen }: SidebarProps) {
                             "flex items-center h-8 text-sm font-medium transition-colors",
                             isActive(subItem.href)
                               ? "text-lime-600"
-                              : "text-gray-600 hover:text-lime-600"
+                              : "text-gray-600 hover:text-lime-600",
                           )}
                         >
                           {subItem.title}
@@ -251,10 +264,12 @@ export default function Sidebar({ open, setOpen }: SidebarProps) {
         </nav>
 
         {/* Footer */}
-        <div className={cn(
-          "p-4 border-t border-gray-200",
-          !open && "flex justify-center"
-        )}>
+        <div
+          className={cn(
+            "p-4 border-t border-gray-200",
+            !open && "flex justify-center",
+          )}
+        >
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -263,7 +278,7 @@ export default function Sidebar({ open, setOpen }: SidebarProps) {
                   size={open ? "md" : "sm"}
                   className={cn(
                     "w-full text-red-500 hover:text-red-600 hover:bg-red-50",
-                    !open && "w-auto"
+                    !open && "w-auto",
                   )}
                   onClick={() => {
                     logout();
@@ -273,11 +288,7 @@ export default function Sidebar({ open, setOpen }: SidebarProps) {
                   {open && <span className="ml-2">Logout</span>}
                 </Button>
               </TooltipTrigger>
-              {!open && (
-                <TooltipContent side="right">
-                  Logout
-                </TooltipContent>
-              )}
+              {!open && <TooltipContent side="right">Logout</TooltipContent>}
             </Tooltip>
           </TooltipProvider>
         </div>

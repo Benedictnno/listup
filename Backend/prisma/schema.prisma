@@ -132,6 +132,7 @@ model User {
   buyerConversations           Conversation[]      @relation("BuyerConversations")
   sellerConversations          Conversation[]      @relation("SellerConversations")
   sentMessages                 Message[]
+  auditLogs                    AuditLog[]
 
 
   @@index([role])
@@ -918,4 +919,22 @@ model ListingPackagePurchase {
   processedAt     DateTime @default(now())
 
   @@index([vendorId])
+}
+
+model AuditLog {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId       String?  @db.ObjectId // User who performed the action (null for system)
+  user         User?    @relation(fields: [userId], references: [id])
+  action       String   // e.g., "LOGIN", "DELETE_LISTING", "APPROVE_VENDOR", "UPDATE_KYC"
+  targetType   String?  // e.g., "USER", "LISTING", "PAYMENT", "STORE"
+  targetId     String?  // ID of the affected object
+  metadata     Json?    // old vs new values, etc.
+  ipAddress    String?
+  userAgent    String?
+  createdAt    DateTime @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([targetType, targetId])
+  @@index([createdAt])
 }
