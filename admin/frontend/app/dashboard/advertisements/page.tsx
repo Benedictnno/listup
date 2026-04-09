@@ -1,11 +1,17 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import Button from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useToast } from '@/hooks/useToast';
-import { api } from '@/services/api';
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import Button from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { useToast } from "@/hooks/useToast";
+import { api } from "@/services/api";
 
 interface Advertisement {
   id: string;
@@ -16,7 +22,7 @@ interface Advertisement {
   startDate: string;
   expiryDate: string;
   isActive: boolean;
-  position: 'HERO_CAROUSEL' | 'RANDOM';
+  position: "HERO_CAROUSEL" | "RANDOM";
   impressions: number;
   clicks: number;
   createdBy: {
@@ -28,21 +34,21 @@ interface Advertisement {
 export default function AdvertisementsPage() {
   const [advertisements, setAdvertisements] = useState<Advertisement[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<'all' | 'active' | 'expired'>('all');
+  const [filter, setFilter] = useState<"all" | "active" | "expired">("all");
   const router = useRouter();
   const toast = useToast();
 
   const fetchAdvertisements = async () => {
     try {
       setLoading(true);
-      const statusParam = filter !== 'all' ? `?status=${filter}` : '';
+      const statusParam = filter !== "all" ? `?status=${filter}` : "";
 
       const response = await api.get(`/advertisements${statusParam}`);
 
       setAdvertisements(response.data.data.advertisements);
     } catch (error) {
-      console.error('Error fetching advertisements:', error);
-      toast.error('Failed to fetch advertisements');
+      console.error("Error fetching advertisements:", error);
+      toast.error("Failed to fetch advertisements");
     } finally {
       setLoading(false);
     }
@@ -53,33 +59,56 @@ export default function AdvertisementsPage() {
   }, [filter]);
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this advertisement?')) {
+    if (!confirm("Are you sure you want to delete this advertisement?")) {
       return;
     }
 
     try {
       await api.delete(`/advertisements/${id}`);
 
-      toast.success('Advertisement deleted successfully');
+      toast.success("Advertisement deleted successfully");
       fetchAdvertisements();
     } catch (error) {
-      console.error('Error deleting advertisement:', error);
-      toast.error('Failed to delete advertisement');
+      console.error("Error deleting advertisement:", error);
+      toast.error("Failed to delete advertisement");
     }
   };
 
   const toggleActive = async (id: string, currentStatus: boolean) => {
     try {
-      await api.put(
-        `/advertisements/${id}`,
-        { isActive: !currentStatus }
-      );
+      console.log(`Toggling ad ${id} to ${!currentStatus}`);
 
-      toast.success(`Advertisement ${!currentStatus ? 'activated' : 'deactivated'} successfully`);
+      // Try PUT first, then PATCH if it fails
+      let response;
+      try {
+        response = await api.put(`/advertisements/${id}`, {
+          isActive: !currentStatus,
+        });
+      } catch (putError: any) {
+        if (
+          putError.response?.status === 404 ||
+          putError.response?.status === 405
+        ) {
+          console.log("PUT failed, trying PATCH /status");
+          response = await api.patch(`/advertisements/${id}/status`, {
+            status: !currentStatus ? "ACTIVE" : "INACTIVE",
+          });
+        } else {
+          throw putError;
+        }
+      }
+
+      console.log("Update response:", response.data);
+
+      toast.success(
+        `Advertisement ${!currentStatus ? "activated" : "deactivated"} successfully`,
+      );
       fetchAdvertisements();
-    } catch (error) {
-      console.error('Error updating advertisement:', error);
-      toast.error('Failed to update advertisement');
+    } catch (error: any) {
+      console.error("Error updating advertisement:", error);
+      const errorMessage =
+        error.response?.data?.message || "Failed to update advertisement";
+      toast.error(errorMessage);
     }
   };
 
@@ -87,27 +116,27 @@ export default function AdvertisementsPage() {
     <div className="container mx-auto py-8">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Advertisement Management</h1>
-        <Button onClick={() => router.push('/dashboard/advertisements/create')}>
+        <Button onClick={() => router.push("/dashboard/advertisements/create")}>
           Create New Ad
         </Button>
       </div>
 
       <div className="mb-4 flex gap-2">
         <Button
-          variant={filter === 'all' ? 'default' : 'outline'}
-          onClick={() => setFilter('all')}
+          variant={filter === "all" ? "default" : "outline"}
+          onClick={() => setFilter("all")}
         >
           All
         </Button>
         <Button
-          variant={filter === 'active' ? 'default' : 'outline'}
-          onClick={() => setFilter('active')}
+          variant={filter === "active" ? "default" : "outline"}
+          onClick={() => setFilter("active")}
         >
           Active
         </Button>
         <Button
-          variant={filter === 'expired' ? 'default' : 'outline'}
-          onClick={() => setFilter('expired')}
+          variant={filter === "expired" ? "default" : "outline"}
+          onClick={() => setFilter("expired")}
         >
           Expired
         </Button>
@@ -123,7 +152,7 @@ export default function AdvertisementsPage() {
             <p className="text-gray-500">No advertisements found</p>
             <Button
               className="mt-4"
-              onClick={() => router.push('/advertisements/create')}
+              onClick={() => router.push("/advertisements/create")}
             >
               Create Your First Ad
             </Button>
@@ -143,28 +172,32 @@ export default function AdvertisementsPage() {
                       <CardTitle className="flex items-center gap-2">
                         {ad.title}
                         <span
-                          className={`text-xs px-2 py-1 rounded ${isCurrentlyActive
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-gray-100 text-gray-800'
-                            }`}
+                          className={`text-xs px-2 py-1 rounded ${
+                            isCurrentlyActive
+                              ? "bg-green-100 text-green-800"
+                              : "bg-gray-100 text-gray-800"
+                          }`}
                         >
-                          {isCurrentlyActive ? 'Active' : 'Inactive'}
+                          {isCurrentlyActive ? "Active" : "Inactive"}
                         </span>
                         <span className="text-xs px-2 py-1 rounded bg-blue-100 text-blue-800">
-                          {ad.position === 'HERO_CAROUSEL' ? 'Hero Carousel' : 'Random Section'}
+                          {ad.position === "HERO_CAROUSEL"
+                            ? "Hero Carousel"
+                            : "Random Section"}
                         </span>
                       </CardTitle>
                       <CardDescription>
-                        Created by {ad.createdBy.name} | Duration: {ad.duration} days
+                        Created by {ad.createdBy.name} | Duration: {ad.duration}{" "}
+                        days
                       </CardDescription>
                     </div>
                     <div className="flex gap-2">
                       <Button
-                        variant={ad.isActive ? 'destructive' : 'default'}
+                        variant={ad.isActive ? "destructive" : "default"}
                         size="sm"
                         onClick={() => toggleActive(ad.id, ad.isActive)}
                       >
-                        {ad.isActive ? 'Deactivate' : 'Activate'}
+                        {ad.isActive ? "Deactivate" : "Activate"}
                       </Button>
                       <Button
                         variant="destructive"
@@ -186,17 +219,17 @@ export default function AdvertisementsPage() {
                     <div className="flex-1">
                       <div className="grid grid-cols-2 gap-2 mb-4">
                         <p className="text-sm text-gray-600">
-                          <strong>Start Date:</strong>{' '}
+                          <strong>Start Date:</strong>{" "}
                           {new Date(ad.startDate).toLocaleDateString()}
                         </p>
                         <p className="text-sm text-gray-600">
-                          <strong>Expiry Date:</strong>{' '}
+                          <strong>Expiry Date:</strong>{" "}
                           {new Date(ad.expiryDate).toLocaleDateString()}
                         </p>
                       </div>
                       {ad.targetUrl && (
                         <p className="text-sm text-gray-600 mb-2">
-                          <strong>Target URL:</strong>{' '}
+                          <strong>Target URL:</strong>{" "}
                           <a
                             href={ad.targetUrl}
                             target="_blank"
@@ -210,7 +243,9 @@ export default function AdvertisementsPage() {
                       <div className="flex gap-6 mt-4 p-4 bg-gray-50 rounded">
                         <div className="text-sm">
                           <div className="text-gray-500">Impressions</div>
-                          <div className="text-2xl font-bold">{ad.impressions}</div>
+                          <div className="text-2xl font-bold">
+                            {ad.impressions}
+                          </div>
                         </div>
                         <div className="text-sm">
                           <div className="text-gray-500">Clicks</div>

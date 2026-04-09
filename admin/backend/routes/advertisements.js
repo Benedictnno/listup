@@ -1,25 +1,22 @@
-const express = require('express');
-const { body, validationResult } = require('express-validator');
-const prisma = require('../lib/prisma');
-const { auth } = require('../middleware/auth');
+const express = require("express");
+const { body, validationResult } = require("express-validator");
+const prisma = require("../lib/prisma");
+const { auth } = require("../middleware/auth");
 
 const router = express.Router();
 
 // Get all advertisements (with pagination and filters)
-router.get('/', auth, async (req, res) => {
+router.get("/", auth, async (req, res) => {
   try {
     const { page = 1, limit = 10, status } = req.query;
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
     const where = {};
-    if (status === 'active') {
+    if (status === "active") {
       where.isActive = true;
       where.expiryDate = { gte: new Date() };
-    } else if (status === 'expired') {
-      where.OR = [
-        { isActive: false },
-        { expiryDate: { lt: new Date() } }
-      ];
+    } else if (status === "expired") {
+      where.OR = [{ isActive: false }, { expiryDate: { lt: new Date() } }];
     }
 
     const [advertisements, total] = await Promise.all([
@@ -27,18 +24,18 @@ router.get('/', auth, async (req, res) => {
         where,
         skip,
         take: parseInt(limit),
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
         include: {
           createdBy: {
             select: {
               id: true,
               name: true,
-              email: true
-            }
-          }
-        }
+              email: true,
+            },
+          },
+        },
       }),
-      prisma.advertisement.count({ where })
+      prisma.advertisement.count({ where }),
     ]);
 
     res.json({
@@ -49,21 +46,21 @@ router.get('/', auth, async (req, res) => {
           total,
           page: parseInt(page),
           limit: parseInt(limit),
-          totalPages: Math.ceil(total / parseInt(limit))
-        }
-      }
+          totalPages: Math.ceil(total / parseInt(limit)),
+        },
+      },
     });
   } catch (error) {
-    console.error('Get advertisements error:', error);
+    console.error("Get advertisements error:", error);
     res.status(500).json({
       success: false,
-      message: 'Failed to fetch advertisements'
+      message: "Failed to fetch advertisements",
     });
   }
 });
 
 // Get single advertisement by ID
-router.get('/:id', auth, async (req, res) => {
+router.get("/:id", auth, async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -74,201 +71,241 @@ router.get('/:id', auth, async (req, res) => {
           select: {
             id: true,
             name: true,
-            email: true
-          }
-        }
-      }
+            email: true,
+          },
+        },
+      },
     });
 
     if (!advertisement) {
       return res.status(404).json({
         success: false,
-        message: 'Advertisement not found'
+        message: "Advertisement not found",
       });
     }
 
     res.json({
       success: true,
-      data: { advertisement }
+      data: { advertisement },
     });
   } catch (error) {
-    console.error('Get advertisement error:', error);
+    console.error("Get advertisement error:", error);
     res.status(500).json({
       success: false,
-      message: 'Failed to fetch advertisement'
+      message: "Failed to fetch advertisement",
     });
   }
 });
 
 // Create new advertisement
-router.post('/', [
+router.post(
+  "/",
   auth,
-  body('title').trim().notEmpty().withMessage('Title is required'),
-  body('imageUrl').trim().isURL().withMessage('Valid image URL is required'),
-  body('targetUrl').optional({ checkFalsy: true }).trim().isURL().withMessage('Valid target URL required'),
-  body('position').optional().isIn(['HERO_CAROUSEL', 'RANDOM']).withMessage('Invalid position'),
-  body('duration').isInt({ min: 1 }).withMessage('Duration must be a positive integer')
-    .custom((value) => {
-      const validDurations = [3, 7, 15, 31];
-      if (!validDurations.includes(parseInt(value))) {
-        throw new Error('Duration must be 3, 7, 15, or 31 days');
+  [
+    body("title").trim().notEmpty().withMessage("Title is required"),
+    body("imageUrl").trim().isURL().withMessage("Valid image URL is required"),
+    body("targetUrl")
+      .optional({ checkFalsy: true })
+      .trim()
+      .isURL()
+      .withMessage("Valid target URL required"),
+    body("position")
+      .optional()
+      .isIn(["HERO_CAROUSEL", "RANDOM"])
+      .withMessage("Invalid position"),
+    body("duration")
+      .isInt({ min: 1 })
+      .withMessage("Duration must be a positive integer")
+      .custom((value) => {
+        const validDurations = [3, 7, 15, 31];
+        if (!validDurations.includes(parseInt(value))) {
+          throw new Error("Duration must be 3, 7, 15, or 31 days");
+        }
+        return true;
+      }),
+  ],
+  async (req, res) => {
+    try {
+      const errors = validationResult(req);
+      console.log(errors);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({
+          success: false,
+          message: "Validation error",
+          errors: errors.array(),
+        });
       }
-      return true;
-    })
-], async (req, res) => {
-  try {
-    const errors = validationResult(req);
-    console.log(errors);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
+
+      const { title, imageUrl, targetUrl, duration } = req.body;
+
+      // Calculate expiry date
+      const startDate = new Date();
+      const expiryDate = new Date(startDate);
+      expiryDate.setDate(expiryDate.getDate() + parseInt(duration));
+
+      const advertisement = await prisma.advertisement.create({
+        data: {
+          title,
+          imageUrl,
+          targetUrl: targetUrl && targetUrl.trim() ? targetUrl.trim() : null,
+          position: req.body.position || "RANDOM",
+          duration: parseInt(duration),
+          startDate,
+          expiryDate,
+          createdById: req.user.id,
+        },
+        include: {
+          createdBy: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+        },
+      });
+
+      res.status(201).json({
+        success: true,
+        message: "Advertisement created successfully",
+        data: { advertisement },
+      });
+    } catch (error) {
+      console.error("Create advertisement error:", error);
+      res.status(500).json({
         success: false,
-        message: 'Validation error',
-        errors: errors.array()
+        message: "Failed to create advertisement",
       });
     }
-
-    const { title, imageUrl, targetUrl, duration } = req.body;
-
-    // Calculate expiry date
-    const startDate = new Date();
-    const expiryDate = new Date(startDate);
-    expiryDate.setDate(expiryDate.getDate() + parseInt(duration));
-
-    const advertisement = await prisma.advertisement.create({
-      data: {
-        title,
-        imageUrl,
-        targetUrl: targetUrl && targetUrl.trim() ? targetUrl.trim() : null,
-        position: req.body.position || 'RANDOM',
-        duration: parseInt(duration),
-        startDate,
-        expiryDate,
-        createdById: req.user.id
-      },
-      include: {
-        createdBy: {
-          select: {
-            id: true,
-            name: true,
-            email: true
-          }
-        }
-      }
-    });
-
-    res.status(201).json({
-      success: true,
-      message: 'Advertisement created successfully',
-      data: { advertisement }
-    });
-  } catch (error) {
-    console.error('Create advertisement error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to create advertisement'
-    });
-  }
-});
+  },
+);
 
 // Update advertisement
-router.put('/:id', [
+router.put(
+  "/:id",
   auth,
-  body('title').optional().trim().notEmpty().withMessage('Title cannot be empty'),
-  body('imageUrl').optional().trim().isURL().withMessage('Valid image URL is required'),
-  body('targetUrl').optional({ checkFalsy: true }).trim().isURL().withMessage('Valid target URL required'),
-  body('position').optional().isIn(['HERO_CAROUSEL', 'RANDOM']).withMessage('Invalid position'),
-  body('isActive').optional().isBoolean().withMessage('isActive must be boolean')
-], async (req, res) => {
-  try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        message: 'Validation error',
-        errors: errors.array()
-      });
-    }
-
-    const { id } = req.params;
-    const { title, imageUrl, targetUrl, isActive } = req.body;
-
-    // Check if advertisement exists
-    const existingAd = await prisma.advertisement.findUnique({
-      where: { id }
-    });
-
-    if (!existingAd) {
-      return res.status(404).json({
-        success: false,
-        message: 'Advertisement not found'
-      });
-    }
-
-    const updateData = {};
-    if (title !== undefined) updateData.title = title;
-    if (imageUrl !== undefined) updateData.imageUrl = imageUrl;
-    if (targetUrl !== undefined) updateData.targetUrl = targetUrl && targetUrl.trim() ? targetUrl.trim() : null;
-    if (req.body.position !== undefined) updateData.position = req.body.position;
-    if (isActive !== undefined) updateData.isActive = isActive;
-
-    const advertisement = await prisma.advertisement.update({
-      where: { id },
-      data: updateData,
-      include: {
-        createdBy: {
-          select: {
-            id: true,
-            name: true,
-            email: true
-          }
-        }
+  [
+    body("title")
+      .optional()
+      .trim()
+      .notEmpty()
+      .withMessage("Title cannot be empty"),
+    body("imageUrl")
+      .optional()
+      .trim()
+      .isURL()
+      .withMessage("Valid image URL is required"),
+    body("targetUrl")
+      .optional({ checkFalsy: true })
+      .trim()
+      .isURL()
+      .withMessage("Valid target URL required"),
+    body("position")
+      .optional()
+      .isIn(["HERO_CAROUSEL", "RANDOM"])
+      .withMessage("Invalid position"),
+    body("isActive")
+      .optional()
+      .isBoolean()
+      .withMessage("isActive must be boolean"),
+  ],
+  async (req, res) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({
+          success: false,
+          message: "Validation error",
+          errors: errors.array(),
+        });
       }
-    });
 
-    res.json({
-      success: true,
-      message: 'Advertisement updated successfully',
-      data: { advertisement }
-    });
-  } catch (error) {
-    console.error('Update advertisement error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to update advertisement'
-    });
-  }
-});
+      const { id } = req.params;
+      const { title, imageUrl, targetUrl, isActive } = req.body;
+
+      // Check if advertisement exists
+      const existingAd = await prisma.advertisement.findUnique({
+        where: { id },
+      });
+
+      if (!existingAd) {
+        return res.status(404).json({
+          success: false,
+          message: "Advertisement not found",
+        });
+      }
+
+      const updateData = {};
+      if (title !== undefined) updateData.title = title;
+      if (imageUrl !== undefined) updateData.imageUrl = imageUrl;
+      if (targetUrl !== undefined)
+        updateData.targetUrl =
+          targetUrl && targetUrl.trim() ? targetUrl.trim() : null;
+      if (req.body.position !== undefined)
+        updateData.position = req.body.position;
+      if (isActive !== undefined) updateData.isActive = isActive;
+
+      console.log(`[Ad Update] ID: ${id}, Payload:`, updateData);
+
+      const advertisement = await prisma.advertisement.update({
+        where: { id },
+        data: updateData,
+        include: {
+          createdBy: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+        },
+      });
+
+      res.json({
+        success: true,
+        message: "Advertisement updated successfully",
+        data: { advertisement },
+      });
+    } catch (error) {
+      console.error("Update advertisement error:", error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to update advertisement",
+      });
+    }
+  },
+);
 
 // Delete advertisement
-router.delete('/:id', auth, async (req, res) => {
+router.delete("/:id", auth, async (req, res) => {
   try {
     const { id } = req.params;
 
     // Check if advertisement exists
     const existingAd = await prisma.advertisement.findUnique({
-      where: { id }
+      where: { id },
     });
 
     if (!existingAd) {
       return res.status(404).json({
         success: false,
-        message: 'Advertisement not found'
+        message: "Advertisement not found",
       });
     }
 
     await prisma.advertisement.delete({
-      where: { id }
+      where: { id },
     });
 
     res.json({
       success: true,
-      message: 'Advertisement deleted successfully'
+      message: "Advertisement deleted successfully",
     });
   } catch (error) {
-    console.error('Delete advertisement error:', error);
+    console.error("Delete advertisement error:", error);
     res.status(500).json({
       success: false,
-      message: 'Failed to delete advertisement'
+      message: "Failed to delete advertisement",
     });
   }
 });
@@ -277,62 +314,75 @@ router.delete('/:id', auth, async (req, res) => {
  * POST /api/advertisements/bulk
  * Create multiple advertisements at once
  */
-router.post('/bulk', [
-  auth,
-  body('ads').isArray().withMessage('Ads must be an array'),
-  body('ads.*.title').trim().notEmpty().withMessage('Title is required for all ads'),
-  body('ads.*.imageUrl').trim().isURL().withMessage('Valid image URL is required for all ads'),
-  body('ads.*.duration').isInt({ min: 1 }).withMessage('Duration must be a positive integer')
-], async (req, res) => {
-  try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
+router.post(
+  "/bulk",
+  [
+    auth,
+    body("ads").isArray().withMessage("Ads must be an array"),
+    body("ads.*.title")
+      .trim()
+      .notEmpty()
+      .withMessage("Title is required for all ads"),
+    body("ads.*.imageUrl")
+      .trim()
+      .isURL()
+      .withMessage("Valid image URL is required for all ads"),
+    body("ads.*.duration")
+      .isInt({ min: 1 })
+      .withMessage("Duration must be a positive integer"),
+  ],
+  async (req, res) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({
+          success: false,
+          message: "Validation error",
+          errors: errors.array(),
+        });
+      }
+
+      const { ads } = req.body;
+      const startDate = new Date();
+
+      const createData = ads.map((ad) => {
+        const expiryDate = new Date(startDate);
+        expiryDate.setDate(expiryDate.getDate() + parseInt(ad.duration));
+
+        return {
+          title: ad.title,
+          imageUrl: ad.imageUrl,
+          targetUrl:
+            ad.targetUrl && ad.targetUrl.trim() ? ad.targetUrl.trim() : null,
+          position: ad.position || "RANDOM",
+          duration: parseInt(ad.duration),
+          startDate,
+          expiryDate,
+          createdById: req.user.id,
+        };
+      });
+
+      const result = await prisma.advertisement.createMany({
+        data: createData,
+      });
+
+      res.status(201).json({
+        success: true,
+        message: `${result.count} advertisements created successfully`,
+        count: result.count,
+      });
+    } catch (error) {
+      console.error("Bulk create advertisements error:", error);
+      res.status(500).json({
         success: false,
-        message: 'Validation error',
-        errors: errors.array()
+        message: "Failed to create advertisements",
       });
     }
-
-    const { ads } = req.body;
-    const startDate = new Date();
-
-    const createData = ads.map(ad => {
-      const expiryDate = new Date(startDate);
-      expiryDate.setDate(expiryDate.getDate() + parseInt(ad.duration));
-
-      return {
-        title: ad.title,
-        imageUrl: ad.imageUrl,
-        targetUrl: ad.targetUrl && ad.targetUrl.trim() ? ad.targetUrl.trim() : null,
-        position: ad.position || 'RANDOM',
-        duration: parseInt(ad.duration),
-        startDate,
-        expiryDate,
-        createdById: req.user.id
-      };
-    });
-
-    const result = await prisma.advertisement.createMany({
-      data: createData
-    });
-
-    res.status(201).json({
-      success: true,
-      message: `${result.count} advertisements created successfully`,
-      count: result.count
-    });
-  } catch (error) {
-    console.error('Bulk create advertisements error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to create advertisements'
-    });
-  }
-});
+  },
+);
 
 // Track advertisement impression
-router.post('/:id/impression', async (req, res) => {
+router.post("/:id/impression", async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -340,26 +390,26 @@ router.post('/:id/impression', async (req, res) => {
       where: { id },
       data: {
         impressions: {
-          increment: 1
-        }
-      }
+          increment: 1,
+        },
+      },
     });
 
     res.json({
       success: true,
-      message: 'Impression tracked'
+      message: "Impression tracked",
     });
   } catch (error) {
-    console.error('Track impression error:', error);
+    console.error("Track impression error:", error);
     res.status(500).json({
       success: false,
-      message: 'Failed to track impression'
+      message: "Failed to track impression",
     });
   }
 });
 
 // Track advertisement click
-router.post('/:id/click', async (req, res) => {
+router.post("/:id/click", async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -367,56 +417,54 @@ router.post('/:id/click', async (req, res) => {
       where: { id },
       data: {
         clicks: {
-          increment: 1
-        }
-      }
+          increment: 1,
+        },
+      },
     });
 
     res.json({
       success: true,
-      message: 'Click tracked'
+      message: "Click tracked",
     });
   } catch (error) {
-    console.error('Track click error:', error);
+    console.error("Track click error:", error);
     res.status(500).json({
       success: false,
-      message: 'Failed to track click'
+      message: "Failed to track click",
     });
   }
 });
 
 // Get advertisement statistics
-router.get('/stats/overview', auth, async (req, res) => {
+router.get("/stats/overview", auth, async (req, res) => {
   try {
     const now = new Date();
 
-    const [totalAds, activeAds, expiredAds, totalImpressions, totalClicks] = await Promise.all([
-      prisma.advertisement.count(),
-      prisma.advertisement.count({
-        where: {
-          isActive: true,
-          expiryDate: { gte: now }
-        }
-      }),
-      prisma.advertisement.count({
-        where: {
-          OR: [
-            { isActive: false },
-            { expiryDate: { lt: now } }
-          ]
-        }
-      }),
-      prisma.advertisement.aggregate({
-        _sum: {
-          impressions: true
-        }
-      }),
-      prisma.advertisement.aggregate({
-        _sum: {
-          clicks: true
-        }
-      })
-    ]);
+    const [totalAds, activeAds, expiredAds, totalImpressions, totalClicks] =
+      await Promise.all([
+        prisma.advertisement.count(),
+        prisma.advertisement.count({
+          where: {
+            isActive: true,
+            expiryDate: { gte: now },
+          },
+        }),
+        prisma.advertisement.count({
+          where: {
+            OR: [{ isActive: false }, { expiryDate: { lt: now } }],
+          },
+        }),
+        prisma.advertisement.aggregate({
+          _sum: {
+            impressions: true,
+          },
+        }),
+        prisma.advertisement.aggregate({
+          _sum: {
+            clicks: true,
+          },
+        }),
+      ]);
 
     res.json({
       success: true,
@@ -426,16 +474,21 @@ router.get('/stats/overview', auth, async (req, res) => {
         expiredAds,
         totalImpressions: totalImpressions._sum.impressions || 0,
         totalClicks: totalClicks._sum.clicks || 0,
-        clickThroughRate: totalImpressions._sum.impressions > 0
-          ? ((totalClicks._sum.clicks || 0) / totalImpressions._sum.impressions * 100).toFixed(2)
-          : 0
-      }
+        clickThroughRate:
+          totalImpressions._sum.impressions > 0
+            ? (
+                ((totalClicks._sum.clicks || 0) /
+                  totalImpressions._sum.impressions) *
+                100
+              ).toFixed(2)
+            : 0,
+      },
     });
   } catch (error) {
-    console.error('Get advertisement stats error:', error);
+    console.error("Get advertisement stats error:", error);
     res.status(500).json({
       success: false,
-      message: 'Failed to fetch advertisement statistics'
+      message: "Failed to fetch advertisement statistics",
     });
   }
 });
