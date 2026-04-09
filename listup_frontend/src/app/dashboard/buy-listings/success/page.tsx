@@ -34,20 +34,40 @@ export default function BuyListingsSuccessPage() {
                 <div className="space-y-3">
                     <h1 className="text-4xl font-black text-gray-900 tracking-tight">Payment Successful!</h1>
                     <p className="text-xl text-gray-600 font-medium">
-                        You now have <span className="font-extrabold text-lime-600">{user?.listingLimit || 'more'}</span> premium listing slots available!
+                        Your account has been credited. You now have <span className="font-extrabold text-lime-600">{user?.listingLimit || '...'}</span> premium listing slots available!
                     </p>
+                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-lime-100 text-lime-700 text-sm font-black">
+                        <CheckCircle2 size={16} />
+                        Balance Updated
+                    </div>
                 </div>
 
-                <div className="bg-gray-50 rounded-2xl p-6 border border-gray-100">
-                    <div className="flex items-center gap-3 text-left">
-                        <div className="bg-lime-100 p-3 rounded-xl shrink-0">
-                            <Zap size={24} className="text-lime-600 fill-current" />
+                <div className="grid gap-4 text-left">
+                    <div className="bg-white rounded-2xl p-6 border-2 border-lime-100 shadow-sm hover:shadow-md transition-shadow">
+                        <div className="flex items-center gap-4">
+                            <div className="bg-lime-500 p-3 rounded-xl shrink-0">
+                                <Zap size={24} className="text-white fill-current" />
+                            </div>
+                            <div>
+                                <h3 className="font-black text-gray-900 text-lg">Start Selling Now</h3>
+                                <p className="text-sm text-gray-600 font-medium mt-1">
+                                    Use your new slots to post items and reach thousands of buyers instantly.
+                                </p>
+                            </div>
                         </div>
-                        <div>
-                            <h3 className="font-bold text-gray-900 text-lg">Next Steps</h3>
-                            <p className="text-sm text-gray-600 font-medium mt-1">
-                                Your account capacity is fully upgraded. Now is the perfect time to post those items you've been waiting to sell!
-                            </p>
+                    </div>
+
+                    <div className="bg-gray-50 rounded-2xl p-6 border border-gray-100">
+                        <div className="flex items-center gap-4">
+                            <div className="bg-gray-200 p-3 rounded-xl shrink-0">
+                                <ArrowRight size={24} className="text-gray-600" />
+                            </div>
+                            <div>
+                                <h3 className="font-bold text-gray-900">What's Next?</h3>
+                                <p className="text-sm text-gray-500 font-medium">
+                                    We've sent a receipt to your email. Your listings will now appear with a <span className="text-lime-600 font-bold">Premium Badge</span>.
+                                </p>
+                            </div>
                         </div>
                     </div>
                 </div>

@@ -377,17 +377,38 @@ router.post("/webhook", async (req, res) => {
     // ── Handle Listing Package payments ──────────────────────────────────────
     if (type === "listing_package" && vendorId) {
       try {
-        // SECURITY: Never trust slot count from client metadata.
-        // Always derive from the server-side configuration for this vendor.
-        const { count: slots } = await getListingPackageConfig(vendorId);
+        let slots = 0;
         const paystackRef = event.data.reference;
         const amountPaid = (event.data.amount || 0) / 100; // convert from kobo to naira
-        console.log(`🔄 Crediting ${slots} listing slots to vendor: ${vendorId} (ref: ${paystackRef})`);
-        const result = await _processListingPackagePaymentInternal(vendorId, slots, paystackRef, amountPaid);
-        if (result.alreadyProcessed) {
-          console.log(`ℹ️ Duplicate webhook for ref ${paystackRef} — already processed, ignoring`);
+
+        // 1. Check if we have a specific tierId from the new top-up flow
+        if (metadata.tierId) {
+          const tier = await prisma.listingTier.findUnique({
+            where: { id: metadata.tierId }
+          });
+          if (tier) {
+            slots = tier.slots;
+            console.log(`📦 Found ListingTier: ${tier.name} (${slots} slots) for tierId: ${metadata.tierId}`);
+          }
+        }
+
+        // 2. Fallback to legacy global/custom config if no tier found
+        if (!slots) {
+          const config = await getListingPackageConfig(vendorId);
+          slots = config.count;
+          console.log(`📦 Using legacy config: ${slots} slots for vendor: ${vendorId}`);
+        }
+
+        if (slots > 0) {
+          console.log(`🔄 Crediting ${slots} listing slots to vendor: ${vendorId} (ref: ${paystackRef})`);
+          const result = await _processListingPackagePaymentInternal(vendorId, slots, paystackRef, amountPaid);
+          if (result.alreadyProcessed) {
+            console.log(`ℹ️ Duplicate webhook for ref ${paystackRef} — already processed, ignoring`);
+          } else {
+            console.log(`✅ Listing package payment processed for vendor: ${vendorId} (+${slots} slots)`);
+          }
         } else {
-          console.log(`✅ Listing package payment processed for vendor: ${vendorId} (+${slots} slots)`);
+          console.error(`❌ Could not determine slot count for vendor ${vendorId} (tierId: ${metadata.tierId})`);
         }
       } catch (error) {
         console.error(`❌ Error processing listing package payment for vendor ${vendorId}:`, error);
