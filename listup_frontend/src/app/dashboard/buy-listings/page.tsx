@@ -220,84 +220,43 @@ export default function BuyListingsPage() {
       {/* Social Proof Section */}
       <div className="max-w-6xl mx-auto mb-24 px-4">
         <div className="text-center mb-12">
-          <p className="text-gray-500 font-black tracking-[0.2em] uppercase mb-4 text-xs">
-            Trusted by Nigeria's Best Sellers
-          </p>
-          <h2 className="text-4xl font-black text-gray-900">
-            Real Results for Real Vendors
-          </h2>
+          <p className="text-gray-500 font-black tracking-[0.2em] uppercase mb-4 text-xs">Trusted by Nigeria's Best Sellers</p>
+          <h2 className="text-4xl font-black text-gray-900">Real Results for Real Vendors</h2>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-16">
           <div className="bg-gray-50 rounded-3xl p-8 text-center border border-gray-100 hover:border-lime-200 transition-colors">
             <h4 className="text-4xl font-black text-gray-900 mb-2">4,200+</h4>
-            <p className="text-sm font-bold text-gray-500 uppercase tracking-wider">
-              Active Vendors
-            </p>
+            <p className="text-sm font-bold text-gray-500 uppercase tracking-wider">Active Vendors</p>
           </div>
           <div className="bg-gray-50 rounded-3xl p-8 text-center border border-gray-100 hover:border-lime-200 transition-colors">
             <h4 className="text-4xl font-black text-gray-900 mb-2">12k+</h4>
-            <p className="text-sm font-bold text-gray-500 uppercase tracking-wider">
-              Sales This Month
-            </p>
+            <p className="text-sm font-bold text-gray-500 uppercase tracking-wider">Sales This Month</p>
           </div>
           <div className="bg-gray-50 rounded-3xl p-8 text-center border border-gray-100 hover:border-lime-200 transition-colors">
             <h4 className="text-4xl font-black text-gray-900 mb-2">₦280M</h4>
-            <p className="text-sm font-bold text-gray-500 uppercase tracking-wider">
-              Vendor Revenue
-            </p>
+            <p className="text-sm font-bold text-gray-500 uppercase tracking-wider">Vendor Revenue</p>
           </div>
           <div className="bg-gray-50 rounded-3xl p-8 text-center border border-gray-100 hover:border-lime-200 transition-colors">
             <h4 className="text-4xl font-black text-gray-900 mb-2">4.9/5</h4>
-            <p className="text-sm font-bold text-gray-500 uppercase tracking-wider">
-              Success Rate
-            </p>
+            <p className="text-sm font-bold text-gray-500 uppercase tracking-wider">Success Rate</p>
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {[
-            {
-              name: "Ibrahim K.",
-              role: "Tech Vendor",
-              text: "Since upgrading to the Professional bundle, my phone hasn't stopped ringing. The SEO indexing actually works!",
-              img: "1",
-            },
-            {
-              name: "Blessing O.",
-              role: "Fashion Store",
-              text: "The WhatsApp bot integration is a game changer. I handle 5x more orders with half the effort.",
-              img: "2",
-            },
-            {
-              name: "Chidi E.",
-              role: "Auto Dealer",
-              text: "ListUp is the only platform that gives me real value for money. My listings get seen by the right people.",
-              img: "3",
-            },
+            { name: "Ibrahim K.", role: "Tech Vendor", text: "Since upgrading to the Professional bundle, my phone hasn't stopped ringing. The SEO indexing actually works!", img: "1" },
+            { name: "Blessing O.", role: "Fashion Store", text: "The WhatsApp bot integration is a game changer. I handle 5x more orders with half the effort.", img: "2" },
+            { name: "Chidi E.", role: "Auto Dealer", text: "ListUp is the only platform that gives me real value for money. My listings get seen by the right people.", img: "3" }
           ].map((t, i) => (
-            <div
-              key={i}
-              className="bg-white p-8 rounded-3xl border-2 border-gray-50 shadow-sm relative"
-            >
+            <div key={i} className="bg-white p-8 rounded-3xl border-2 border-gray-50 shadow-sm relative">
               <div className="flex gap-1 mb-4">
-                {[1, 2, 3, 4, 5].map((s) => (
-                  <Sparkles
-                    key={s}
-                    size={14}
-                    className="text-yellow-400 fill-current"
-                  />
-                ))}
+                {[1, 2, 3, 4, 5].map(s => <Sparkles key={s} size={14} className="text-yellow-400 fill-current" />)}
               </div>
-              <p className="text-gray-600 font-medium mb-6 italic">
-                "{t.text}"
-              </p>
+              <p className="text-gray-600 font-medium mb-6 italic">"{t.text}"</p>
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-full bg-lime-100 overflow-hidden">
-                  <img
-                    src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${t.img + 20}`}
-                    alt={t.name}
-                  />
+                  <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${t.img + 20}`} alt={t.name} />
                 </div>
                 <div>
                   <h5 className="font-black text-gray-900">{t.name}</h5>

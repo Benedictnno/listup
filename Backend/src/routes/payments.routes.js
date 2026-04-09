@@ -374,6 +374,8 @@ router.post("/webhook", async (req, res) => {
     const metadata = event.data.metadata || {};
     const { adId, kycId, kycRenewal, type, vendorId, listingSlotsToAdd } = metadata;
 
+    console.log("🔍 Webhook Metadata:", JSON.stringify(metadata, null, 2));
+
     // ── Handle Listing Package payments ──────────────────────────────────────
     if (type === "listing_package" && vendorId) {
       try {
@@ -381,14 +383,19 @@ router.post("/webhook", async (req, res) => {
         const paystackRef = event.data.reference;
         const amountPaid = (event.data.amount || 0) / 100; // convert from kobo to naira
 
+        console.log(`🔄 Processing listing package for vendor ${vendorId}, ref: ${paystackRef}`);
+
         // 1. Check if we have a specific tierId from the new top-up flow
         if (metadata.tierId) {
+          console.log(`🔍 Searching for tier with ID: ${metadata.tierId}`);
           const tier = await prisma.listingTier.findUnique({
             where: { id: metadata.tierId }
           });
           if (tier) {
             slots = tier.slots;
             console.log(`📦 Found ListingTier: ${tier.name} (${slots} slots) for tierId: ${metadata.tierId}`);
+          } else {
+            console.warn(`⚠️ Tier with ID ${metadata.tierId} not found in database!`);
           }
         }
 

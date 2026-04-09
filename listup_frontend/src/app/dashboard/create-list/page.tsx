@@ -2,7 +2,13 @@
 import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -18,7 +24,7 @@ export default function CreateListing() {
   const { user } = useAuthStore();
   const router = useRouter();
   console.log(user);
-  
+
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
@@ -32,6 +38,38 @@ export default function CreateListing() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
   const [showLimitModal, setShowLimitModal] = useState(false);
+
+  // Load form data from localStorage on mount
+  useEffect(() => {
+    const savedData = localStorage.getItem("createListingForm");
+    if (savedData) {
+      try {
+        const { title, description, price, categoryId, condition, location } =
+          JSON.parse(savedData);
+        if (title) setTitle(title);
+        if (description) setDescription(description);
+        if (price) setPrice(price);
+        if (categoryId) setCategoryId(categoryId);
+        if (condition) setCondition(condition);
+        if (location) setLocation(location);
+      } catch (err) {
+        console.error("Failed to parse saved form data:", err);
+      }
+    }
+  }, []);
+
+  // Save form data to localStorage whenever a field changes
+  useEffect(() => {
+    const formData = {
+      title,
+      description,
+      price,
+      categoryId,
+      condition,
+      location,
+    };
+    localStorage.setItem("createListingForm", JSON.stringify(formData));
+  }, [title, description, price, categoryId, condition, location]);
 
   // Auto-populate location from user's signup data
   useEffect(() => {
@@ -58,11 +96,7 @@ export default function CreateListing() {
     loadCategories();
   }, []);
 
-  const conditions = [
-    "New",
-    "Like New",
-    "Used"
-  ];
+  const conditions = ["New", "Like New", "Used"];
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -83,13 +117,19 @@ export default function CreateListing() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!image) {
       setError("Please select an image");
       return;
     }
 
-    if (!title.trim() || !description.trim() || !price || !categoryId || !condition) {
+    if (
+      !title.trim() ||
+      !description.trim() ||
+      !price ||
+      !categoryId ||
+      !condition
+    ) {
       setError("Please fill in all required fields");
       return;
     }
@@ -110,16 +150,20 @@ export default function CreateListing() {
         categoryId: categoryId,
         condition,
         location: location.trim(),
-        images: [imageUrl] // Send as array with the uploaded image URL
+        images: [imageUrl], // Send as array with the uploaded image URL
       };
 
       await createListing(listingData);
+      localStorage.removeItem("createListingForm");
       router.push("/dashboard");
     } catch (err: any) {
       console.error("Error creating listing:", err);
-      
+
       // Handle listing limit reached (403 or specific error message)
-      if (err.message?.toLowerCase().includes("limit") || err.response?.status === 403) {
+      if (
+        err.message?.toLowerCase().includes("limit") ||
+        err.response?.status === 403
+      ) {
         setShowLimitModal(true);
         return;
       }
@@ -150,8 +194,10 @@ export default function CreateListing() {
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Basic Information */}
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900">Basic Information</h3>
-              
+              <h3 className="text-lg font-semibold text-gray-900">
+                Basic Information
+              </h3>
+
               <div>
                 <Label htmlFor="title">Title *</Label>
                 <Input
@@ -162,7 +208,9 @@ export default function CreateListing() {
                   maxLength={100}
                   className="mt-1"
                 />
-                <p className="text-sm text-gray-500 mt-1">{title.length}/100 characters</p>
+                <p className="text-sm text-gray-500 mt-1">
+                  {title.length}/100 characters
+                </p>
               </div>
 
               <div>
@@ -176,7 +224,9 @@ export default function CreateListing() {
                   maxLength={500}
                   className="mt-1"
                 />
-                <p className="text-sm text-gray-500 mt-1">{description.length}/500 characters</p>
+                <p className="text-sm text-gray-500 mt-1">
+                  {description.length}/500 characters
+                </p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -205,9 +255,13 @@ export default function CreateListing() {
                     </SelectTrigger>
                     <SelectContent className="bg-white">
                       {loadingCategories ? (
-                        <SelectItem value="loading" disabled>Loading categories...</SelectItem>
+                        <SelectItem value="loading" disabled>
+                          Loading categories...
+                        </SelectItem>
                       ) : categories.length === 0 ? (
-                        <SelectItem value="no-categories" disabled>No categories found</SelectItem>
+                        <SelectItem value="no-categories" disabled>
+                          No categories found
+                        </SelectItem>
                       ) : (
                         categories.map((cat) => (
                           <SelectItem key={cat.id} value={cat.id}>
@@ -223,7 +277,7 @@ export default function CreateListing() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="bg-white">
                   <Label htmlFor="condition">Condition *</Label>
-                  <Select value={condition} onValueChange={setCondition} >
+                  <Select value={condition} onValueChange={setCondition}>
                     <SelectTrigger className="mt-1">
                       <SelectValue placeholder="Select condition" />
                     </SelectTrigger>
@@ -258,11 +312,13 @@ export default function CreateListing() {
 
             {/* Product Image */}
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900">Product Image</h3>
-              
+              <h3 className="text-lg font-semibold text-gray-900">
+                Product Image
+              </h3>
+
               <div className="space-y-3">
                 <Label htmlFor="image">Upload Image *</Label>
-                
+
                 {!imagePreview ? (
                   <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
                     <input
@@ -278,8 +334,12 @@ export default function CreateListing() {
                           <ImagePlus size={32} className="text-gray-400" />
                         </div>
                         <div>
-                          <p className="text-sm font-medium text-gray-900">Click to upload image</p>
-                          <p className="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
+                          <p className="text-sm font-medium text-gray-900">
+                            Click to upload image
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            PNG, JPG, GIF up to 10MB
+                          </p>
                         </div>
                       </div>
                     </label>
@@ -300,7 +360,9 @@ export default function CreateListing() {
                         ×
                       </button>
                     </div>
-                    <p className="text-sm text-gray-500">Image uploaded successfully</p>
+                    <p className="text-sm text-gray-500">
+                      Image uploaded successfully
+                    </p>
                   </div>
                 )}
               </div>
@@ -313,24 +375,25 @@ export default function CreateListing() {
                   <span className="text-red-500 text-lg">⚠️</span>
                   <div className="flex-1">
                     <p className="text-red-600 text-sm font-medium">{error}</p>
-                    {error.includes('categoryId') && (
+                    {error.includes("categoryId") && (
                       <p className="text-red-500 text-xs mt-1">
                         💡 Please select a category from the dropdown above
                       </p>
                     )}
-                    {error.includes('image') && (
+                    {error.includes("image") && (
                       <p className="text-red-500 text-xs mt-1">
                         💡 Please select an image file (JPG, PNG, or GIF)
                       </p>
                     )}
-                    {error.includes('price') && (
+                    {error.includes("price") && (
                       <p className="text-red-500 text-xs mt-1">
                         💡 Please enter a valid price (e.g., 25.99)
                       </p>
                     )}
-                    {error.includes('location') && (
+                    {error.includes("location") && (
                       <p className="text-red-500 text-xs mt-1">
-                        💡 Location is automatically filled from your store address
+                        💡 Location is automatically filled from your store
+                        address
                       </p>
                     )}
                   </div>
@@ -355,7 +418,9 @@ export default function CreateListing() {
       {/* Tips */}
       <div className="mt-8 space-y-4">
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <h4 className="font-medium text-blue-900 mb-2">💡 Tips for Better Listings</h4>
+          <h4 className="font-medium text-blue-900 mb-2">
+            💡 Tips for Better Listings
+          </h4>
           <ul className="text-sm text-blue-800 space-y-1">
             <li>• Use clear, high-quality images in good lighting</li>
             <li>• Write detailed descriptions including any flaws or wear</li>
@@ -366,9 +431,9 @@ export default function CreateListing() {
         </div>
       </div>
 
-      <LimitReachedModal 
-        isOpen={showLimitModal} 
-        onClose={() => setShowLimitModal(false)} 
+      <LimitReachedModal
+        isOpen={showLimitModal}
+        onClose={() => setShowLimitModal(false)}
       />
     </div>
   );
