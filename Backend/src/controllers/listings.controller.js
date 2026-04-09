@@ -1,5 +1,5 @@
-const { validationResult } = require('express-validator');
-const prisma = require('../lib/prisma');
+const { validationResult } = require("express-validator");
+const prisma = require("../lib/prisma");
 
 exports.getAll = async (req, res, next) => {
   try {
@@ -11,19 +11,16 @@ exports.getAll = async (req, res, next) => {
     if (categoryId) filters.categoryId = categoryId;
     if (q) {
       filters.OR = [
-        { title: { contains: q, mode: 'insensitive' } },
-        { description: { contains: q, mode: 'insensitive' } },
-        { location: { contains: q, mode: 'insensitive' } }
+        { title: { contains: q, mode: "insensitive" } },
+        { description: { contains: q, mode: "insensitive" } },
+        { location: { contains: q, mode: "insensitive" } },
       ];
     }
 
     const [items, total] = await Promise.all([
       prisma.listing.findMany({
         where: filters,
-        orderBy: [
-          { boostScore: "desc" },
-          { createdAt: "desc" },
-        ],
+        orderBy: [{ boostScore: "desc" }, { createdAt: "desc" }],
         skip,
         take,
         select: {
@@ -35,7 +32,7 @@ exports.getAll = async (req, res, next) => {
           condition: true,
           createdAt: true,
           category: {
-            select: { id: true, name: true, slug: true }
+            select: { id: true, name: true, slug: true },
           },
           seller: {
             select: {
@@ -46,21 +43,21 @@ exports.getAll = async (req, res, next) => {
                 select: {
                   storeName: true,
                   logo: true,
-                  coverImage: true
-                }
-              }
-            }
-          }
-        }
+                  coverImage: true,
+                },
+              },
+            },
+          },
+        },
       }),
-      prisma.listing.count({ where: filters })
+      prisma.listing.count({ where: filters }),
     ]);
 
     res.json({
       items,
       total,
       page: Number(page),
-      pages: Math.ceil(total / take)
+      pages: Math.ceil(total / take),
     });
   } catch (err) {
     next(err);
@@ -69,7 +66,14 @@ exports.getAll = async (req, res, next) => {
 
 exports.search = async (req, res, next) => {
   try {
-    const { q, categoryId, minPrice, maxPrice, limit = 20, page = 1 } = req.query;
+    const {
+      q,
+      categoryId,
+      minPrice,
+      maxPrice,
+      limit = 20,
+      page = 1,
+    } = req.query;
     const take = Math.min(parseInt(limit), 50);
     const skip = (Math.max(parseInt(page), 1) - 1) * take;
 
@@ -77,9 +81,9 @@ exports.search = async (req, res, next) => {
     if (categoryId) filters.categoryId = categoryId;
     if (q) {
       filters.OR = [
-        { title: { contains: q, mode: 'insensitive' } },
-        { description: { contains: q, mode: 'insensitive' } },
-        { location: { contains: q, mode: 'insensitive' } }
+        { title: { contains: q, mode: "insensitive" } },
+        { description: { contains: q, mode: "insensitive" } },
+        { location: { contains: q, mode: "insensitive" } },
       ];
     }
 
@@ -93,11 +97,9 @@ exports.search = async (req, res, next) => {
     const [items, total] = await Promise.all([
       prisma.listing.findMany({
         where: filters,
-        orderBy: [
-          { boostScore: "desc" },
-          { createdAt: "desc" },
-        ],
-        skip, take,
+        orderBy: [{ boostScore: "desc" }, { createdAt: "desc" }],
+        skip,
+        take,
         select: {
           id: true,
           title: true,
@@ -108,7 +110,7 @@ exports.search = async (req, res, next) => {
           condition: true,
           createdAt: true,
           category: {
-            select: { id: true, name: true, slug: true }
+            select: { id: true, name: true, slug: true },
           },
           seller: {
             select: {
@@ -119,22 +121,21 @@ exports.search = async (req, res, next) => {
                 select: {
                   storeName: true,
                   logo: true,
-                  coverImage: true   // ✅ only fetch cover image
-                }
-              }
-            }
-          }
-        }
+                  coverImage: true, // ✅ only fetch cover image
+                },
+              },
+            },
+          },
+        },
       }),
-      prisma.listing.count({ where: filters })
+      prisma.listing.count({ where: filters }),
     ]);
-
 
     res.json({
       items,
       total,
       page: Number(page),
-      pages: Math.ceil(total / take)
+      pages: Math.ceil(total / take),
     });
   } catch (e) {
     next(e);
@@ -142,13 +143,19 @@ exports.search = async (req, res, next) => {
 };
 
 exports.getOne = async (req, res, next) => {
-
   try {
     const item = await prisma.listing.findUnique({
       where: { id: req.params.id },
       select: {
-        id: true, title: true, description: true, price: true, images: true, location: true,
-        condition: true, createdAt: true, isActive: true,
+        id: true,
+        title: true,
+        description: true,
+        price: true,
+        images: true,
+        location: true,
+        condition: true,
+        createdAt: true,
+        isActive: true,
         category: { select: { id: true, name: true, slug: true } },
         seller: {
           select: {
@@ -160,29 +167,43 @@ exports.getOne = async (req, res, next) => {
               select: {
                 storeName: true,
                 logo: true,
-                coverImage: true
-              }
-            }
-          }
-        }
-      }
+                coverImage: true,
+              },
+            },
+          },
+        },
+      },
     });
-    if (!item) return res.status(404).json({ message: 'Listing not found' });
+    if (!item) return res.status(404).json({ message: "Listing not found" });
     res.json(item);
-  } catch (e) { next(e) }
+  } catch (e) {
+    next(e);
+  }
 };
 
 exports.create = async (req, res, next) => {
   try {
     // Defensive auth checks in case middleware is misconfigured upstream
-    if (!req.user) return res.status(401).json({ message: 'Authentication required' });
-    if (req.user.role !== 'VENDOR') return res.status(403).json({ message: 'Only vendors may create listings' });
+    if (!req.user)
+      return res.status(401).json({ message: "Authentication required" });
+    if (req.user.role !== "VENDOR")
+      return res
+        .status(403)
+        .json({ message: "Only vendors may create listings" });
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { title, description, price, images = [], location, condition, categoryId } = req.body;
+    const {
+      title,
+      description,
+      price,
+      images = [],
+      location,
+      condition,
+      categoryId,
+    } = req.body;
 
     if (!title || !price || !categoryId) {
       return res.status(400).json({ error: "Missing required fields" });
@@ -197,17 +218,17 @@ exports.create = async (req, res, next) => {
         condition,
 
         sellerId: req.user.id,
-        categoryId,             // 👈 assign categoryId
-        images,                 // 👈 directly pass array of URLs
+        categoryId, // 👈 assign categoryId
+        images, // 👈 directly pass array of URLs
       },
     });
 
     // Trigger First Listing Reward (if this vendor was referred)
     try {
-      const ReferralService = require('../services/referral.service');
+      const ReferralService = require("../services/referral.service");
       await ReferralService.completeListingAction(req.user.id, listing.id);
     } catch (e) {
-      console.error('Error triggering listing reward:', e);
+      console.error("Error triggering listing reward:", e);
       // Don't fail the listing creation if referral tracking fails
     }
 
@@ -217,30 +238,56 @@ exports.create = async (req, res, next) => {
   }
 };
 
-
 exports.update = async (req, res, next) => {
   try {
-    const exists = await prisma.listing.findUnique({ where: { id: req.params.id } });
-    if (!exists) return res.status(404).json({ message: 'Listing not found' });
-    if (exists.sellerId !== req.user.id) return res.status(403).json({ message: 'Not your listing' });
+    const exists = await prisma.listing.findUnique({
+      where: { id: req.params.id },
+    });
+    if (!exists) return res.status(404).json({ message: "Listing not found" });
+    if (exists.sellerId !== req.user.id)
+      return res.status(403).json({ message: "Not your listing" });
 
     const listing = await prisma.listing.update({
       where: { id: req.params.id },
-      data: { ...req.body, updatedAt: new Date() }
+      data: { ...req.body, updatedAt: new Date() },
     });
     res.json(listing);
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 };
 
 exports.remove = async (req, res, next) => {
   try {
-    const exists = await prisma.listing.findUnique({ where: { id: req.params.id } });
-    if (!exists) return res.status(404).json({ message: 'Listing not found' });
-    if (exists.sellerId !== req.user.id) return res.status(403).json({ message: 'Not your listing' });
+    const exists = await prisma.listing.findUnique({
+      where: { id: req.params.id },
+    });
+    if (!exists) return res.status(404).json({ message: "Listing not found" });
+    if (exists.sellerId !== req.user.id)
+      return res.status(403).json({ message: "Not your listing" });
 
-    await prisma.listing.delete({ where: { id: req.params.id } });
+    // Clean up related records before deleting the listing to avoid referential integrity errors
+    await prisma.$transaction([
+      prisma.listingView.deleteMany({ where: { listingId: req.params.id } }),
+      prisma.listingSaveEvent.deleteMany({
+        where: { listingId: req.params.id },
+      }),
+      prisma.listingMessageClick.deleteMany({
+        where: { listingId: req.params.id },
+      }),
+      prisma.favorite.deleteMany({ where: { listingId: req.params.id } }),
+      prisma.ad.deleteMany({ where: { productId: req.params.id } }),
+      prisma.conversation.updateMany({
+        where: { listingId: req.params.id },
+        data: { listingId: null },
+      }),
+      prisma.listing.delete({ where: { id: req.params.id } }),
+    ]);
+
     res.status(204).send();
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 };
 
 exports.getByVendorId = async (req, res) => {
@@ -253,7 +300,7 @@ exports.getByVendorId = async (req, res) => {
     }
 
     const listings = await prisma.listing.findMany({
-      where: { sellerId: vendorId }
+      where: { sellerId: vendorId },
       // include: {
       //   vendor: true, // optional, if you want vendor details returned
       // },
@@ -270,7 +317,7 @@ exports.getByVendorId = async (req, res) => {
 exports.getPublicVendorListings = async (req, res) => {
   try {
     const { vendorId } = req.params;
-    const { page = 1, limit = 20, sort = 'newest' } = req.query;
+    const { page = 1, limit = 20, sort = "newest" } = req.query;
 
     const take = Math.min(parseInt(limit), 50);
     const skip = (Math.max(parseInt(page), 1) - 1) * take;
@@ -279,7 +326,7 @@ exports.getPublicVendorListings = async (req, res) => {
     const vendor = await prisma.user.findUnique({
       where: {
         id: vendorId,
-        role: 'VENDOR'
+        role: "VENDOR",
       },
       select: {
         id: true,
@@ -297,16 +344,16 @@ exports.getPublicVendorListings = async (req, res) => {
             businessHours: true,
             socialMedia: true,
             isVerified: true,
-            storeAnnouncement: true
-          }
-        }
-      }
+            storeAnnouncement: true,
+          },
+        },
+      },
     });
 
     if (!vendor) {
       return res.status(404).json({
         success: false,
-        message: 'Vendor not found'
+        message: "Vendor not found",
       });
     }
 
@@ -315,12 +362,13 @@ exports.getPublicVendorListings = async (req, res) => {
       prisma.listing.findMany({
         where: {
           sellerId: vendorId,
-          isActive: true // Only show active listings
+          isActive: true, // Only show active listings
         },
         orderBy: (() => {
           let orders = [{ boostScore: "desc" }];
           if (sort === "price_asc") orders.push({ price: "asc" });
-          else if (sort === "popular") orders.push({ ListingView: { _count: "desc" } });
+          else if (sort === "popular")
+            orders.push({ ListingView: { _count: "desc" } });
           else orders.push({ createdAt: "desc" });
           return orders;
         })(),
@@ -339,17 +387,17 @@ exports.getPublicVendorListings = async (req, res) => {
             select: {
               id: true,
               name: true,
-              slug: true
-            }
-          }
-        }
+              slug: true,
+            },
+          },
+        },
       }),
       prisma.listing.count({
         where: {
           sellerId: vendorId,
-          isActive: true
-        }
-      })
+          isActive: true,
+        },
+      }),
     ]);
 
     res.json({
@@ -369,23 +417,22 @@ exports.getPublicVendorListings = async (req, res) => {
           isVerified: vendor.vendorProfile?.isVerified,
           storeAnnouncement: vendor.vendorProfile?.storeAnnouncement,
           phone: vendor.phone,
-          profileImage: vendor.profileImage
+          profileImage: vendor.profileImage,
         },
         listings,
         pagination: {
           total,
           page: Number(page),
           pages: Math.ceil(total / take),
-          limit: take
-        }
-      }
+          limit: take,
+        },
+      },
     });
-
   } catch (error) {
     console.error("Error fetching public vendor listings:", error);
     res.status(500).json({
       success: false,
-      message: "Server error while fetching vendor listings"
+      message: "Server error while fetching vendor listings",
     });
   }
 };
@@ -394,7 +441,7 @@ exports.getPublicVendorListings = async (req, res) => {
 exports.getVendorListingsByStore = async (req, res) => {
   try {
     const { storeName } = req.params;
-    const { page = 1, limit = 20, sort = 'newest' } = req.query;
+    const { page = 1, limit = 20, sort = "newest" } = req.query;
 
     const take = Math.min(parseInt(limit), 50);
     const skip = (Math.max(parseInt(page), 1) - 1) * take;
@@ -402,13 +449,13 @@ exports.getVendorListingsByStore = async (req, res) => {
     // Find vendor by store name
     const vendor = await prisma.user.findFirst({
       where: {
-        role: 'VENDOR',
+        role: "VENDOR",
         vendorProfile: {
           storeName: {
             contains: storeName,
-            mode: 'insensitive' // Case-insensitive search
-          }
-        }
+            mode: "insensitive", // Case-insensitive search
+          },
+        },
       },
       select: {
         id: true,
@@ -426,16 +473,16 @@ exports.getVendorListingsByStore = async (req, res) => {
             businessHours: true,
             socialMedia: true,
             isVerified: true,
-            storeAnnouncement: true
-          }
-        }
-      }
+            storeAnnouncement: true,
+          },
+        },
+      },
     });
 
     if (!vendor) {
       return res.status(404).json({
         success: false,
-        message: 'Store not found'
+        message: "Store not found",
       });
     }
 
@@ -444,12 +491,13 @@ exports.getVendorListingsByStore = async (req, res) => {
       prisma.listing.findMany({
         where: {
           sellerId: vendor.id,
-          isActive: true
+          isActive: true,
         },
         orderBy: (() => {
           let orders = [{ boostScore: "desc" }];
           if (sort === "price_asc") orders.push({ price: "asc" });
-          else if (sort === "popular") orders.push({ ListingView: { _count: "desc" } });
+          else if (sort === "popular")
+            orders.push({ ListingView: { _count: "desc" } });
           else orders.push({ createdAt: "desc" });
           return orders;
         })(),
@@ -468,17 +516,17 @@ exports.getVendorListingsByStore = async (req, res) => {
             select: {
               id: true,
               name: true,
-              slug: true
-            }
-          }
-        }
+              slug: true,
+            },
+          },
+        },
       }),
       prisma.listing.count({
         where: {
           sellerId: vendor.id,
-          isActive: true
-        }
-      })
+          isActive: true,
+        },
+      }),
     ]);
 
     res.json({
@@ -498,41 +546,37 @@ exports.getVendorListingsByStore = async (req, res) => {
           isVerified: vendor.vendorProfile?.isVerified,
           storeAnnouncement: vendor.vendorProfile?.storeAnnouncement,
           phone: vendor.phone,
-          profileImage: vendor.profileImage
+          profileImage: vendor.profileImage,
         },
         listings,
         pagination: {
           total,
           page: Number(page),
           pages: Math.ceil(total / take),
-          limit: take
-        }
-      }
+          limit: take,
+        },
+      },
     });
-
   } catch (error) {
     console.error("Error fetching vendor listings by store:", error);
     res.status(500).json({
       success: false,
-      message: "Server error while fetching vendor listings"
+      message: "Server error while fetching vendor listings",
     });
   }
 };
-
-
-
 
 // Phase 1 - Content-Based Filtering
 exports.getSimilarListings = async (req, res, next) => {
   try {
     const { id } = req.params;
-    
+
     const listing = await prisma.listing.findUnique({
       where: { id },
-      select: { categoryId: true, price: true, sellerId: true, location: true }
+      select: { categoryId: true, price: true, sellerId: true, location: true },
     });
 
-    if (!listing) return res.status(404).json({ message: 'Not found' });
+    if (!listing) return res.status(404).json({ message: "Not found" });
 
     // Price band: ±40% of current price
     const minPrice = listing.price * 0.6;
@@ -541,26 +585,28 @@ exports.getSimilarListings = async (req, res, next) => {
     const similar = await prisma.listing.findMany({
       where: {
         isActive: true,
-        id: { not: id },                    // exclude current
+        id: { not: id }, // exclude current
         sellerId: { not: listing.sellerId }, // exclude same vendor
         categoryId: listing.categoryId,
-        price: { gte: minPrice, lte: maxPrice }
+        price: { gte: minPrice, lte: maxPrice },
       },
-      orderBy: [
-        { boostScore: 'desc' },
-        { createdAt: 'desc' }
-      ],
+      orderBy: [{ boostScore: "desc" }, { createdAt: "desc" }],
       take: 8,
       select: {
-        id: true, title: true, price: true,
-        images: true, location: true, condition: true,
+        id: true,
+        title: true,
+        price: true,
+        images: true,
+        location: true,
+        condition: true,
         seller: {
           select: {
-            id: true, name: true,
-            vendorProfile: { select: { storeName: true, logo: true } }
-          }
-        }
-      }
+            id: true,
+            name: true,
+            vendorProfile: { select: { storeName: true, logo: true } },
+          },
+        },
+      },
     });
 
     res.json(similar);
@@ -581,8 +627,8 @@ exports.getAllListingsAdmin = async (req, res, next) => {
       categoryId,
       vendorId,
       search,
-      sortBy = 'createdAt',
-      sortOrder = 'desc'
+      sortBy = "createdAt",
+      sortOrder = "desc",
     } = req.query;
 
     const take = Math.min(parseInt(limit), 100);
@@ -591,22 +637,22 @@ exports.getAllListingsAdmin = async (req, res, next) => {
     // Build filters
     const filters = {};
     if (status) {
-      if (status === 'active') filters.isActive = true;
-      else if (status === 'inactive') filters.isActive = false;
+      if (status === "active") filters.isActive = true;
+      else if (status === "inactive") filters.isActive = false;
     }
     if (categoryId) filters.categoryId = categoryId;
     if (vendorId) filters.sellerId = vendorId;
     if (search) {
       filters.OR = [
-        { title: { contains: search, mode: 'insensitive' } },
-        { description: { contains: search, mode: 'insensitive' } }
+        { title: { contains: search, mode: "insensitive" } },
+        { description: { contains: search, mode: "insensitive" } },
       ];
     }
 
     // Build sort
     const orderBy = {};
-    if (sortBy === 'price') orderBy.price = sortOrder;
-    else if (sortBy === 'title') orderBy.title = sortOrder;
+    if (sortBy === "price") orderBy.price = sortOrder;
+    else if (sortBy === "title") orderBy.title = sortOrder;
     else orderBy.createdAt = sortOrder;
 
     const [items, total] = await Promise.all([
@@ -627,7 +673,7 @@ exports.getAllListingsAdmin = async (req, res, next) => {
           createdAt: true,
           updatedAt: true,
           category: {
-            select: { id: true, name: true, slug: true }
+            select: { id: true, name: true, slug: true },
           },
           seller: {
             select: {
@@ -637,14 +683,14 @@ exports.getAllListingsAdmin = async (req, res, next) => {
               vendorProfile: {
                 select: {
                   storeName: true,
-                  storeAddress: true
-                }
-              }
-            }
-          }
-        }
+                  storeAddress: true,
+                },
+              },
+            },
+          },
+        },
       }),
-      prisma.listing.count({ where: filters })
+      prisma.listing.count({ where: filters }),
     ]);
 
     res.json({
@@ -655,9 +701,9 @@ exports.getAllListingsAdmin = async (req, res, next) => {
           total,
           page: Number(page),
           pages: Math.ceil(total / take),
-          limit: take
-        }
-      }
+          limit: take,
+        },
+      },
     });
   } catch (err) {
     next(err);
@@ -668,13 +714,13 @@ exports.getAllListingsAdmin = async (req, res, next) => {
 exports.updateListingAdmin = async (req, res, next) => {
   try {
     const exists = await prisma.listing.findUnique({
-      where: { id: req.params.id }
+      where: { id: req.params.id },
     });
 
     if (!exists) {
       return res.status(404).json({
         success: false,
-        message: 'Listing not found'
+        message: "Listing not found",
       });
     }
 
@@ -682,27 +728,27 @@ exports.updateListingAdmin = async (req, res, next) => {
       where: { id: req.params.id },
       data: {
         ...req.body,
-        updatedAt: new Date()
+        updatedAt: new Date(),
       },
       include: {
         category: {
-          select: { id: true, name: true, slug: true }
+          select: { id: true, name: true, slug: true },
         },
         seller: {
           select: {
             id: true,
             name: true,
             vendorProfile: {
-              select: { storeName: true }
-            }
-          }
-        }
-      }
+              select: { storeName: true },
+            },
+          },
+        },
+      },
     });
 
     res.json({
       success: true,
-      data: listing
+      data: listing,
     });
   } catch (e) {
     next(e);
@@ -713,23 +759,37 @@ exports.updateListingAdmin = async (req, res, next) => {
 exports.deleteListingAdmin = async (req, res, next) => {
   try {
     const exists = await prisma.listing.findUnique({
-      where: { id: req.params.id }
+      where: { id: req.params.id },
     });
 
     if (!exists) {
       return res.status(404).json({
         success: false,
-        message: 'Listing not found'
+        message: "Listing not found",
       });
     }
 
-    await prisma.listing.delete({
-      where: { id: req.params.id }
-    });
+    // Clean up related records before deleting the listing to avoid referential integrity errors
+    await prisma.$transaction([
+      prisma.listingView.deleteMany({ where: { listingId: req.params.id } }),
+      prisma.listingSaveEvent.deleteMany({
+        where: { listingId: req.params.id },
+      }),
+      prisma.listingMessageClick.deleteMany({
+        where: { listingId: req.params.id },
+      }),
+      prisma.favorite.deleteMany({ where: { listingId: req.params.id } }),
+      prisma.ad.deleteMany({ where: { productId: req.params.id } }),
+      prisma.conversation.updateMany({
+        where: { listingId: req.params.id },
+        data: { listingId: null },
+      }),
+      prisma.listing.delete({ where: { id: req.params.id } }),
+    ]);
 
     res.json({
       success: true,
-      message: 'Listing deleted successfully'
+      message: "Listing deleted successfully",
     });
   } catch (e) {
     next(e);
@@ -744,38 +804,50 @@ exports.bulkActionAdmin = async (req, res, next) => {
     if (!listingIds || !Array.isArray(listingIds) || listingIds.length === 0) {
       return res.status(400).json({
         success: false,
-        message: 'listingIds array is required'
+        message: "listingIds array is required",
       });
     }
 
-    if (!['activate', 'deactivate', 'delete'].includes(action)) {
+    if (!["activate", "deactivate", "delete"].includes(action)) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid action. Must be: activate, deactivate, or delete'
+        message: "Invalid action. Must be: activate, deactivate, or delete",
       });
     }
 
     let result;
-    if (action === 'activate') {
+    if (action === "activate") {
       result = await prisma.listing.updateMany({
         where: { id: { in: listingIds } },
-        data: { isActive: true, updatedAt: new Date() }
+        data: { isActive: true, updatedAt: new Date() },
       });
-    } else if (action === 'deactivate') {
+    } else if (action === "deactivate") {
       result = await prisma.listing.updateMany({
         where: { id: { in: listingIds } },
-        data: { isActive: false, updatedAt: new Date() }
+        data: { isActive: false, updatedAt: new Date() },
       });
     } else if (action === 'delete') {
-      result = await prisma.listing.deleteMany({
-        where: { id: { in: listingIds } }
-      });
+      // Clean up related records for all listings being deleted
+      await prisma.$transaction([
+        prisma.listingView.deleteMany({ where: { listingId: { in: listingIds } } }),
+        prisma.listingSaveEvent.deleteMany({ where: { listingId: { in: listingIds } } }),
+        prisma.listingMessageClick.deleteMany({ where: { listingId: { in: listingIds } } }),
+        prisma.favorite.deleteMany({ where: { listingId: { in: listingIds } } }),
+        prisma.ad.deleteMany({ where: { productId: { in: listingIds } } }),
+        prisma.conversation.updateMany({
+          where: { listingId: { in: listingIds } },
+          data: { listingId: null }
+        }),
+        prisma.listing.deleteMany({ where: { id: { in: listingIds } } })
+      ]);
+      // result for delete case is slightly different for deleteMany
+      result = { count: listingIds.length };
     }
 
     res.json({
       success: true,
       message: `Successfully ${action}d ${result.count} listing(s)`,
-      count: result.count
+      count: result.count,
     });
   } catch (e) {
     next(e);

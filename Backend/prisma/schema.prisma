@@ -500,7 +500,7 @@ model Favorite {
   createdAt DateTime @default(now())
 
   user    User    @relation(fields: [userId], references: [id])
-  listing Listing @relation(fields: [listingId], references: [id])
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
 
   @@unique([userId, listingId])
   @@index([userId])
@@ -544,7 +544,7 @@ model Ad {
   store   VendorProfile? @relation(fields: [storeId], references: [id])
 
   productId String?  @db.ObjectId
-  product   Listing? @relation(fields: [productId], references: [id])
+  product   Listing? @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   appliesToAllProducts Boolean? @default(false)
 
@@ -717,7 +717,7 @@ model Advertisement {
 model ListingView {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
   listingId String   @db.ObjectId
-  listing   Listing  @relation(fields: [listingId], references: [id])
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
   userId    String?  @db.ObjectId
   user      User?    @relation(fields: [userId], references: [id])
   sessionId String?
@@ -730,7 +730,7 @@ model ListingView {
 model ListingSaveEvent {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
   listingId String   @db.ObjectId
-  listing   Listing  @relation(fields: [listingId], references: [id])
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
   userId    String   @db.ObjectId
   user      User     @relation(fields: [userId], references: [id])
   savedAt   DateTime @default(now())
@@ -742,7 +742,7 @@ model ListingSaveEvent {
 model ListingMessageClick {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
   listingId String   @db.ObjectId
-  listing   Listing  @relation(fields: [listingId], references: [id])
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
   userId    String?  @db.ObjectId
   user      User?    @relation(fields: [userId], references: [id])
   clickedAt DateTime @default(now())
@@ -791,7 +791,7 @@ model Conversation {
   
   // Optional: link to specific listing (null for general vendor chat)
   listingId     String?   @db.ObjectId
-  listing       Listing?  @relation(fields: [listingId], references: [id])
+  listing       Listing?  @relation(fields: [listingId], references: [id], onDelete: SetNull)
   
   // Participants
   buyerId       String    @db.ObjectId
