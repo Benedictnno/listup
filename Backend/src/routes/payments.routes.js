@@ -6,6 +6,7 @@ const { auth, allow } = require("../middleware/auth");
 const { checkFeature } = require("../middleware/featureFlag");
 const KYCCtrl = require("../controllers/kyc.controller");
 const crypto = require("crypto");
+const { getFrontendUrl } = require("../utils/url");
 
 const router = express.Router();
 
@@ -117,7 +118,7 @@ router.post("/initialize", auth, checkFeature('listing_promotion'), async (req, 
         email,
         amount: amount * 100, // Paystack expects kobo
         metadata: { adId },
-        callback_url: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/dashboard/promote/payments/${adId}/success`,
+        callback_url: `${getFrontendUrl()}/dashboard/promote/payments/${adId}/success`,
       },
       {
         headers: {
@@ -169,7 +170,7 @@ router.post("/kyc/initialize", auth, allow('VENDOR'), checkFeature('kyc_system')
           vendorId: vendorId,
           hasReferral: kyc.hasReferral,
         },
-        callback_url: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/kyc/payment/success`,
+        callback_url: `${getFrontendUrl()}/kyc/payment/success`,
       },
       {
         headers: {
@@ -223,7 +224,7 @@ router.post("/kyc/renew/initialize", auth, allow('VENDOR'), async (req, res) => 
           vendorId: vendorId,
           kycRenewal: true,
         },
-        callback_url: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/kyc/payment/success`,
+        callback_url: `${getFrontendUrl()}/kyc/payment/success`,
       },
       {
         headers: {
@@ -322,7 +323,7 @@ router.post("/listing-package/initialize", auth, allow('VENDOR'), async (req, re
           vendorId,
           listingSlotsToAdd: config.count,
         },
-        callback_url: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/dashboard/buy-listings/success`,
+        callback_url: `${getFrontendUrl()}/dashboard/buy-listings/success`,
       },
       {
         headers: { Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}` },

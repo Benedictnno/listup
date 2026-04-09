@@ -77,9 +77,9 @@ export default function BuyListingsPage() {
             </div>
 
             {/* Pricing Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-10 max-w-6xl mx-auto mb-20">
+            <div className="flex md:grid md:grid-cols-3 gap-6 md:gap-10 max-w-6xl mx-auto mb-20 overflow-x-auto pb-8 snap-x snap-mandatory px-4 md:px-0">
                 {tiers.map((tier) => (
-                    <Card key={tier.id} className={`relative group flex flex-col overflow-hidden border-2 transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 ${tier.name === 'Professional' ? 'border-lime-500 ring-4 ring-lime-50 shadow-xl z-10' : 'border-gray-100'}`}>
+                    <Card key={tier.id} className={`snap-center shrink-0 w-[85vw] md:w-auto relative group flex flex-col overflow-hidden border-2 transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 ${tier.name === 'Professional' ? 'border-lime-500 ring-4 ring-lime-50 shadow-xl z-10' : 'border-gray-100'}`}>
                         {tier.name === 'Professional' && (
                             <div className="bg-lime-500 text-white text-center py-2 text-xs font-black uppercase tracking-widest">
                                 Most Popular Value
@@ -107,7 +107,7 @@ export default function BuyListingsPage() {
                                     <span className="font-bold text-gray-900">{tier.slots} Premium Listing Slots</span>
                                 </div>
                                 {[
-                                    "No expiration on slots",
+                                    "Limited-time First Purchase Discount",
                                     "SEO Optimized indexing",
                                     "Verified Vendor badge",
                                     "WhatsApp bot integration"
@@ -140,6 +140,29 @@ export default function BuyListingsPage() {
                 ))}
             </div>
 
+            {/* Social Proof */}
+            <div className="max-w-5xl mx-auto mb-24 px-4 text-center">
+                <p className="text-gray-500 font-bold tracking-widest uppercase mb-8 text-sm">Trusted by Nigeria's Best Sellers</p>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-4">
+                     <div className="space-y-1">
+                          <h4 className="text-4xl font-black text-gray-900">4,200+</h4>
+                          <p className="text-sm font-medium text-gray-500">Active Vendors</p>
+                     </div>
+                     <div className="space-y-1">
+                          <h4 className="text-4xl font-black text-gray-900">12k+</h4>
+                          <p className="text-sm font-medium text-gray-500">Items Sold This Month</p>
+                     </div>
+                     <div className="space-y-1">
+                          <h4 className="text-4xl font-black text-gray-900">₦280M</h4>
+                          <p className="text-sm font-medium text-gray-500">Vendor Revenue</p>
+                     </div>
+                     <div className="space-y-1">
+                          <h4 className="text-4xl font-black text-gray-900">4.9/5</h4>
+                          <p className="text-sm font-medium text-gray-500">Seller Satisfaction</p>
+                     </div>
+                </div>
+            </div>
+
             {/* Benefit Breakdowns */}
             <div className="max-w-4xl mx-auto mb-24">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
@@ -163,7 +186,7 @@ export default function BuyListingsPage() {
                 <h2 className="text-3xl font-black text-center text-gray-900 mb-12">Frequently Asked Questions</h2>
                 <div className="space-y-8">
                     {[
-                        { q: "Do my listing slots expire?", a: "No. Your purchased listing slots never expire. You can use them today or six months from now." },
+                        { q: "Is there a discount for first-time buyers?", a: "Yes! First-time buyers automatically receive a limited-time 20% discount on their first bundle purchase." },
                         { q: "Can I upgrade my package later?", a: "Yes. You can purchase additional bundles at any time. New slots are simply added to your current balance." },
                         { q: "What happens if a buyer reports me?", a: "We maintain high standards. If a listing is removed due to policy violations, the slot is not refunded." }
                     ].map((faq, i) => (

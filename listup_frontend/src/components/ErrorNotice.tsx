@@ -21,25 +21,25 @@ export default function ErrorNotice({ message, retryCount = 0 }: Props) {
         <div className="flex-1 space-y-2">
           <p className="font-medium text-red-800">{message}</p>
 
-          {lower && (
+          {(lower.includes('email') || lower.includes('user')) && !lower.includes('password') && (
             <div className="text-xs text-red-600 bg-red-100 p-2 rounded-lg">
               <p className="font-medium mb-1">💡 Helpful tips:</p>
               <ul className="space-y-1">
                 <li>• Check if your email address is spelled correctly</li>
                 <li>• Make sure you're using the email you registered with</li>
-                <ul className="space-y-1">
-                  <li>• Check if Caps Lock is turned off</li>
-                  <li>• Make sure you're using the correct password</li>
-                </ul>
               </ul>
             </div>
           )}
 
-          {lower.includes('password') && (
+          {lower.includes('password') || lower.includes('credentials') ? (
             <div className="text-xs text-red-600 bg-red-100 p-2 rounded-lg">
               <p className="font-medium mb-1">💡 Helpful tips:</p>
+              <ul className="space-y-1">
+                <li>• Check if Caps Lock is turned off</li>
+                <li>• Make sure you're using the correct password</li>
+              </ul>
             </div>
-          )}
+          ) : null}
 
           {lower.includes('account not found') && (
             <div className="text-xs text-red-600 bg-red-100 p-2 rounded-lg">

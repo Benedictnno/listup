@@ -4,6 +4,7 @@ const axios = require('axios');
 const prisma = require('../lib/prisma');
 const { auth } = require('../middleware/auth');
 
+const { getFrontendUrl } = require('../utils/url');
 const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY;
 
 // Initialize payment
@@ -67,7 +68,7 @@ router.post('/initialize', auth, async (req, res) => {
                     purpose: 'KYC_VERIFICATION',
                     hasReferral: hasReferral
                 },
-                callback_url: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/dashboard/kyc-payment?verify=true`
+                callback_url: `${getFrontendUrl()}/dashboard/kyc-payment?verify=true`
             },
             {
                 headers: {

@@ -2,6 +2,7 @@ const prisma = require('../lib/prisma');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const { sendEmailVerification } = require('../lib/email');
+const { getFrontendUrl } = require('../utils/url');
 
 // Get all settings for a user
 exports.getUserSettings = async (req, res, next) => {
@@ -236,7 +237,7 @@ exports.updatePersonalInfo = async (req, res, next) => {
         }
       });
 
-      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+      const frontendUrl = getFrontendUrl();
       const verificationLink = `${frontendUrl}/verify-email?token=${verificationToken}`;
       await sendEmailVerification(updatedUser.email, verificationLink, updatedUser.name);
 

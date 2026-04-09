@@ -10,6 +10,7 @@ import { useAuthStore } from "@/store/authStore";
 import { createListing } from "@/lib/api/listing";
 import { uploadImage } from "@/lib/api/upload";
 import { fetchCategories, Category } from "@/lib/api/categories";
+import { ImagePlus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { LimitReachedModal } from "@/components/dashboard/LimitReachedModal";
 
@@ -273,8 +274,8 @@ export default function CreateListing() {
                     />
                     <label htmlFor="image" className="cursor-pointer">
                       <div className="space-y-2">
-                        <div className="mx-auto w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
-                          <span className="text-2xl">📷</span>
+                        <div className="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
+                          <ImagePlus size={32} className="text-gray-400" />
                         </div>
                         <div>
                           <p className="text-sm font-medium text-gray-900">Click to upload image</p>

@@ -12,8 +12,8 @@ export function VendorListingEmptyState({ hasFilters, isLimitReached }: VendorLi
     return (
         <Card>
             <CardContent className="p-12 text-center">
-                <div className="text-gray-400 mb-4">
-                    <Package size={48} className="mx-auto" />
+                <div className="mx-auto bg-gray-100 rounded-full h-24 w-24 flex items-center justify-center mb-6">
+                    <Package size={40} className="text-gray-400" />
                 </div>
                 <h3 className="text-lg font-medium text-gray-900 mb-2">
                     {isLimitReached ? 'Limit Reached' : 'No listings found'}

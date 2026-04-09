@@ -124,24 +124,10 @@ export default function ListingDetails({ listing }: { listing: Listing }) {
             </div>
           </div>
 
-          {/* Thumbnail Gallery */}
-          {/* <div className="flex gap-3 mt-4">
-            {listing.images.map((img, idx) => (
-              <button key={idx} onClick={() => setSelectedImage(img)} className={`rounded-lg overflow-hidden border-2 ${selectedImage === img ? 'border-green-600' : 'border-transparent'}`}>
-                <Image
-                  src={img}
-                  alt={`Thumbnail ${idx + 1}`}
-                  width={80}
-                  height={80}
-                  className="w-20 h-20 object-cover object-center"
-                />
-              </button>
-            ))}
-          </div> */}
+
 
           <div className="my-2">
-            {/* <VerifiedBadge seller={listing.seller} /> */}
-            {/* <LocationMarkerIcon className="w-5 h-5 text-gray-600" /> */}
+
             {listing.location}
           </div>
           <div>
@@ -162,7 +148,6 @@ export default function ListingDetails({ listing }: { listing: Listing }) {
                 ₦ {listing.price.toLocaleString()}
               </p>
               <SectionEyebrow > <span className="text-sm text-gray-500">{listing.condition}</span> </SectionEyebrow>
-              {/* <span className="text-sm text-gray-500">{listing.condition}</span> */}
             </div>
             <div className="ml-4">
               <button
@@ -222,22 +207,7 @@ export default function ListingDetails({ listing }: { listing: Listing }) {
                 </div>
               </div>
             </Link>
-            {/* <div className="flex gap-2 mt-3">
-              {showPhone ? <button className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-xl shadow hover:bg-green-700" onClick={() => setShowPhone(false)}>
-                <Phone size={18} /> {listing.seller.phone}
-              </button> : <button className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-xl shadow hover:bg-green-700" onClick={() => setShowPhone(true)}>
-                <Phone size={18} /> Show Contact
-              </button>}
-              <button
-                className="flex items-center gap-2 px-2 py-1 border rounded-xl shadow hover:bg-gray-100"
-                onClick={() => {
-                  handleCopy(listing.seller.phone)
-                }}
-              >
-                <ClipboardCopy size={24} /> copy number
-              </button>
 
-            </div> */}
 
             <div className="space-y-3 ">
               <ChatButton
@@ -247,36 +217,7 @@ export default function ListingDetails({ listing }: { listing: Listing }) {
                 className="w-full  bg-green-600 hover:bg-green-700 text-white rounded-xl py-6 text-lg font-bold shadow-lg mt-3 shadow-green-200"
               />
 
-              {/* <div className="flex flex-col gap-2">
-                <button
-                  onClick={() => {
-                    const raw = (listing.seller.phone || "").replace(/[^0-9]/g, "");
-                    if (!raw) {
-                      alert("Seller has no WhatsApp number available.");
-                      return;
-                    }
-                    let phone = raw;
-                    if (phone.length === 11 && phone.startsWith("0")) {
-                      phone = `234${phone.slice(1)}`;
-                    }
 
-                    const origin = typeof window !== 'undefined' ? window.location.origin : '';
-                    const listingUrl = `${origin}/listings/${listing.id}`;
-                    const text = encodeURIComponent(
-                      `Hi ${listing.seller.name}. I found your item on Listup.ng\n\nProduct: ${listing.title}\nPrice: ₦${listing.price.toLocaleString()}\nLink: ${listingUrl}`
-                    );
-                    const url = `https://wa.me/${phone}?text=${text}`;
-                    trackListingMessageClick(listing.id);
-                    window.open(url, '_blank');
-                  }}
-                  className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-green-600 px-4 py-3 text-green-600 hover:bg-green-50 transition-colors text-sm font-medium"
-                >
-                  <Send size={16} /> Send on WhatsApp
-                </button>
-                <p className="text-[10px] text-center text-gray-400">
-                  Recommended: Use in-app chat for better security and 30-day history.
-                </p>
-              </div> */}
             </div>
           </div>
 

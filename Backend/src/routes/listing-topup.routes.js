@@ -3,6 +3,8 @@ const prisma = require("../lib/prisma");
 const { auth } = require("../middleware/auth");
 const axios = require("axios");
 
+const { getFrontendUrl } = require("../utils/url");
+
 // Initialize a listing top-up payment
 router.post("/initialize", auth, async (req, res, next) => {
   try {
@@ -30,7 +32,7 @@ router.post("/initialize", auth, async (req, res, next) => {
           tierId: tier.id,
           listingSlotsToAdd: tier.slots,
         },
-        callback_url: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/dashboard/buy-listings/success`,
+        callback_url: `${getFrontendUrl()}/dashboard/buy-listings/success`,
       },
       {
         headers: { Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}` },

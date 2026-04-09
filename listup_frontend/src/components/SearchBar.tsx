@@ -19,16 +19,6 @@ export default function SearchBar() {
   const [isSearching, setIsSearching] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
 
-  // Mock search suggestions - in real app, these would come from API
-  const [suggestions] = useState<SearchSuggestion[]>([
-    { id: '1', text: 'iPhone 13', type: 'trending', icon: <TrendingUp size={16} /> },
-    { id: '2', text: 'Samsung Galaxy', type: 'trending', icon: <TrendingUp size={16} /> },
-    { id: '3', text: 'pefume', type: 'trending', icon: <TrendingUp size={16} /> },
-    { id: '4', text: 'school gate', type: 'location', icon: <MapPin size={16} /> },
-    { id: '5', text: 'iworoko', type: 'location', icon: <MapPin size={16} /> },
-    { id: '6', text: 'Phase 2', type: 'location', icon: <MapPin size={16} /> },
-  ]);
-
   // Recent searches from localStorage
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
 
@@ -141,10 +131,6 @@ export default function SearchBar() {
   const renderSuggestions = () => {
     if (!showSuggestions) return null;
 
-    const filteredSuggestions = suggestions.filter(suggestion =>
-      suggestion.text.toLowerCase().includes(inputValue.toLowerCase())
-    );
-
     return (
       <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-96 overflow-y-auto">
         {/* Recent Searches */}
@@ -172,38 +158,6 @@ export default function SearchBar() {
               ))}
             </div>
           </div>
-        )}
-
-        {/* Search Suggestions */}
-        {filteredSuggestions.length > 0 && (
-          <div className="p-3">
-            <span className="text-sm font-medium text-gray-700 mb-2 block">Suggestions</span>
-            <div className="space-y-1">
-              {filteredSuggestions.map((suggestion) => (
-                <button
-                  key={suggestion.id}
-                  onClick={() => handleSuggestionClick(suggestion)}
-                  className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md transition-colors"
-                >
-                  <span className="text-lime-500">{suggestion.icon}</span>
-                  <span className="truncate">{suggestion.text}</span>
-                  <span className="ml-auto text-xs text-gray-400 capitalize">
-                    {suggestion.type}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* No Results */}
-        {filteredSuggestions.length === 0 && inputValue.length > 0 && (
-          <div className="p-4 text-center text-gray-500">
-            <Search size={20} className="mx-auto mb-2 text-gray-300" />
-            <p className="text-sm">No suggestions found</p>
-            <p className="text-xs">Try different keywords</p>
-          </div>
-        )}
       </div>
     );
   };
@@ -240,7 +194,7 @@ export default function SearchBar() {
               value={inputValue}
               onChange={handleInputChange}
               onFocus={handleInputFocus}
-              className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 text-white placeholder-slate-400 rounded-l-lg focus:ring-2 focus:ring-lime-400 focus:border-transparent transition-all focus:outline-none"
+              className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 text-white placeholder-slate-400 rounded-l-xl focus:ring-2 focus:ring-lime-400 focus:border-transparent transition-all focus:outline-none"
             />
 
             {/* Clear Button */}
@@ -259,7 +213,7 @@ export default function SearchBar() {
           <button
             type="submit"
             disabled={!inputValue.trim() || isSearching}
-            className={`px-6 py-3 bg-lime-500 text-white font-medium rounded-r-lg transition-all focus:outline-none focus:ring-2 focus:ring-lime-400 focus:ring-offset-2 ${!inputValue.trim() || isSearching
+            className={`px-6 py-3 bg-lime-500 text-white font-medium rounded-r-xl transition-all focus:outline-none focus:ring-2 focus:ring-lime-400 focus:ring-offset-2 ${!inputValue.trim() || isSearching
               ? 'opacity-50 cursor-not-allowed'
               : 'hover:bg-lime-600 active:bg-lime-700'
               }`}

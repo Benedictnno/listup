@@ -4,6 +4,7 @@ const crypto = require('crypto');
 const prisma = require('../lib/prisma');
 const { sign, verify } = require('../lib/jwt');
 const { addToGoogleSheet } = require('../utils/googleSheets');
+const { getFrontendUrl } = require('../utils/url');
 
 // Helper function to generate unique verification token
 function generateVerificationToken() {
@@ -161,7 +162,7 @@ exports.register = async (req, res, next) => {
     // Send verification email (fire-and-forget)
     try {
       const { sendEmailVerification } = require('../lib/email');
-      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+      const frontendUrl = getFrontendUrl();
       const verificationLink = `${frontendUrl}/verify-email?token=${verificationToken}`;
       await sendEmailVerification(user.email, verificationLink, user.name);
     } catch (emailError) {
@@ -346,7 +347,7 @@ exports.registerVendor = async (req, res, next) => {
     // Send emails (fire and forget)
     try {
       const { sendEmailVerification, sendVendorPendingEmail } = require('../lib/email');
-      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+      const frontendUrl = getFrontendUrl();
       const verificationLink = `${frontendUrl}/verify-email?token=${verificationToken}`;
       
       sendEmailVerification(user.email, verificationLink, user.name).catch(e => console.error(e));

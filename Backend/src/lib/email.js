@@ -1,4 +1,5 @@
 const { Resend } = require('resend');
+const { getFrontendUrl } = require('../utils/url');
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY
 const resend = new Resend(RESEND_API_KEY);
@@ -129,7 +130,7 @@ async function sendVendorPendingEmail(email, userName, storeName) {
           <p style="color:#374151;margin:0 0 12px;">Thanks for signing up your store${storeName ? ` "${storeName}"` : ''} on ListUp.</p>
           <p style="color:#374151;margin:0 0 12px;">Your vendor account is <strong>pending verification</strong>. Our team will review your details and reach out shortly.</p>
           <p style="color:#374151;margin:0 0 16px;">You can read about the process here:</p>
-          <p><a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/welcome/vendor" style="color:#84cc16;font-weight:600;">Vendor Welcome & Next Steps</a></p>
+          <p><a href="${getFrontendUrl()}/welcome/vendor" style="color:#84cc16;font-weight:600;">Vendor Welcome & Next Steps</a></p>
           <p style="color:#6b7280;margin-top:24px;font-size:12px;">If you didn't request this, please ignore this email.</p>
         </div>
       </body>
@@ -403,7 +404,7 @@ async function sendKYCEmail(email, templateName, ...args) {
           <p>To complete your verification and unlock unlimited listings, please pay the one-time verification fee of <strong>₦${fee.toLocaleString()}</strong>.</p>
 
           <p style="margin: 32px 0; text-align: center;">
-            <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/dashboard/kyc-payment" style="background-color: #84cc16; color: white; padding: 16px 32px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block; font-size: 16px;">Pay Now with Paystack</a>
+            <a href="${getFrontendUrl()}/dashboard/kyc-payment" style="background-color: #84cc16; color: white; padding: 16px 32px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block; font-size: 16px;">Pay Now with Paystack</a>
           </p>
           
           <div style="background-color: #f0f9ff; border-left: 4px solid #84cc16; padding: 16px; margin: 24px 0;">
@@ -497,7 +498,7 @@ async function sendChatNotification(email, name, messageCount, lastSenderName, l
   try {
     const isDev = process.env.NODE_ENV !== 'production';
     const recipientEmail = (isDev && process.env.DEV_EMAIL_REDIRECT) ? process.env.DEV_EMAIL_REDIRECT : email;
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    const frontendUrl = getFrontendUrl();
 
     const { data, error } = await resend.emails.send({
       from: 'ListUp <noreply@listup.ng>',

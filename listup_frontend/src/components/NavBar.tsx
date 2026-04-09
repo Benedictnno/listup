@@ -250,7 +250,7 @@ function NavBar() {
               </div>
 
               {/* Fixed Bottom Section */}
-              <div className="mt-auto p-8 bg-slate-50 border-t border-slate-100/50">
+              <div className="mt-auto p-8 bg-slate-100 border-t-2 border-slate-200 shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.1)] relative z-10">
                 {user ? (
                   <div className="flex flex-col gap-4">
                     <Link

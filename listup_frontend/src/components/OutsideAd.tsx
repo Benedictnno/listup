@@ -130,7 +130,7 @@ export default function FloatingAd() {
   const currentAd = advertisements[currentAdIndex];
 
   return (
-    <div className="fixed bottom-0 left-0 w-full z-50">
+    <div className="fixed bottom-[72px] md:bottom-0 left-0 w-full z-50">
       <div className="group mx-auto max-w-5xl bg-white border-t shadow-lg p-3 relative">
         {/* Advertisement Label with Counter */}
         <div className="absolute top-1 left-2 text-[10px] text-gray-400 uppercase tracking-wide flex items-center gap-2">

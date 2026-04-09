@@ -52,7 +52,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {/* Sidebar */}
         <aside
           className={cn(
-            "bg-white border-r border-slate-100 transition-all duration-300 flex flex-col",
+            "bg-white border-r border-slate-100 transition-all duration-300 flex flex-col overflow-hidden whitespace-nowrap",
             "fixed inset-y-0 left-0 z-50", // Mobile: fixed and on top
             "lg:sticky lg:top-[64px] lg:z-30 lg:h-[calc(100vh-64px)]", // Desktop: sticky below NavBar
             isOpen ? "w-64 translate-x-0" : "w-64 -translate-x-full lg:translate-x-0 lg:w-24"

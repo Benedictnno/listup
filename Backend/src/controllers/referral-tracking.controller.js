@@ -1,4 +1,5 @@
 const ReferralService = require('../services/referral.service');
+const { getFrontendUrl } = require('../utils/url');
 
 class ReferralTrackingController {
 
@@ -29,14 +30,14 @@ class ReferralTrackingController {
             }
 
             // Redirect to signup page
-            const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+            const frontendUrl = getFrontendUrl();
             const targetUrl = `${frontendUrl}/signup`;
             return res.redirect(targetUrl);
 
         } catch (error) {
             console.error('Referral Redirect Error:', error);
             // Fallback redirect even if error
-            const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+            const frontendUrl = getFrontendUrl();
             const targetUrl = `${frontendUrl}/signup`;
             return res.redirect(targetUrl);
         }

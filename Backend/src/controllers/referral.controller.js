@@ -1,10 +1,10 @@
 const crypto = require('crypto');
 const prisma = require('../lib/prisma');
+const { getFrontendUrl } = require('../utils/url');
 
 // Helper to build referral URL
 function buildReferralUrl(code) {
-  const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-  return `${baseUrl}/signup?ref=${encodeURIComponent(code)}`;
+  return `${getFrontendUrl()}/signup?ref=${encodeURIComponent(code)}`;
 }
 
 // Generate personalized referral code NAME-HASH
