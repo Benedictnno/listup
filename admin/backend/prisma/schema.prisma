@@ -109,6 +109,7 @@ model User {
   monthlyStatements   MonthlyStatement[]
   whatsappOptIn       Boolean             @default(false)
   whatsappMessageLogs WhatsAppMessageLog[]
+  auditLogs           AuditLog[]
 
   @@index([role])
 }
@@ -706,4 +707,22 @@ model SystemSettings {
   clickRewardAmount   Float    @default(15)
   minimumPayoutAmount Float    @default(1000)
   updatedAt           DateTime @updatedAt
+}
+
+model AuditLog {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId       String?  @db.ObjectId // User who performed the action (null for system)
+  user         User?    @relation(fields: [userId], references: [id])
+  action       String   // e.g., "LOGIN", "DELETE_LISTING", "APPROVE_VENDOR", "UPDATE_KYC"
+  targetType   String?  // e.g., "USER", "LISTING", "PAYMENT", "STORE"
+  targetId     String?  // ID of the affected object
+  metadata     Json?    // old vs new values, etc.
+  ipAddress    String?
+  userAgent    String?
+  createdAt    DateTime @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([targetType, targetId])
+  @@index([createdAt])
 }

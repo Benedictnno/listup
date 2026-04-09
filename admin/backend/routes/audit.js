@@ -1,13 +1,13 @@
 const router = require("express").Router();
 const auditService = require("../services/audit.service");
-const { protect, admin } = require("../middleware/auth");
+const { auth } = require("../middleware/auth");
 
 /**
  * @route   GET /api/audit/logs
  * @desc    Get all audit logs (Admin only)
  * @access  Private/Admin
  */
-router.get("/logs", protect, admin, async (req, res) => {
+router.get("/logs", auth, async (req, res) => {
   try {
     const { 
       userId, 
@@ -50,7 +50,7 @@ router.get("/logs", protect, admin, async (req, res) => {
  * @desc    Get unique audit actions for filtering
  * @access  Private/Admin
  */
-router.get("/actions", protect, admin, async (req, res) => {
+router.get("/actions", auth, async (req, res) => {
   try {
     const prisma = require("../lib/prisma");
     const actions = await prisma.auditLog.groupBy({

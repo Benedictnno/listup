@@ -30,7 +30,7 @@ router.use('/admin/whatsapp', require('./whatsapp-analytics.routes'));
 router.use('/listing-tiers', require('./listing-tiers.routes'));
 router.use('/listing-topup', require('./listing-topup.routes'));
 router.use('/recommendations', require('./recommendations.routes'));
-router.use('/audit', require('./audit.routes'));
+// router.use('/audit', require('./audit.routes')); // Moved to Admin Backend
 
 
 module.exports = router;

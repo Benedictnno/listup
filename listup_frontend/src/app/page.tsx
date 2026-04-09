@@ -46,18 +46,22 @@ export default function MarketplaceLanding() {
       {/* HERO SECTION */}
       <section className="bg-slate-950 py-6 md:py-12 border-b border-white/5">
         <div className="mx-auto max-w-7xl px-4 md:px-6">
-
           {/* Mobile Search Bar - Visible only on mobile */}
           <div className="md:hidden mb-6">
-            <form onSubmit={(e) => {
-              e.preventDefault();
-              const searchInput = e.currentTarget.querySelector('input');
-              const searchValue = searchInput?.value || '';
-              if (searchValue.trim()) {
-                setSearch(searchValue.trim());
-                router.push(`/listings?q=${encodeURIComponent(searchValue.trim())}`);
-              }
-            }} className="flex w-full items-center bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden h-14 shadow-2xl">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                const searchInput = e.currentTarget.querySelector("input");
+                const searchValue = searchInput?.value || "";
+                if (searchValue.trim()) {
+                  setSearch(searchValue.trim());
+                  router.push(
+                    `/listings?q=${encodeURIComponent(searchValue.trim())}`,
+                  );
+                }
+              }}
+              className="flex w-full items-center bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden h-14 shadow-2xl"
+            >
               <div className="pl-4">
                 <Search className="h-5 w-4 text-slate-500" />
               </div>
@@ -74,8 +78,6 @@ export default function MarketplaceLanding() {
               </button>
             </form>
           </div>
-
-
 
           <div className="flex flex-col lg:flex-row gap-6">
             {/* 1. Category Sidebar (Desktop Only) */}
@@ -98,12 +100,16 @@ export default function MarketplaceLanding() {
                 <div className="inline-flex p-3 rounded-xl bg-gradient-to-br from-lime-400 to-lime-500 text-white mb-4 shadow-lg shadow-lime-500/20 w-fit">
                   <Store className="w-6 h-6" />
                 </div>
-                <h3 className="text-xl font-bold text-slate-900 mb-2 font-montserrat tracking-tight">Start Selling</h3>
-                <p className="text-slate-500 text-sm font-montserrat">Turn your items into cash today</p>
+                <h3 className="text-xl font-bold text-slate-900 mb-2 font-montserrat tracking-tight">
+                  Start Selling
+                </h3>
+                <p className="text-slate-500 text-sm font-montserrat">
+                  Turn your items into cash today
+                </p>
               </Link>
 
               <a
-                href="https://wa.me/2349011022509"
+                href="https://wa.me/23490110225097"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-lime-400 to-lime-500 p-6 hover:shadow-xl transition-all group h-[215px] flex flex-col justify-center"
@@ -112,8 +118,12 @@ export default function MarketplaceLanding() {
                 <div className="inline-flex p-3 rounded-xl bg-white/20 backdrop-blur-sm text-white mb-4 shadow-lg w-fit">
                   <MessageCircle className="w-6 h-6" />
                 </div>
-                <h3 className="text-xl font-bold text-white mb-2 font-montserrat tracking-tight">Join WhatsApp</h3>
-                <p className="text-white/90 text-sm font-montserrat">Get exclusive deals & updates</p>
+                <h3 className="text-xl font-bold text-white mb-2 font-montserrat tracking-tight">
+                  Join WhatsApp
+                </h3>
+                <p className="text-white/90 text-sm font-montserrat">
+                  Get exclusive deals & updates
+                </p>
               </a>
             </div>
           </div>
@@ -141,7 +151,7 @@ export default function MarketplaceLanding() {
       {/* <PromoCards /> */}
 
       {/* <AdsPage/> */}
-      
+
       <TrendingListings />
       <RecentlyViewed />
 
@@ -158,18 +168,29 @@ export default function MarketplaceLanding() {
               Find Your Next Great Deal Today!
             </h3>
             <p className="mt-2 text-sm text-slate-600 font-montserrat">
-              Discover hidden gems and smart tips for buying pre‑loved items.
-              We curate the best deals so you don’t have to.
+              Discover hidden gems and smart tips for buying pre‑loved items. We
+              curate the best deals so you don’t have to.
             </p>
             <ul className="mt-4 space-y-2 text-sm text-slate-600">
-              <li className="flex items-start gap-2"><span className="mt-1 h-1.5 w-1.5 rounded-full bg-lime-400"></span> Weekly highlights across top categories</li>
-              <li className="flex items-start gap-2"><span className="mt-1 h-1.5 w-1.5 rounded-full bg-lime-400"></span> Verified sellers and protected checkout</li>
-              <li className="flex items-start gap-2"><span className="mt-1 h-1.5 w-1.5 rounded-full bg-lime-400"></span> Buyer and seller safety guidelines</li>
+              <li className="flex items-start gap-2">
+                <span className="mt-1 h-1.5 w-1.5 rounded-full bg-lime-400"></span>{" "}
+                Weekly highlights across top categories
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="mt-1 h-1.5 w-1.5 rounded-full bg-lime-400"></span>{" "}
+                Verified sellers and protected checkout
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="mt-1 h-1.5 w-1.5 rounded-full bg-lime-400"></span>{" "}
+                Buyer and seller safety guidelines
+              </li>
             </ul>
 
             <div className="mt-5 flex items-center gap-3">
               <PrimaryButton>Read More</PrimaryButton>
-              <button className="text-sm font-semibold text-slate-700 underline-offset-4 hover:underline">Share</button>
+              <button className="text-sm font-semibold text-slate-700 underline-offset-4 hover:underline">
+                Share
+              </button>
             </div>
 
             <div className="mt-4 flex gap-4 text-[11px] text-slate-500">
@@ -209,15 +230,18 @@ export default function MarketplaceLanding() {
 
         <div className="absolute inset-0 bg-slate-900/60" />
         <div className="relative flex max-sm:flex-col max-sm:p-8 z-10 mx-auto h-full max-w-7xl items-center justify-between px-4 md:px-6">
-          <div >
-            <h3 className="text-lg font-semibold text-white md:text-2xl font-montserrat">Discover Amazing Deals Today!</h3>
-            <p className="mt-1 text-sm text-slate-200 font-montserrat">Limited‑time offers across popular categories.</p>
+          <div>
+            <h3 className="text-lg font-semibold text-white md:text-2xl font-montserrat">
+              Discover Amazing Deals Today!
+            </h3>
+            <p className="mt-1 text-sm text-slate-200 font-montserrat">
+              Limited‑time offers across popular categories.
+            </p>
           </div>
           <div className=" m-auto">
             <PrimaryButton>Explore Now</PrimaryButton>
           </div>
         </div>
-
       </section>
 
       {/* TIPS SECTION */}
@@ -225,19 +249,37 @@ export default function MarketplaceLanding() {
         <div className="mx-auto max-w-7xl px-4 py-14 md:px-6">
           <div className="mb-8 text-center">
             <SectionEyebrow>Tips</SectionEyebrow>
-            <h3 className="text-2xl font-semibold text-white md:text-3xl font-montserrat">Buying and Selling Tips</h3>
-            <p className="mt-2 text-sm text-slate-300 font-montserrat">Actionable insights to help you transact with confidence.</p>
+            <h3 className="text-2xl font-semibold text-white md:text-3xl font-montserrat">
+              Buying and Selling Tips
+            </h3>
+            <p className="mt-2 text-sm text-slate-300 font-montserrat">
+              Actionable insights to help you transact with confidence.
+            </p>
           </div>
 
           <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
             {tips.map((t, i) => (
-              <article key={i} className="overflow-hidden rounded-2xl border border-white/10 bg-white/5 shadow-sm">
-                <Image src={t.img} alt={t.title} width={500} height={300} className="h-44 w-full object-cover" />
+              <article
+                key={i}
+                className="overflow-hidden rounded-2xl border border-white/10 bg-white/5 shadow-sm"
+              >
+                <Image
+                  src={t.img}
+                  alt={t.title}
+                  width={500}
+                  height={300}
+                  className="h-44 w-full object-cover"
+                />
                 <div className="p-4">
-                  <h4 className="text-base font-semibold text-white font-montserrat">{t.title}</h4>
+                  <h4 className="text-base font-semibold text-white font-montserrat">
+                    {t.title}
+                  </h4>
                   <div className="mt-3 flex items-center justify-between text-[11px] text-slate-300">
                     <span>3 min read</span>
-                    <a href="#" className="inline-flex items-center gap-1 font-semibold text-white/90 hover:text-white">
+                    <a
+                      href="#"
+                      className="inline-flex items-center gap-1 font-semibold text-white/90 hover:text-white"
+                    >
                       Read <ArrowRight className="h-3 w-3" />
                     </a>
                   </div>
@@ -248,7 +290,6 @@ export default function MarketplaceLanding() {
         </div>
       </section>
       <OutsideAd />
-
-    </div >
+    </div>
   );
 }
