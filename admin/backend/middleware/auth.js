@@ -69,15 +69,13 @@ const auth = async (req, res, next) => {
   try {
     // Try to get token from cookies first
     let token = req.cookies?.token;
-console.log(token);
-
+    console.log(`[Auth Debug] Cookie token exists: ${!!token}`);
 
     if (!token) {
       // Fall back to Authorization header
       const authHeader = req.header('Authorization');
       token = authHeader?.replace('Bearer ', '');
-console.log(token);
-
+      console.log(`[Auth Debug] Header token exists: ${!!token}`);
     }
 
     if (!token) {

@@ -39,6 +39,7 @@ const whitelist = [
   'http://localhost:3002', // Main frontend
   'http://localhost:3000', // Main frontend
   'https://listup-admin.vercel.app', // Admin production
+  'https://listup-admin-vdf5.onrender.app', // Admin backend itself
   'https://listup.ng',
   'https://www.listup.ng',
   'https://api.listup.ng'
