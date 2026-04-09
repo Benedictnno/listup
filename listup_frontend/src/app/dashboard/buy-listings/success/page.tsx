@@ -9,7 +9,7 @@ import { useAuthStore } from "@/store/authStore";
 export default function BuyListingsSuccessPage() {
   const router = useRouter();
   const { user, initializeAuth } = useAuthStore();
-  const [isRefreshing, setIsRefreshing] = useState<Boolean>(true);
+  const [isRefreshing, setIsRefreshing] = useState<boolean>(true);
 
   useEffect(() => {
     // Refresh the user's profile multiple times to ensure we get the update from the webhook

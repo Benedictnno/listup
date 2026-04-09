@@ -1,6 +1,6 @@
 "use client";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 import { useState, useEffect, Suspense } from "react";
 import { useSignupStore } from "@/store/signupStore";
@@ -24,7 +24,6 @@ import {
   parseValidationErrors,
   getFieldErrorMessage,
   // isRetryableError,
-  getSuccessMessage,
 } from "@/utils/errorHandler";
 import ErrorNotice from "@/components/ErrorNotice";
 import TermsModal from "@/components/TermsModal";
@@ -45,7 +44,7 @@ type payloadType = {
   storeAddress?: string;
   businessCategory?: string;
   whatsappOptIn?: boolean;
-}
+};
 
 function SignupContent() {
   const { form, setField, reset } = useSignupStore();
@@ -57,18 +56,22 @@ function SignupContent() {
   const [step, setStep] = useState<number>(1);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>(
-    {}
-  );
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [success, setSuccess] = useState<string>("");
   const [showPassword, setShowPassword] = useState<boolean>(false);
-  const [retryCount, setRetryCount] = useState<number>(0);
-  const [hasReferralDiscount, setHasReferralDiscount] = useState<boolean>(false);
+  const [hasReferralDiscount, setHasReferralDiscount] =
+    useState<boolean>(false);
 
   // Addresses (admin-managed) for vendor signup
-  const [addresses, setAddresses] = useState<{ id: string; name: string, active: boolean, createdAt: string, updatedAt: string }[]>(
-    []
-  );
+  const [addresses, setAddresses] = useState<
+    {
+      id: string;
+      name: string;
+      active: boolean;
+      createdAt: string;
+      updatedAt: string;
+    }[]
+  >([]);
   const [addressesLoading, setAddressesLoading] = useState<boolean>(false);
   const [addressesError, setAddressesError] = useState<string>("");
 
@@ -114,7 +117,7 @@ function SignupContent() {
     } catch (err: any) {
       console.error("Error fetching addresses:", err);
       setAddressesError(
-        err?.response?.data?.message || "Failed to load addresses"
+        err?.response?.data?.message || "Failed to load addresses",
       );
     } finally {
       setAddressesLoading(false);
@@ -177,11 +180,14 @@ function SignupContent() {
       if (phoneErr) {
         setFieldError("phone", phoneErr);
         valid = false;
-    valid = false;
+      }
     }
 
     if (form.role === "USER" && !form.termsAccepted) {
-      setFieldError("termsAccepted", "You must accept the terms and conditions to continue");
+      setFieldError(
+        "termsAccepted",
+        "You must accept the terms and conditions to continue",
+      );
       valid = false;
     }
 
@@ -195,7 +201,7 @@ function SignupContent() {
 
     const storeNameErr = getFieldErrorMessage(
       "storeName",
-      form.storeName || ""
+      form.storeName || "",
     );
     if (storeNameErr) {
       setFieldError("storeName", storeNameErr);
@@ -204,7 +210,7 @@ function SignupContent() {
 
     const storeAddressErr = getFieldErrorMessage(
       "storeAddress",
-      form.storeAddress || ""
+      form.storeAddress || "",
     );
     if (storeAddressErr) {
       setFieldError("storeAddress", storeAddressErr);
@@ -213,7 +219,7 @@ function SignupContent() {
 
     const businessCategoryErr = getFieldErrorMessage(
       "businessCategory",
-      form.businessCategory || ""
+      form.businessCategory || "",
     );
     if (businessCategoryErr) {
       setFieldError("businessCategory", businessCategoryErr);
@@ -221,7 +227,10 @@ function SignupContent() {
     }
 
     if (!form.termsAccepted) {
-      setFieldError("termsAccepted", "You must accept the terms and conditions to continue");
+      setFieldError(
+        "termsAccepted",
+        "You must accept the terms and conditions to continue",
+      );
       valid = false;
     }
 
@@ -274,7 +283,8 @@ function SignupContent() {
         role: form.role,
         whatsappOptIn: form.whatsappOptIn,
       };
-      if (String(form.phone || "").trim()) payload.phone = String(form.phone).trim();
+      if (String(form.phone || "").trim())
+        payload.phone = String(form.phone).trim();
       if (form.role === "VENDOR") {
         payload.storeName = String(form.storeName || "").trim();
         payload.storeAddress = String(form.storeAddress || "").trim();
@@ -282,18 +292,24 @@ function SignupContent() {
       }
 
       if (String((form as any).referralCode || "").trim()) {
-        (payload as any).referralCode = String((form as any).referralCode).trim().toUpperCase();
+        (payload as any).referralCode = String((form as any).referralCode)
+          .trim()
+          .toUpperCase();
       }
 
-      const result = await signup(payload);
+      await signup(payload);
 
-      toast.success("Account created successfully! Please check your email to verify your account.");
-      setSuccess("Account created successfully! Please check your email to verify your account.");
+      toast.success(
+        "Account created successfully! Please check your email to verify your account.",
+      );
+      setSuccess(
+        "Account created successfully! Please check your email to verify your account.",
+      );
       reset();
 
       // Store email temporarily for the verification page
-      if (typeof window !== 'undefined') {
-        sessionStorage.setItem('pendingVerificationEmail', payload.email);
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem("pendingVerificationEmail", payload.email);
       }
 
       // Redirect to email verification notice page
@@ -371,8 +387,8 @@ function SignupContent() {
           <ErrorNotice
             message={error}
             rawError={error}
-            retryCount={retryCount}
-          // onRetry={handleRetry}
+            retryCount={0}
+            // onRetry={handleRetry}
           />
         )}
 
@@ -380,10 +396,16 @@ function SignupContent() {
         {form.role === "VENDOR" && (
           <div className="mb-6">
             <div className="flex items-center justify-center space-x-2">
-              <div className={`w-3 h-3 rounded-full ${step >= 1 ? "bg-lime-400" : "bg-slate-300"}`} />
-              <div className={`w-3 h-3 rounded-full ${step >= 2 ? "bg-lime-400" : "bg-slate-300"}`} />
+              <div
+                className={`w-3 h-3 rounded-full ${step >= 1 ? "bg-lime-400" : "bg-slate-300"}`}
+              />
+              <div
+                className={`w-3 h-3 rounded-full ${step >= 2 ? "bg-lime-400" : "bg-slate-300"}`}
+              />
             </div>
-            <p className="text-center text-sm text-slate-500 mt-2">Step {step} of 2</p>
+            <p className="text-center text-sm text-slate-500 mt-2">
+              Step {step} of 2
+            </p>
           </div>
         )}
 
@@ -394,19 +416,22 @@ function SignupContent() {
           <form onSubmit={handleNext} className="space-y-4 mb-4">
             {/* Full Name */}
             <div>
-              <label className="block text-sm font-medium mb-1 text-slate-700">Full Name *</label>
+              <label className="block text-sm font-medium mb-1 text-slate-700">
+                Full Name *
+              </label>
               <input
                 type="text"
                 value={form.name}
                 onChange={(e) => handleFieldChange("name", e.target.value)}
                 placeholder="John Doe"
                 required
-                className={`w-full p-3 rounded-xl transition-colors border ${getFieldError("name")
-                  ? "border-red-300 bg-red-50"
-                  : isFieldValid("name")
-                    ? "border-green-300 bg-green-50"
-                    : "border-slate-300"
-                  } focus:outline-none focus:ring-2 focus:ring-lime-200`}
+                className={`w-full p-3 rounded-xl transition-colors border ${
+                  getFieldError("name")
+                    ? "border-red-300 bg-red-50"
+                    : isFieldValid("name")
+                      ? "border-green-300 bg-green-50"
+                      : "border-slate-300"
+                } focus:outline-none focus:ring-2 focus:ring-lime-200`}
               />
               {getFieldError("name") && (
                 <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
@@ -418,19 +443,22 @@ function SignupContent() {
 
             {/* Email */}
             <div>
-              <label className="block text-sm font-medium mb-1 text-slate-700">Email Address *</label>
+              <label className="block text-sm font-medium mb-1 text-slate-700">
+                Email Address *
+              </label>
               <input
                 type="email"
                 value={form.email}
                 onChange={(e) => handleFieldChange("email", e.target.value)}
                 placeholder="you@example.com"
                 required
-                className={`w-full p-3 rounded-xl transition-colors border ${getFieldError("email")
-                  ? "border-red-300 bg-red-50"
-                  : isFieldValid("email")
-                    ? "border-green-300 bg-green-50"
-                    : "border-slate-300"
-                  } focus:outline-none focus:ring-2 focus:ring-lime-200`}
+                className={`w-full p-3 rounded-xl transition-colors border ${
+                  getFieldError("email")
+                    ? "border-red-300 bg-red-50"
+                    : isFieldValid("email")
+                      ? "border-green-300 bg-green-50"
+                      : "border-slate-300"
+                } focus:outline-none focus:ring-2 focus:ring-lime-200`}
               />
               {getFieldError("email") && (
                 <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
@@ -442,18 +470,21 @@ function SignupContent() {
 
             {/* Phone */}
             <div>
-              <label className="block text-sm font-medium mb-1 text-slate-700">Phone Number</label>
+              <label className="block text-sm font-medium mb-1 text-slate-700">
+                Phone Number
+              </label>
               <input
                 type="tel"
                 value={form.phone}
                 onChange={(e) => handleFieldChange("phone", e.target.value)}
                 placeholder="08012345678"
-                className={`w-full p-3 rounded-xl transition-colors border ${getFieldError("phone")
-                  ? "border-red-300 bg-red-50"
-                  : form.phone?.trim() && !getFieldError("phone")
-                    ? "border-green-300 bg-green-50"
-                    : "border-slate-300"
-                  } focus:outline-none focus:ring-2 focus:ring-lime-200`}
+                className={`w-full p-3 rounded-xl transition-colors border ${
+                  getFieldError("phone")
+                    ? "border-red-300 bg-red-50"
+                    : form.phone?.trim() && !getFieldError("phone")
+                      ? "border-green-300 bg-green-50"
+                      : "border-slate-300"
+                } focus:outline-none focus:ring-2 focus:ring-lime-200`}
               />
               {getFieldError("phone") && (
                 <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
@@ -461,33 +492,40 @@ function SignupContent() {
                   {getFieldError("phone")}
                 </p>
               )}
-
             </div>
-
 
             {/* Password */}
             <div>
-              <label className="block text-sm font-medium mb-1 text-slate-700">Password *</label>
+              <label className="block text-sm font-medium mb-1 text-slate-700">
+                Password *
+              </label>
               <div className="relative">
                 <input
                   type={showPassword ? "text" : "password"}
                   value={form.password}
-                  onChange={(e) => handleFieldChange("password", e.target.value)}
+                  onChange={(e) =>
+                    handleFieldChange("password", e.target.value)
+                  }
                   placeholder="••••••••"
                   required
-                  className={`w-full p-3 pr-12 rounded-xl transition-colors border ${getFieldError("password")
-                    ? "border-red-300 bg-red-50"
-                    : isFieldValid("password")
-                      ? "border-green-300 bg-green-50"
-                      : "border-slate-300"
-                    } focus:outline-none focus:ring-2 focus:ring-lime-200`}
+                  className={`w-full p-3 pr-12 rounded-xl transition-colors border ${
+                    getFieldError("password")
+                      ? "border-red-300 bg-red-50"
+                      : isFieldValid("password")
+                        ? "border-green-300 bg-green-50"
+                        : "border-slate-300"
+                  } focus:outline-none focus:ring-2 focus:ring-lime-200`}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword((s) => !s)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                 >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  {showPassword ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
                 </button>
               </div>
               {getFieldError("password") && (
@@ -496,50 +534,80 @@ function SignupContent() {
                   {getFieldError("password")}
                 </p>
               )}
-              <p className="mt-1 text-xs text-slate-500">Minimum 6 characters</p>
+              <p className="mt-1 text-xs text-slate-500">
+                Minimum 6 characters
+              </p>
             </div>
 
             {/* Role Custom Radio Group */}
             <div>
-              <label className="block text-sm font-medium mb-3 text-slate-700">Account Type *</label>
+              <label className="block text-sm font-medium mb-3 text-slate-700">
+                Account Type *
+              </label>
               <div className="grid grid-cols-2 gap-4">
                 {/* Vendor Option */}
                 <div
                   onClick={() => handleFieldChange("role", "VENDOR")}
-                  className={`cursor-pointer relative p-4 rounded-xl border-2 transition-all duration-200 flex flex-col items-center gap-2 group ${form.role === "VENDOR"
-                    ? "border-lime-400 bg-lime-50/50 ring-4 ring-lime-100"
-                    : "border-slate-100 bg-slate-50 hover:border-slate-200 hover:bg-slate-100"
-                    }`}
+                  className={`cursor-pointer relative p-4 rounded-xl border-2 transition-all duration-200 flex flex-col items-center gap-2 group ${
+                    form.role === "VENDOR"
+                      ? "border-lime-400 bg-lime-50/50 ring-4 ring-lime-100"
+                      : "border-slate-100 bg-slate-50 hover:border-slate-200 hover:bg-slate-100"
+                  }`}
                 >
-                  <div className={`p-2 rounded-lg transition-colors ${form.role === "VENDOR" ? "bg-lime-400 text-slate-900" : "bg-slate-200 text-slate-500 group-hover:bg-slate-300"}`}>
+                  <div
+                    className={`p-2 rounded-lg transition-colors ${form.role === "VENDOR" ? "bg-lime-400 text-slate-900" : "bg-slate-200 text-slate-500 group-hover:bg-slate-300"}`}
+                  >
                     <Store className="w-5 h-5" />
                   </div>
-                  <span className={`text-sm font-bold ${form.role === "VENDOR" ? "text-slate-900" : "text-slate-600"}`}>Vendor</span>
-                  <p className="text-[10px] text-center text-slate-500 leading-tight">I want to sell products</p>
+                  <span
+                    className={`text-sm font-bold ${form.role === "VENDOR" ? "text-slate-900" : "text-slate-600"}`}
+                  >
+                    Vendor
+                  </span>
+                  <p className="text-[10px] text-center text-slate-500 leading-tight">
+                    I want to sell products
+                  </p>
 
                   {/* Selection dot */}
-                  <div className={`absolute top-2 right-2 w-4 h-4 rounded-full border-2 flex items-center justify-center ${form.role === "VENDOR" ? "border-lime-500 bg-lime-500" : "border-slate-300 bg-white"}`}>
-                    {form.role === "VENDOR" && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                  <div
+                    className={`absolute top-2 right-2 w-4 h-4 rounded-full border-2 flex items-center justify-center ${form.role === "VENDOR" ? "border-lime-500 bg-lime-500" : "border-slate-300 bg-white"}`}
+                  >
+                    {form.role === "VENDOR" && (
+                      <div className="w-1.5 h-1.5 rounded-full bg-white" />
+                    )}
                   </div>
                 </div>
 
                 {/* User Option */}
                 <div
                   onClick={() => handleFieldChange("role", "USER")}
-                  className={`cursor-pointer relative p-4 rounded-xl border-2 transition-all duration-200 flex flex-col items-center gap-2 group ${form.role === "USER"
-                    ? "border-lime-400 bg-lime-50/50 ring-4 ring-lime-100"
-                    : "border-slate-100 bg-slate-50 hover:border-slate-200 hover:bg-slate-100"
-                    }`}
+                  className={`cursor-pointer relative p-4 rounded-xl border-2 transition-all duration-200 flex flex-col items-center gap-2 group ${
+                    form.role === "USER"
+                      ? "border-lime-400 bg-lime-50/50 ring-4 ring-lime-100"
+                      : "border-slate-100 bg-slate-50 hover:border-slate-200 hover:bg-slate-100"
+                  }`}
                 >
-                  <div className={`p-2 rounded-lg transition-colors ${form.role === "USER" ? "bg-lime-400 text-slate-900" : "bg-slate-200 text-slate-500 group-hover:bg-slate-300"}`}>
+                  <div
+                    className={`p-2 rounded-lg transition-colors ${form.role === "USER" ? "bg-lime-400 text-slate-900" : "bg-slate-200 text-slate-500 group-hover:bg-slate-300"}`}
+                  >
                     <User className="w-5 h-5" />
                   </div>
-                  <span className={`text-sm font-bold ${form.role === "USER" ? "text-slate-900" : "text-slate-600"}`}>User</span>
-                  <p className="text-[10px] text-center text-slate-500 leading-tight">I want to buy products</p>
+                  <span
+                    className={`text-sm font-bold ${form.role === "USER" ? "text-slate-900" : "text-slate-600"}`}
+                  >
+                    User
+                  </span>
+                  <p className="text-[10px] text-center text-slate-500 leading-tight">
+                    I want to buy products
+                  </p>
 
                   {/* Selection dot */}
-                  <div className={`absolute top-2 right-2 w-4 h-4 rounded-full border-2 flex items-center justify-center ${form.role === "USER" ? "border-lime-500 bg-lime-500" : "border-slate-300 bg-white"}`}>
-                    {form.role === "USER" && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                  <div
+                    className={`absolute top-2 right-2 w-4 h-4 rounded-full border-2 flex items-center justify-center ${form.role === "USER" ? "border-lime-500 bg-lime-500" : "border-slate-300 bg-white"}`}
+                  >
+                    {form.role === "USER" && (
+                      <div className="w-1.5 h-1.5 rounded-full bg-white" />
+                    )}
                   </div>
                 </div>
               </div>
@@ -552,12 +620,19 @@ function SignupContent() {
                   id="whatsapp-optin"
                   type="checkbox"
                   checked={form.whatsappOptIn}
-                  onChange={(e) => handleFieldChange("whatsappOptIn", e.target.checked)}
+                  onChange={(e) =>
+                    handleFieldChange("whatsappOptIn", e.target.checked)
+                  }
                   className="h-4 w-4 rounded border-slate-300 text-lime-600 focus:ring-lime-200"
                 />
               </div>
-              <label htmlFor="whatsapp-optin" className="text-sm text-slate-700 cursor-pointer select-none">
-                <span className="font-medium text-slate-900">Get updates on WhatsApp</span>
+              <label
+                htmlFor="whatsapp-optin"
+                className="text-sm text-slate-700 cursor-pointer select-none"
+              >
+                <span className="font-medium text-slate-900">
+                  Get updates on WhatsApp
+                </span>
                 <p className="text-xs text-slate-500 mt-0.5">
                   Receive updates, special offers, and support via WhatsApp.
                 </p>
@@ -567,17 +642,24 @@ function SignupContent() {
             {/* Terms and Conditions (USER only on Step 1) */}
             {form.role === "USER" && (
               <div className="space-y-1">
-                <div className={`flex items-start gap-3 p-3 rounded-xl border transition-colors ${getFieldError("termsAccepted") ? "bg-red-50 border-red-200" : "bg-slate-50 border-slate-100"}`}>
+                <div
+                  className={`flex items-start gap-3 p-3 rounded-xl border transition-colors ${getFieldError("termsAccepted") ? "bg-red-50 border-red-200" : "bg-slate-50 border-slate-100"}`}
+                >
                   <div className="flex h-5 w-5 items-center justify-center">
                     <input
                       id="terms-accepted-user"
                       type="checkbox"
                       checked={form.termsAccepted}
-                      onChange={(e) => handleFieldChange("termsAccepted", e.target.checked)}
+                      onChange={(e) =>
+                        handleFieldChange("termsAccepted", e.target.checked)
+                      }
                       className="h-4 w-4 rounded border-slate-300 text-lime-600 focus:ring-lime-200"
                     />
                   </div>
-                  <label htmlFor="terms-accepted-user" className="text-sm text-slate-700 cursor-pointer select-none">
+                  <label
+                    htmlFor="terms-accepted-user"
+                    className="text-sm text-slate-700 cursor-pointer select-none"
+                  >
                     I agree to the <TermsModal />
                   </label>
                 </div>
@@ -594,7 +676,9 @@ function SignupContent() {
             <div className="p-3 bg-blue-50 rounded-lg border border-blue-200 text-xs text-blue-700">
               <p className="font-medium mb-1">💡 Account creation tips:</p>
               <ul className="space-y-1">
-                <li>• Use your real name as it appears on official documents</li>
+                <li>
+                  • Use your real name as it appears on official documents
+                </li>
                 <li>• Choose a strong password with at least 6 characters</li>
                 <li>• Vendor accounts require additional store information</li>
               </ul>
@@ -633,7 +717,9 @@ function SignupContent() {
                 <Store className="w-5 h-5" />
                 <span className="font-medium">Vendor Account Setup</span>
               </div>
-              <p className="text-sm text-lime-600 mt-1">Complete your store information to start selling</p>
+              <p className="text-sm text-lime-600 mt-1">
+                Complete your store information to start selling
+              </p>
             </div>
 
             {/* Referral Code (optional) */}
@@ -649,29 +735,38 @@ function SignupContent() {
               <input
                 type="text"
                 value={(form as any).referralCode || ""}
-                onChange={(e) => handleFieldChange("referralCode", e.target.value.toUpperCase())}
+                onChange={(e) =>
+                  handleFieldChange(
+                    "referralCode",
+                    e.target.value.toUpperCase(),
+                  )
+                }
                 placeholder="Optional - e.g. BOB-A3F2E1"
                 className="w-full p-3 rounded-xl transition-colors border border-slate-300 focus:outline-none focus:ring-2 focus:ring-lime-200 text-sm tracking-wide"
               />
               <p className="mt-1 text-xs text-slate-500">
-                If you followed a friend&apos;s referral link, this should be filled automatically.
+                If you followed a friend&apos;s referral link, this should be
+                filled automatically.
               </p>
             </div>
             {/* Store Name */}
             <div>
-              <label className="block text-sm font-medium mb-1 text-slate-700">Store Name *</label>
+              <label className="block text-sm font-medium mb-1 text-slate-700">
+                Store Name *
+              </label>
               <input
                 type="text"
                 value={form.storeName}
                 onChange={(e) => handleFieldChange("storeName", e.target.value)}
                 placeholder="Bob's Fashion Hub"
                 required
-                className={`w-full p-3 rounded-xl transition-colors border ${getFieldError("storeName")
-                  ? "border-red-300 bg-red-50"
-                  : isFieldValid("storeName")
-                    ? "border-green-300 bg-green-50"
-                    : "border-slate-300"
-                  } focus:outline-none focus:ring-2 focus:ring-lime-200`}
+                className={`w-full p-3 rounded-xl transition-colors border ${
+                  getFieldError("storeName")
+                    ? "border-red-300 bg-red-50"
+                    : isFieldValid("storeName")
+                      ? "border-green-300 bg-green-50"
+                      : "border-slate-300"
+                } focus:outline-none focus:ring-2 focus:ring-lime-200`}
               />
               {getFieldError("storeName") && (
                 <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
@@ -683,11 +778,17 @@ function SignupContent() {
 
             {/* Store Address - admin-managed */}
             <div>
-              <label className="block text-sm font-medium mb-1 text-slate-700">Store Address *</label>
+              <label className="block text-sm font-medium mb-1 text-slate-700">
+                Store Address *
+              </label>
               {addressesLoading ? (
-                <div className="text-sm text-slate-600 p-2 bg-slate-50 rounded">Loading addresses...</div>
+                <div className="text-sm text-slate-600 p-2 bg-slate-50 rounded">
+                  Loading addresses...
+                </div>
               ) : addressesError ? (
-                <div className="text-sm text-red-600 p-2 bg-red-50 rounded">{addressesError}</div>
+                <div className="text-sm text-red-600 p-2 bg-red-50 rounded">
+                  {addressesError}
+                </div>
               ) : addresses.length === 0 ? (
                 <div className="text-sm text-amber-700 p-2 bg-amber-50 rounded">
                   No active selling addresses available. Please contact admin.
@@ -695,14 +796,17 @@ function SignupContent() {
               ) : (
                 <select
                   value={form.storeAddress}
-                  onChange={(e) => handleFieldChange("storeAddress", e.target.value)}
+                  onChange={(e) =>
+                    handleFieldChange("storeAddress", e.target.value)
+                  }
                   required
-                  className={`w-full p-3 rounded-xl transition-colors border ${getFieldError("storeAddress")
-                    ? "border-red-300 bg-red-50"
-                    : isFieldValid("storeAddress")
-                      ? "border-green-300 bg-green-50"
-                      : "border-slate-300"
-                    } focus:outline-none focus:ring-2 focus:ring-lime-200`}
+                  className={`w-full p-3 rounded-xl transition-colors border ${
+                    getFieldError("storeAddress")
+                      ? "border-red-300 bg-red-50"
+                      : isFieldValid("storeAddress")
+                        ? "border-green-300 bg-green-50"
+                        : "border-slate-300"
+                  } focus:outline-none focus:ring-2 focus:ring-lime-200`}
                 >
                   {addresses.map((a) => (
                     <option key={a.id} value={a.name}>
@@ -719,24 +823,31 @@ function SignupContent() {
                 </p>
               )}
 
-              <p className="mt-1 text-xs text-slate-500">Selected from admin-approved selling locations.</p>
+              <p className="mt-1 text-xs text-slate-500">
+                Selected from admin-approved selling locations.
+              </p>
             </div>
 
             {/* Business Category */}
             <div>
-              <label className="block text-sm font-medium mb-1 text-slate-700">Business Category *</label>
+              <label className="block text-sm font-medium mb-1 text-slate-700">
+                Business Category *
+              </label>
               <input
                 type="text"
                 value={form.businessCategory}
-                onChange={(e) => handleFieldChange("businessCategory", e.target.value)}
+                onChange={(e) =>
+                  handleFieldChange("businessCategory", e.target.value)
+                }
                 placeholder="Food / Electronics / Fashion"
                 required
-                className={`w-full p-3 rounded-xl transition-colors border ${getFieldError("businessCategory")
-                  ? "border-red-300 bg-red-50"
-                  : isFieldValid("businessCategory")
-                    ? "border-green-300 bg-green-50"
-                    : "border-slate-300"
-                  } focus:outline-none focus:ring-2 focus:ring-lime-200`}
+                className={`w-full p-3 rounded-xl transition-colors border ${
+                  getFieldError("businessCategory")
+                    ? "border-red-300 bg-red-50"
+                    : isFieldValid("businessCategory")
+                      ? "border-green-300 bg-green-50"
+                      : "border-slate-300"
+                } focus:outline-none focus:ring-2 focus:ring-lime-200`}
               />
               {getFieldError("businessCategory") && (
                 <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
@@ -750,30 +861,46 @@ function SignupContent() {
             <div className="p-3 bg-lime-50 rounded-lg border border-lime-200 text-lime-700 text-xs">
               <p className="font-medium mb-1">💡 Store setup tips:</p>
               <ul className="space-y-1">
-                <li>• Choose a memorable store name that reflects your business</li>
+                <li>
+                  • Choose a memorable store name that reflects your business
+                </li>
                 <li>• Include landmarks or nearby locations in your address</li>
-                <li>• Be specific about your business category to help customers find you</li>
-                <li>• You can update store details later from your profile settings</li>
+                <li>
+                  • Be specific about your business category to help customers
+                  find you
+                </li>
+                <li>
+                  • You can update store details later from your profile
+                  settings
+                </li>
               </ul>
             </div>
 
             <div className="p-3 bg-blue-50 rounded-lg border border-blue-200 text-blue-700 text-sm">
-              💡 You can add your store logo and cover image later from your profile settings
+              💡 You can add your store logo and cover image later from your
+              profile settings
             </div>
 
             {/* Terms and Conditions (VENDOR on Step 2) */}
             <div className="space-y-1">
-              <div className={`flex items-start gap-3 p-3 rounded-xl border transition-colors ${getFieldError("termsAccepted") ? "bg-red-50 border-red-200" : "bg-slate-50 border-slate-100"}`}>
+              <div
+                className={`flex items-start gap-3 p-3 rounded-xl border transition-colors ${getFieldError("termsAccepted") ? "bg-red-50 border-red-200" : "bg-slate-50 border-slate-100"}`}
+              >
                 <div className="flex h-5 w-5 items-center justify-center">
                   <input
                     id="terms-accepted-vendor"
                     type="checkbox"
                     checked={form.termsAccepted}
-                    onChange={(e) => handleFieldChange("termsAccepted", e.target.checked)}
+                    onChange={(e) =>
+                      handleFieldChange("termsAccepted", e.target.checked)
+                    }
                     className="h-4 w-4 rounded border-slate-300 text-lime-600 focus:ring-lime-200"
                   />
                 </div>
-                <label htmlFor="terms-accepted-vendor" className="text-sm text-slate-700 cursor-pointer select-none">
+                <label
+                  htmlFor="terms-accepted-vendor"
+                  className="text-sm text-slate-700 cursor-pointer select-none"
+                >
                   I agree to the <TermsModal />
                 </label>
               </div>
@@ -819,7 +946,10 @@ function SignupContent() {
         {/* Footer */}
         <div className="mt-4 text-center text-sm text-slate-600">
           Already have an account?{" "}
-          <Link href="/login" className="font-semibold text-lime-600 hover:text-lime-700">
+          <Link
+            href="/login"
+            className="font-semibold text-lime-600 hover:text-lime-700"
+          >
             Log in
           </Link>
         </div>

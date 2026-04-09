@@ -146,6 +146,7 @@ router.get("/me", AuthCtrl.getMe);
 router.post(
   "/forgot-password",
   loginLimiter,
+  auditLog("FORGOT_PASSWORD", "USER"),
   [
     body("email")
       .isEmail()
@@ -173,6 +174,7 @@ router.post(
 router.post(
   "/reset-password",
   loginLimiter,
+  auditLog("RESET_PASSWORD", "USER"),
   [
     body("email")
       .isEmail()
