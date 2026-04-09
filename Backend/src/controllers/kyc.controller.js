@@ -496,50 +496,61 @@ exports.checkListingLimit = async (req, res, next) => {
     const isKycEnabled = kycFlag && kycFlag.isEnabled;
     const kyc = user.vendorKYC;
 
-    // KYC-verified unlimited vendors
-    if (kyc && user.isKYCVerified) {
+    // 1. KYC-verified vendors get unlimited listings (if verified)
+    // If KYC system is enabled, we strictly check verification status
+    if (user.isKYCVerified) {
       const now = new Date();
-      const validUntil = kyc.validUntil ? new Date(kyc.validUntil) : null;
+      // Only check expiration if KYC system is actually enabled
+      if (isKycEnabled && kyc) {
+        const validUntil = kyc.validUntil ? new Date(kyc.validUntil) : null;
 
-      if (validUntil && validUntil < now) {
-        return res.status(403).json({
-          success: false,
-          message: 'Your KYC verification has expired. Please renew your subscription to continue creating listings.',
-          expired: true,
-          validUntil: kyc.validUntil,
-          redirectTo: '/kyc/payment',
-        });
-      }
+        if (validUntil && validUntil < now) {
+          return res.status(403).json({
+            success: false,
+            message: 'Your KYC verification has expired. Please renew your subscription to continue creating listings.',
+            expired: true,
+            validUntil: kyc.validUntil,
+            redirectTo: '/kyc/payment',
+          });
+        }
 
-      const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-      if (validUntil && validUntil < thirtyDaysFromNow) {
-        res.setHeader('X-KYC-Warning', 'KYC expiring soon');
-        res.setHeader('X-KYC-Expires', kyc.validUntil);
+        const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+        if (validUntil && validUntil < thirtyDaysFromNow) {
+          res.setHeader('X-KYC-Warning', 'KYC expiring soon');
+          res.setHeader('X-KYC-Expires', kyc.validUntil);
+        }
       }
 
       return next();
     }
 
-    // Admin-granted unlimited access flag
+    // 2. Admin-granted unlimited access flag
     if (user.vendorProfile?.canCreateUnlimitedListings) {
       return next();
     }
 
-    // Count only active listings against the quota
+    // 3. Count active listings against the quota
     const currentCount = await prisma.listing.count({
       where: { sellerId: userId, isActive: true },
     });
 
-    if (currentCount >= user.listingLimit) {
+    // Determine the effective limit.
+    // If the user has explicitly purchased slots (listingLimit > 0), use that.
+    // If not, and KYC is disabled, provide a default "Free" starter limit.
+    // If KYC is enabled, the starter limit is 0 (must verify or buy).
+    const starterLimit = isKycEnabled ? 0 : 10;
+    const effectiveLimit = Math.max(user.listingLimit, starterLimit);
+
+    if (currentCount >= effectiveLimit) {
       const message = isKycEnabled
-        ? `You have reached your listing limit of ${user.listingLimit}. Purchase a listing package (₦1,000 for 3 listings) to continue, or complete KYC verification to unlock unlimited listings.`
-        : `You have reached your listing limit of ${user.listingLimit}. Purchase a listing package to continue posting.`;
+        ? `You have reached your listing limit of ${effectiveLimit}. Purchase a listing package (₦1,000 for 3 listings) to continue, or complete KYC verification to unlock unlimited listings.`
+        : `You have reached your free listing limit of ${effectiveLimit}. Purchase a listing package to increase your capacity and continue posting.`;
 
       return res.status(403).json({
         success: false,
         message,
         currentCount,
-        limit: user.listingLimit,
+        limit: effectiveLimit,
         redirectTo: '/dashboard/buy-listings',
         kycStatus: kyc?.status || 'NOT_SUBMITTED',
         canPurchasePackage: true,
