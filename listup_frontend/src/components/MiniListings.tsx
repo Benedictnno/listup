@@ -14,7 +14,7 @@ async function fetchFeaturedListings(): Promise<Listing[]> {
     const data = await fetchListings();
     // Backend returns paging shape: { items, total, page, pages }
     let items = Array.isArray(data?.items) ? data.items : Array.isArray(data) ? data : [];
-    return items.slice(-12);
+    return items.slice(-15);
   } catch (err: unknown) {
     console.error('Failed to load listings:', err);
     throw new Error(err instanceof Error ? err.message : "Failed to load listings");
