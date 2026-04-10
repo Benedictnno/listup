@@ -9,14 +9,19 @@ export default function PWAInstallPrompt() {
     const [showPrompt, setShowPrompt] = useState(false);
 
     useEffect(() => {
+        const sessionKey = "listup_pwa_install_prompt_shown";
+
         const handler = (e: any) => {
+            if (window.matchMedia("(display-mode: standalone)").matches) return;
+            if (sessionStorage.getItem(sessionKey) === "1") return;
+
             // Prevent the mini-infobar from appearing on mobile
             e.preventDefault();
             // Stash the event so it can be triggered later.
             setDeferredPrompt(e);
             // Update UI notify the user they can install the PWA
+            sessionStorage.setItem(sessionKey, "1");
             setShowPrompt(true);
-            console.log("PWA install prompt deferred");
         };
 
         window.addEventListener("beforeinstallprompt", handler);
@@ -39,10 +44,13 @@ export default function PWAInstallPrompt() {
 
         // Wait for the user to respond to the prompt
         const { outcome } = await deferredPrompt.userChoice;
-        console.log(`User responded to the install prompt: ${outcome}`);
 
         // We've used the prompt, and can't use it again, throw it away
         setDeferredPrompt(null);
+        setShowPrompt(false);
+    };
+
+    const handleDismiss = () => {
         setShowPrompt(false);
     };
 
@@ -59,7 +67,7 @@ export default function PWAInstallPrompt() {
                         </p>
                     </div>
                     <button
-                        onClick={() => setShowPrompt(false)}
+                        onClick={handleDismiss}
                         className="text-slate-500 hover:text-white transition-colors"
                     >
                         <X size={16} />
