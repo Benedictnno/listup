@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { User, Lock, Save } from "lucide-react";
 
 export default function SettingsPage() {
-  const { user, isInitialized, fetchUser } = useAuthStore();
+  const { user, isInitialized, initializeAuth } = useAuthStore();
   const router = useRouter();
 
   const [activeTab, setActiveTab] = useState("profile");
@@ -41,7 +41,7 @@ export default function SettingsPage() {
       const res = await api.put("/auth/update-profile", { name, phone });
       if (res.data.success) {
         toast.success("Profile updated successfully");
-        await fetchUser(); // Refresh global user state
+        await initializeAuth(); // Refresh global user state
       }
     } catch (err: any) {
       toast.error(err.response?.data?.message || "Failed to update profile");

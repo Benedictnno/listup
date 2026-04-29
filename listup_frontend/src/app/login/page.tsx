@@ -234,6 +234,19 @@ export default function LoginPage() {
           </div>
         )}
 
+        <GoogleSignInButton
+          onSuccess={({ isNewUser }) => {
+            if (isNewUser) setShowVendorPrompt(true);
+            else router.push('/dashboard');
+          }}
+        />
+        
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '20px 0' }}>
+          <div style={{ flex: 1, height: 1, background: '#e5e7eb' }} />
+          <span style={{ color: '#9ca3af', fontSize: 13 }}>or</span>
+          <div style={{ flex: 1, height: 1, background: '#e5e7eb' }} />
+        </div>
+
         <div className="space-y-4 mb-6">
           {/* Email Field */}
           <div>
@@ -360,17 +373,7 @@ export default function LoginPage() {
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '20px 0' }}>
-          <div style={{ flex: 1, height: 1, background: '#e5e7eb' }} />
-          <span style={{ color: '#9ca3af', fontSize: 13 }}>or</span>
-          <div style={{ flex: 1, height: 1, background: '#e5e7eb' }} />
-        </div>
-        <GoogleSignInButton
-          onSuccess={({ isNewUser }) => {
-            if (isNewUser) setShowVendorPrompt(true);
-            else router.push('/dashboard');
-          }}
-        />
+      
       </form>
 
       <PostSignupVendorPrompt
