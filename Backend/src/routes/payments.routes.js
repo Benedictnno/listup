@@ -90,15 +90,16 @@ async function _processListingPackagePaymentInternal(vendorId, slotsToAdd, payst
 
 
 // Initialize payment for an ad
+// SECURITY: amount is derived server-side from ad.amount — never trusted from the client.
 router.post("/initialize", auth, checkFeature('listing_promotion'), async (req, res) => {
-  const { adId, email, amount } = req.body;
+  const { adId, email } = req.body;
 
-  if (!adId || !email || !amount) {
-    return res.status(400).json({ error: "All fields are required" });
+  if (!adId || !email) {
+    return res.status(400).json({ error: "adId and email are required" });
   }
 
   try {
-    // Verify the ad exists and belongs to the user
+    // Verify the ad exists and belongs to the requesting vendor
     const ad = await prisma.ad.findUnique({
       where: { id: adId },
       include: { vendor: true }
@@ -112,11 +113,17 @@ router.post("/initialize", auth, checkFeature('listing_promotion'), async (req, 
       return res.status(403).json({ error: "Unauthorized" });
     }
 
+    // Use the server-recorded amount — never the client-supplied value.
+    const serverAmount = ad.amount;
+    if (!serverAmount || serverAmount <= 0) {
+      return res.status(400).json({ error: "Ad has no valid amount on record" });
+    }
+
     const response = await axios.post(
       "https://api.paystack.co/transaction/initialize",
       {
         email,
-        amount: amount * 100, // Paystack expects kobo
+        amount: Math.round(serverAmount * 100), // Paystack expects kobo
         metadata: { adId },
         callback_url: `${getFrontendUrl()}/dashboard/promote/payments/${adId}/success`,
       },
@@ -460,33 +467,41 @@ router.post("/webhook", async (req, res) => {
           console.error(`❌ Ad ${adId} not found`);
           // Do not return non-200 to avoid webhook retries
         } else if (ad.paymentStatus !== "SUCCESS") {
-          // Set proper dates for the ad
-          const now = new Date();
-          const endDate = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days from now
+          // SECURITY: verify Paystack's reported charge matches the server-side price.
+          const paidNaira = (event.data.amount || 0) / 100;
+          if (Math.abs(paidNaira - ad.amount) > 1) {
+            console.error(
+              `❌ Ad ${adId} amount mismatch: expected ₦${ad.amount}, ` +
+              `Paystack reported ₦${paidNaira} — not activating ad`
+            );
+            // Do not activate; log for manual review but still return 200 to Paystack.
+          } else {
+            // Set proper dates for the ad
+            const now = new Date();
+            const endDate = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days from now
 
-          const updatedAd = await prisma.ad.update({
-            where: { 
-              id: adId,
-              paymentStatus: { not: "SUCCESS" } // Atomic idempotency check
-            },
-            data: {
-              status: "ACTIVE",
-              paymentStatus: "SUCCESS",
-              transactionId: event.data.reference,
-              startDate: now,
-              endDate: endDate,
-            },
-          });
+            const updatedAd = await prisma.ad.update({
+              where: {
+                id: adId,
+                paymentStatus: { not: "SUCCESS" } // Atomic idempotency check
+              },
+              data: {
+                status: "ACTIVE",
+                paymentStatus: "SUCCESS",
+                transactionId: event.data.reference,
+                startDate: now,
+                endDate: endDate,
+              },
+            });
 
-          console.log(`✅ Ad ${adId} payment successful and updated`);
-          console.log(`📅 Start Date: ${now.toISOString()}`);
-          console.log(`📅 End Date: ${endDate.toISOString()}`);
-          console.log(`💰 Amount: ₦${ad.amount}`);
-          console.log(`🎯 Type: ${ad.type}`);
-          console.log(`🔗 Transaction ID: ${event.data.reference}`);
-
-          // Log the complete updated ad data
-          console.log("📊 Updated ad data:", JSON.stringify(updatedAd, null, 2));
+            console.log(`✅ Ad ${adId} payment successful and updated`);
+            console.log(`📅 Start Date: ${now.toISOString()}`);
+            console.log(`📅 End Date: ${endDate.toISOString()}`);
+            console.log(`💰 Amount: ₦${ad.amount}`);
+            console.log(`🎯 Type: ${ad.type}`);
+            console.log(`🔗 Transaction ID: ${event.data.reference}`);
+            console.log("📊 Updated ad data:", JSON.stringify(updatedAd, null, 2));
+          }
         } else {
           console.log(`ℹ️ Ad ${adId} already marked as paid`);
         }

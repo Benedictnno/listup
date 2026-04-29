@@ -1,6 +1,6 @@
 "use client"
 import { PrimaryButton } from '@/utils/helpers';
-import { Menu, X, Layers, MessageSquare } from 'lucide-react';
+import { Menu, X, Layers, MessageSquare, Store, User, ChevronDown, Settings, LogOut, Heart } from 'lucide-react';
 import Link from 'next/link';
 import React, { useEffect, useState } from 'react';
 import { useAuthStore } from '@/store/authStore';
@@ -20,8 +20,10 @@ const SearchBar = dynamic(() => import('./SearchBar'), {
 
 function NavBar() {
   const [open, setOpen] = React.useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const menuRef = React.useRef<HTMLDivElement | null>(null);
+  const userMenuRef = React.useRef<HTMLDivElement | null>(null);
 
   // Use the proper auth store instead of local localStorage
   const { user, logout } = useAuthStore();
@@ -40,6 +42,9 @@ function NavBar() {
       const target = e.target as Node | null;
       if (menuRef.current && target && !menuRef.current.contains(target)) {
         setOpen(false);
+      }
+      if (userMenuRef.current && target && !userMenuRef.current.contains(target)) {
+        setUserMenuOpen(false);
       }
     }
 
@@ -104,43 +109,113 @@ function NavBar() {
             <SearchBar />
           </div>
 
-          {/* Authentication Buttons - show Dashboard for VENDOR, Saved for USER, or Login/Signup */}
-          {user ? (
-            <div className="hidden items-center gap-3 md:flex">
-              <Link href="/chat" className="relative p-2 text-white/80 hover:text-white transition">
-                <MessageSquare className="h-6 w-6" />
-                {unreadCount > 0 && (
-                  <span className="absolute top-0 right-0 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[12px] font-bold text-white border-2 border-[#0f172a]">
-                    {unreadCount > 9 ? '9+' : unreadCount}
-                  </span>
+          {/* Authentication Buttons */}
+          <div className="hidden items-center gap-4 md:flex shrink-0 min-w-[200px] justify-end">
+            {user ? (
+              <>
+                <Link href="/chat" className="relative p-2 text-white/80 hover:text-white transition">
+                  <MessageSquare className="h-6 w-6" />
+                  {unreadCount > 0 && (
+                    <span className="absolute top-0 right-0 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[12px] font-bold text-white border-2 border-[#0f172a]">
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
+                  )}
+                </Link>
+
+                {user.role === 'VENDOR' && (
+                  <>
+                    <Link href="/dashboard">
+                      <PrimaryButton>Dashboard</PrimaryButton>
+                    </Link>
+                    <button onClick={handleLogout} className="rounded-xl px-3 py-2 text-lg font-semibold text-white/80 hover:text-white">Logout</button>
+                  </>
                 )}
-              </Link>
-              {user.role === 'VENDOR' ? (
-                <Link href="/dashboard">
-                  <PrimaryButton>Dashboard</PrimaryButton>
+
+                {user.role === 'PARTNER' && (
+                  <>
+                    <Link href="/partner">
+                      <PrimaryButton>Partner Panel</PrimaryButton>
+                    </Link>
+                    <button onClick={handleLogout} className="rounded-xl px-3 py-2 text-lg font-semibold text-white/80 hover:text-white">Logout</button>
+                  </>
+                )}
+
+                {user.role === 'USER' && (
+                  <div className="relative" ref={userMenuRef}>
+                    <button
+                      onClick={() => setUserMenuOpen(!userMenuOpen)}
+                      className="flex items-center gap-2 rounded-full bg-slate-800/50 hover:bg-slate-800 border border-slate-700 px-4 py-2 text-sm font-semibold text-white transition-all"
+                    >
+                      <User className="h-5 w-5 text-lime-400" />
+                      <span className="max-w-[100px] truncate">{user.name || 'Account'}</span>
+                      <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform ${userMenuOpen ? 'rotate-180' : ''}`} />
+                    </button>
+
+                    {/* User Dropdown */}
+                    <AnimatePresence>
+                      {userMenuOpen && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                          transition={{ duration: 0.15 }}
+                          className="absolute right-0 mt-3 w-56 rounded-2xl bg-white shadow-xl ring-1 ring-slate-900/5 overflow-hidden"
+                        >
+                          <div className="p-2 space-y-1">
+                            <Link
+                              href="/saved"
+                              onClick={() => setUserMenuOpen(false)}
+                              className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-lime-600 transition-colors"
+                            >
+                              <Heart className="h-4 w-4" />
+                              Saved Items
+                            </Link>
+                            
+                            <Link
+                              href="/settings"
+                              onClick={() => setUserMenuOpen(false)}
+                              className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-lime-600 transition-colors"
+                            >
+                              <Settings className="h-4 w-4" />
+                              Settings
+                            </Link>
+
+                            <Link
+                              href="/dashboard?upgrade=1"
+                              onClick={() => setUserMenuOpen(false)}
+                              className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold text-lime-700 bg-lime-50 hover:bg-lime-100 transition-colors"
+                            >
+                              <Store className="h-4 w-4" />
+                              Sell on ListUp
+                            </Link>
+
+                            <div className="h-px bg-slate-100 my-1" />
+                            
+                            <button
+                              onClick={() => { setUserMenuOpen(false); handleLogout(); }}
+                              className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
+                            >
+                              <LogOut className="h-4 w-4" />
+                              Logout
+                            </button>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                )}
+              </>
+            ) : (
+              <>
+                <Link href="/login" className="rounded-xl px-3 py-2 text-lg font-semibold text-white/80 transition hover:text-white">
+                  Log in
                 </Link>
-              ) : (
-                <Link href="/saved">
-                  <button className="rounded-xl px-3 py-2 text-lg font-semibold text-white/80 transition hover:text-white">Saved</button>
+                <Link href="/signup">
+                  <PrimaryButton>Sign up</PrimaryButton>
                 </Link>
-              )}
-              <button
-                onClick={handleLogout}
-                className="rounded-xl px-3 py-2 text-lg font-semibold text-white/80 transition hover:text-white"
-              >
-                Logout
-              </button>
-            </div>
-          ) : (
-            <div className="hidden items-center gap-3 md:flex px-3 py-2">
-              <Link href="/login" className="rounded-xl px-3 py-2 text-lg font-semibold text-white/80 transition hover:text-white">
-                Log in
-              </Link>
-              <Link href="/signup">
-                <PrimaryButton>Sign up</PrimaryButton>
-              </Link>
-            </div>
-          )}
+              </>
+            )}
+          </div>
 
           <button
             className="inline-flex items-center justify-center rounded-lg p-2 text-white md:hidden"
@@ -180,10 +255,10 @@ function NavBar() {
                   className="p-3 rounded-2xl bg-slate-50 text-slate-500 hover:text-black hover:bg-slate-100 transition-all active:scale-95"
                   aria-label="Close menu"
                 >
-                  <X className="h-7 w-7 stroke-[2.5]" />
+                  <X className="h-5 w-7 stroke-[2.5]" />
                 </button>
                 <div className="text-right">
-                  <h2 className="text-[32px] font-black tracking-tighter text-slate-900 leading-none">
+                  <h2 className="text-[30px] font-black tracking-tighter text-slate-900 leading-none">
                     Categories
                   </h2>
                   <div className="h-1.5 w-12 bg-lime-400 ml-auto mt-2 rounded-full" />
@@ -250,24 +325,42 @@ function NavBar() {
               </div>
 
               {/* Fixed Bottom Section */}
-              <div className="mt-auto p-8 bg-slate-100 border-t-2 border-slate-200 shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.1)] relative z-10">
+              <div className="mt-auto p-5 bg-slate-100 border-t-2 border-slate-200 shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.1)] relative z-10">
                 {user ? (
-                  <div className="flex flex-col gap-4">
+                  <div className="flex flex-col gap-2">
                     <Link
-                      href={user.role === 'VENDOR' ? "/dashboard" : "/saved"}
+                      href={user.role === 'VENDOR' ? "/dashboard" : "/dashboard"}
                       onClick={() => setOpen(false)}
-                      className="flex items-center justify-between p-5 bg-white border border-slate-200 rounded-[1.5rem] shadow-sm hover:shadow-md hover:border-lime-400 transition-all group"
+                      className="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-[1.5rem] shadow-sm hover:shadow-md hover:border-lime-400 transition-all group"
                     >
                       <div className="flex items-center gap-4">
                         <div className="p-3 bg-lime-50 text-lime-600 rounded-xl group-hover:bg-lime-400 group-hover:text-white transition-colors">
-                          <Layers className="h-6 w-6" />
+                          <Layers className="h-5 w-5" />
                         </div>
-                        <span className="text-[18px] font-black text-slate-900">
+                        <span className="text-[16px] font-black text-slate-900">
                           {user.role === 'VENDOR' ? 'Dashboard' : 'Saved Items'}
                         </span>
                       </div>
                       <X className="h-5 w-5 text-slate-300 group-hover:text-lime-500 rotate-45 transition-colors" />
                     </Link>
+
+                    {user.role === 'USER' && (
+                      <Link
+                        href="/dashboard?upgrade=1"
+                        onClick={() => setOpen(false)}
+                        className="flex items-center justify-between p-3 bg-lime-400 border border-lime-500 rounded-[1.5rem] shadow-sm hover:shadow-md transition-all group"
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className="p-3 bg-white/20 text-slate-900 rounded-xl group-hover:bg-white/40 transition-colors">
+                            <Store className="h-5 w-5" />
+                          </div>
+                          <span className="text-[16px] font-black text-slate-900">
+                            Sell on ListUp
+                          </span>
+                        </div>
+                        <X className="h-5 w-5 text-slate-900 rotate-45 transition-colors" />
+                      </Link>
+                    )}
 
                     <button
                       onClick={handleLogout}

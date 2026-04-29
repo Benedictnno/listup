@@ -23,6 +23,37 @@ exports.verifyWebhook = (req, res) => {
  */
 exports.webhook = async (req, res) => {
     try {
+        // Verify X-Hub-Signature-256 so only genuine Meta payloads are processed.
+        const crypto = require('crypto');
+        const appSecret = process.env.META_APP_SECRET;
+        const signature = req.headers['x-hub-signature-256'];
+
+        if (!appSecret) {
+            console.error('[WA-WEBHOOK] META_APP_SECRET is not set — rejecting all inbound webhooks');
+            return res.sendStatus(500);
+        }
+
+        if (!signature) {
+            console.warn('[WA-WEBHOOK] Missing X-Hub-Signature-256 — possible spoof attempt');
+            return res.sendStatus(401);
+        }
+
+        const rawBody = req.rawBody || Buffer.from(JSON.stringify(req.body));
+        const expectedSig = 'sha256=' + crypto
+            .createHmac('sha256', appSecret)
+            .update(rawBody)
+            .digest('hex');
+
+        let sigMatch = false;
+        try {
+            sigMatch = crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSig));
+        } catch (_) { /* length mismatch — leave sigMatch false */ }
+
+        if (!sigMatch) {
+            console.warn('[WA-WEBHOOK] Invalid X-Hub-Signature-256 — rejecting request');
+            return res.sendStatus(401);
+        }
+
         const body = req.body;
 
         // Check if it's a WhatsApp message webhook

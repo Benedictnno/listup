@@ -33,6 +33,7 @@
     "date-fns": "^4.1.0",
     "eslint": "^8.57.0",
     "eslint-config-next": "14.2.3",
+    "firebase": "^12.12.1",
     "framer-motion": "^12.23.12",
     "js-cookie": "^3.0.5",
     "lucide-react": "^0.539.0",

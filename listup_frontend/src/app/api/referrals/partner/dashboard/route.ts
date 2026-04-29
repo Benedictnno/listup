@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 
+// Prevent Next.js from statically pre-rendering / pre-executing this proxy route.
+// cookies() and cache: 'no-store' both require a dynamic request context.
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
     try {
         const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';

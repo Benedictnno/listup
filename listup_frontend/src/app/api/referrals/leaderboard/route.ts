@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
 
+// Prevent Next.js from statically pre-rendering this no-store proxy route.
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
     try {
         const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';

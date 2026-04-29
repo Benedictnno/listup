@@ -27,6 +27,9 @@ import {
 } from "@/utils/errorHandler";
 import ErrorNotice from "@/components/ErrorNotice";
 import TermsModal from "@/components/TermsModal";
+import GoogleSignInButton from '@/components/GoogleSignInButton';
+import Analytics from '@/lib/analytics';
+import PostSignupVendorPrompt from '@/components/PostSignupVendorPrompt';
 
 interface ValidationError {
   field: string;
@@ -58,6 +61,7 @@ function SignupContent() {
   const [error, setError] = useState<string>("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [success, setSuccess] = useState<string>("");
+  const [showVendorPrompt, setShowVendorPrompt] = useState<boolean>(false);
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [hasReferralDiscount, setHasReferralDiscount] =
     useState<boolean>(false);
@@ -298,6 +302,7 @@ function SignupContent() {
       }
 
       await signup(payload);
+      Analytics.signUp('email');
 
       toast.success(
         "Account created successfully! Please check your email to verify your account.",
@@ -704,6 +709,21 @@ function SignupContent() {
                 )}
               </button>
             </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '20px 0' }}>
+              <div style={{ flex: 1, height: 1, background: '#e5e7eb' }} />
+              <span style={{ color: '#9ca3af', fontSize: 13 }}>or</span>
+              <div style={{ flex: 1, height: 1, background: '#e5e7eb' }} />
+            </div>
+            <GoogleSignInButton
+              onSuccess={({ isNewUser }) => {
+                if (isNewUser) {
+                  setShowVendorPrompt(true);
+                } else {
+                  router.push('/dashboard');
+                }
+              }}
+            />
           </form>
         )}
 
@@ -954,6 +974,11 @@ function SignupContent() {
           </Link>
         </div>
       </div>
+
+      <PostSignupVendorPrompt
+        isOpen={showVendorPrompt}
+        onClose={() => setShowVendorPrompt(false)}
+      />
     </div>
   );
 }

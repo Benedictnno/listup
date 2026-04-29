@@ -32,14 +32,15 @@ const CLOUDFLARE_IP_RANGES = [
 ];
 
 /**
- * Extract Cloudflare-reported client IP.
- */
-function extractClientIp(req) {
-  return req.headers["cf-connecting-ip"] || null;
-}
-
-/**
  * Allow only Cloudflare-originated traffic.
+ *
+ * Security rationale: req.ips / X-Forwarded-For can be forged by anyone who
+ * sends a request directly to the origin with a crafted header. The only
+ * unforgeable source of truth is req.socket.remoteAddress — the IP of the
+ * process that actually opened the TCP connection to this server. With
+ * app.set('trust proxy', 1) that is always the immediate upstream peer
+ * (Cloudflare's edge node in production). We validate that peer against the
+ * published Cloudflare IP ranges.
  */
 function cloudflareSecurity(req, res, next) {
   // 1. Allow OPTIONS preflight requests to bypass security checks
@@ -53,46 +54,38 @@ function cloudflareSecurity(req, res, next) {
   }
 
   try {
-    // 3. Extract the IP provided by Cloudflare
-    const cfIp = extractClientIp(req);
+    // 3. The actual TCP peer — cannot be spoofed via headers.
+    const remoteIp = (req.socket.remoteAddress || "").replace(/^::ffff:/, "");
 
-    // We need to check the entire chain of IPs if we are behind multiple proxies (e.g. Cloudflare -> Vercel -> Backend)
-    // req.ips contains all IPs in X-Forwarded-For if 'trust proxy' is on
-    const ipChain =
-      req.ips.length > 0 ? req.ips : [req.ip.replace(/^::ffff:/, "")];
-
-    // 4. Whitelist check (e.g. for development or specific internal tools)
+    // 4. Static allowlist check (dev boxes / internal tools)
     const allowedIps = (process.env.ALLOWED_DIRECT_IPS || "")
       .split(",")
-      .map((ip) => ip.trim());
-    if (ipChain.some((ip) => allowedIps.includes(ip))) {
+      .map((ip) => ip.trim())
+      .filter(Boolean);
+    if (allowedIps.includes(remoteIp)) {
       return next();
     }
 
-    // 5. If we are in production, we MUST verify that at least ONE IP in the chain is from Cloudflare
+    // 5. In production the TCP peer MUST be a Cloudflare edge node.
     if (process.env.NODE_ENV === "production") {
-      const hasCloudflareIp = ipChain.some((ip) =>
-        CLOUDFLARE_IP_RANGES.some((range) => ipRangeCheck(ip, range)),
+      const isCloudflare = CLOUDFLARE_IP_RANGES.some((range) =>
+        ipRangeCheck(remoteIp, range)
       );
 
-      if (!hasCloudflareIp) {
+      if (!isCloudflare) {
         console.warn(
-          `[SECURITY-DENIED] No Cloudflare IP found in chain: ${ipChain.join(", ")}`,
+          `[SECURITY-DENIED] Non-Cloudflare TCP peer: ${remoteIp}`
         );
-        console.warn(`Headers: ${JSON.stringify(req.headers)}`);
         return res.status(403).json({
-          error:
-            "Direct IP access restricted. Please access through the domain.",
-          debug_info:
-            process.env.DEBUG_SECURITY === "true"
-              ? { ipChain, hasCloudflareIp }
-              : undefined,
+          error: "Direct IP access restricted. Please access through the domain.",
         });
       }
 
-      if (!cfIp) {
+      // cf-connecting-ip is injected by Cloudflare — its absence means the
+      // request bypassed the Cloudflare proxy layer somehow.
+      if (!req.headers["cf-connecting-ip"]) {
         console.warn(
-          `[SECURITY-DENIED] Cloudflare header missing from edge IP: ${edgeIp}`,
+          `[SECURITY-DENIED] Missing cf-connecting-ip from Cloudflare peer ${remoteIp}`
         );
         return res
           .status(403)
@@ -103,7 +96,7 @@ function cloudflareSecurity(req, res, next) {
     return next();
   } catch (err) {
     console.error("Cloudflare security error:", err);
-    // On error, we fail closed in production for security
+    // Fail closed in production
     if (process.env.NODE_ENV === "production") {
       return res.status(500).json({ error: "Security check failed" });
     }

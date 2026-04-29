@@ -110,7 +110,7 @@ export default function HeroCarousel() {
                             src={ads[currentIndex].imageUrl}
                             alt={ads[currentIndex].title}
                             fill
-                            className="object-fit"
+                            className="object-contain"
                             priority
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />

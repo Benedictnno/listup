@@ -45,9 +45,9 @@ const BottomNav = () => {
             href: "/saved",
         },
         {
-            label: user?.role === "VENDOR" ? "Dashboard" : "Categories",
-            icon: user?.role === "VENDOR" ? LayoutDashboard : Grid,
-            href: user?.role === "VENDOR" ? "/dashboard" : "/categories",
+            label: user ? "Dashboard" : "Categories",
+            icon: user ? LayoutDashboard : Grid,
+            href: user ? "/dashboard" : "/categories",
         },
     ];
 

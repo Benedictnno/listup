@@ -8,6 +8,9 @@ import { parseApiError, getFieldErrorMessage, getSuccessMessage } from "@/utils/
 import ErrorNotice from "@/components/ErrorNotice";
 import { toast } from "sonner";
 import api from "@/utils/axios";
+import GoogleSignInButton from '@/components/GoogleSignInButton';
+import Analytics from '@/lib/analytics';
+import PostSignupVendorPrompt from '@/components/PostSignupVendorPrompt';
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -19,6 +22,7 @@ export default function LoginPage() {
   const [retryCount, setRetryCount] = useState(0);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [requiresEmailVerification, setRequiresEmailVerification] = useState(false);
+  const [showVendorPrompt, setShowVendorPrompt] = useState(false);
 
   const login = useAuthStore((state) => state.login);
   const router = useRouter();
@@ -102,6 +106,7 @@ export default function LoginPage() {
 
     try {
       const user = await login(email.trim(), password);
+      Analytics.login('email');
       const successMsg = getSuccessMessage('login');
       setSuccess(successMsg);
       toast.success(successMsg);
@@ -111,8 +116,7 @@ export default function LoginPage() {
         if (user.role === 'VENDOR') {
           router.push("/dashboard");
         } else {
-          // Partners and regular users go to partner dashboard (which serves as user dashboard too)
-          router.push("/partner");
+          router.push("/");
         }
       }, 1000);
 
@@ -355,7 +359,24 @@ export default function LoginPage() {
             </Link>
           </div>
         </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '20px 0' }}>
+          <div style={{ flex: 1, height: 1, background: '#e5e7eb' }} />
+          <span style={{ color: '#9ca3af', fontSize: 13 }}>or</span>
+          <div style={{ flex: 1, height: 1, background: '#e5e7eb' }} />
+        </div>
+        <GoogleSignInButton
+          onSuccess={({ isNewUser }) => {
+            if (isNewUser) setShowVendorPrompt(true);
+            else router.push('/dashboard');
+          }}
+        />
       </form>
+
+      <PostSignupVendorPrompt
+        isOpen={showVendorPrompt}
+        onClose={() => setShowVendorPrompt(false)}
+      />
     </div>
   );
 }

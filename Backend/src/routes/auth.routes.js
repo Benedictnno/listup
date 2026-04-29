@@ -228,4 +228,26 @@ router.post("/logout", (req, res) => {
   }
 });
 
+// Update Profile
+router.put(
+  "/update-profile",
+  passport.authenticate("jwt", { session: false }),
+  [
+    body("name").trim().notEmpty().withMessage("Name is required"),
+    body("phone").optional().trim(),
+  ],
+  AuthCtrl.updateProfile
+);
+
+// Change Password
+router.put(
+  "/change-password",
+  passport.authenticate("jwt", { session: false }),
+  [
+    body("currentPassword").notEmpty().withMessage("Current password is required"),
+    body("newPassword").isLength({ min: 6 }).withMessage("New password must be at least 6 characters"),
+  ],
+  AuthCtrl.changePassword
+);
+
 module.exports = router;

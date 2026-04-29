@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { usePathname } from "next/navigation";
 import { FiMenu, FiSettings, FiLogOut, FiX, FiHome } from "react-icons/fi";
 import { CiBoxList } from "react-icons/ci";
 import { AiOutlineRise } from "react-icons/ai";
@@ -17,8 +18,15 @@ import { useFeatureFlag } from "@/context/FeatureFlagContext";
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { isEnabled } = useFeatureFlag();
   const { user, logout: authLogout } = useAuthStore();
+  const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false); // Start closed on mobile
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
+
+  // Only the root /dashboard page is accessible to non-vendor (USER) accounts
+  // so that the upgrade modal / saved-posts view can render. Every /dashboard/*
+  // sub-route still requires VENDOR role via the ProtectedRoute below.
+  const isRootDashboard = pathname === "/dashboard";
+  const isVendor = user?.role === "VENDOR";
 
   const vendorName = user?.name || "Vendor";
   const storeName = user?.vendorProfile?.storeName || vendorName;
@@ -30,16 +38,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     window.location.href = "/login";
   };
 
+  // Vendor-only actions are hidden when a USER account is on the /dashboard
+  // upgrade/saved-posts view so the sidebar stays coherent.
   const quickActions = [
-    { icon: <ShoppingBag size={20} />, label: "My Products", href: "/dashboard/vendor-listing", color: "bg-green-500" },
-    { icon: <CiBoxList size={20} />, label: "Add Listing", href: "/dashboard/create-list", color: "bg-lime-500" },
-    ...(isEnabled('listing_promotion') ? [{ icon: <AiOutlineRise size={20} />, label: "Create Ad", href: "/dashboard/promote", color: "bg-blue-500" }] : []),
-    ...(isEnabled('referral_system') ? [{ icon: <Gift size={20} />, label: "Earn Referrals", href: "/dashboard/referrals", color: "bg-purple-500" }] : []),
-    { icon: <FiSettings size={20} />, label: "Settings", href: "/dashboard/settings", color: "bg-orange-500" },
+    ...(isVendor ? [
+      { icon: <ShoppingBag size={20} />, label: "My Products", href: "/dashboard/vendor-listing", color: "bg-green-500" },
+      { icon: <CiBoxList size={20} />, label: "Add Listing", href: "/dashboard/create-list", color: "bg-lime-500" },
+      ...(isEnabled('listing_promotion') ? [{ icon: <AiOutlineRise size={20} />, label: "Create Ad", href: "/dashboard/promote", color: "bg-blue-500" }] : []),
+      ...(isEnabled('referral_system') ? [{ icon: <Gift size={20} />, label: "Earn Referrals", href: "/dashboard/referrals", color: "bg-purple-500" }] : []),
+      { icon: <FiSettings size={20} />, label: "Settings", href: "/dashboard/settings", color: "bg-orange-500" },
+    ] : []),
   ];
 
   return (
-    <ProtectedRoute requireVendor={true}>
+    <ProtectedRoute requireVendor={!isRootDashboard}>
       <div className="flex bg-gray-50 min-h-[calc(100vh-64px)]">
         {/* Mobile Overlay */}
         {isOpen && (

@@ -247,9 +247,21 @@ exports.update = async (req, res, next) => {
     if (exists.sellerId !== req.user.id)
       return res.status(403).json({ message: "Not your listing" });
 
+    // Allowlist: only fields a vendor may legitimately change.
+    // Excludes server-controlled fields: sellerId, boostScore, createdAt, etc.
+    const EDITABLE_FIELDS = [
+      "title", "description", "price", "images",
+      "location", "condition", "categoryId", "isActive",
+    ];
+    const data = {};
+    for (const field of EDITABLE_FIELDS) {
+      if (req.body[field] !== undefined) data[field] = req.body[field];
+    }
+    if (data.price !== undefined) data.price = Number(data.price);
+
     const listing = await prisma.listing.update({
       where: { id: req.params.id },
-      data: { ...req.body, updatedAt: new Date() },
+      data: { ...data, updatedAt: new Date() },
     });
     res.json(listing);
   } catch (e) {

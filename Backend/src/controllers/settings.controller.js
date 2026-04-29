@@ -43,6 +43,16 @@ exports.getUserSettings = async (req, res, next) => {
 exports.updateStoreSettings = async (req, res, next) => {
   try {
     const userId = req.user.id;
+
+    // Only VENDOR accounts may manage store settings.
+    // USERs must go through the explicit upgrade-to-vendor flow first.
+    if (req.user.role !== 'VENDOR') {
+      return res.status(403).json({
+        success: false,
+        message: 'Only vendors can manage store settings. Please upgrade your account first.',
+      });
+    }
+
     const {
       storeName,
       storeDescription,

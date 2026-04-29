@@ -191,16 +191,28 @@ class ChatController {
             const { id } = req.params;
             const userId = req.user.id;
 
-            // Get conversation ID first to emit event
             const prisma = require('../lib/prisma');
-            const message = await prisma.message.findUnique({ where: { id }, select: { conversationId: true } });
+            // Fetch the message and verify the caller belongs to that conversation.
+            const message = await prisma.message.findUnique({
+                where: { id },
+                select: {
+                    conversationId: true,
+                    conversation: { select: { buyerId: true, sellerId: true } },
+                },
+            });
+
+            if (!message) {
+                return res.status(404).json({ success: false, message: 'Message not found' });
+            }
+            const { buyerId, sellerId } = message.conversation;
+            if (userId !== buyerId && userId !== sellerId) {
+                return res.status(403).json({ success: false, message: 'Unauthorized' });
+            }
 
             await ChatService.markAsRead([id], userId);
 
             const { emitMessageRead, emitUnreadRefresh } = require('../utils/socketEmitter');
-            if (message) {
-                emitMessageRead(message.conversationId, [id], userId);
-            }
+            emitMessageRead(message.conversationId, [id], userId);
             emitUnreadRefresh(userId);
 
             return res.json({ success: true });
@@ -217,6 +229,19 @@ class ChatController {
         try {
             const { id } = req.params;
             const userId = req.user.id;
+
+            // Verify membership before mutating.
+            const prisma = require('../lib/prisma');
+            const convo = await prisma.conversation.findUnique({
+                where: { id },
+                select: { buyerId: true, sellerId: true },
+            });
+            if (!convo) {
+                return res.status(404).json({ success: false, message: 'Conversation not found' });
+            }
+            if (userId !== convo.buyerId && userId !== convo.sellerId) {
+                return res.status(403).json({ success: false, message: 'Unauthorized' });
+            }
 
             await ChatService.markAllAsRead(id, userId);
 
@@ -256,6 +281,19 @@ class ChatController {
 
             if (!conversationId || !reason) {
                 return res.status(400).json({ success: false, message: 'Conversation ID and reason are required' });
+            }
+
+            // Verify the reporter is a member of the conversation.
+            const prisma = require('../lib/prisma');
+            const convo = await prisma.conversation.findUnique({
+                where: { id: conversationId },
+                select: { buyerId: true, sellerId: true },
+            });
+            if (!convo) {
+                return res.status(404).json({ success: false, message: 'Conversation not found' });
+            }
+            if (reporterId !== convo.buyerId && reporterId !== convo.sellerId) {
+                return res.status(403).json({ success: false, message: 'You are not a member of this conversation' });
             }
 
             const report = await ChatService.reportConversation({

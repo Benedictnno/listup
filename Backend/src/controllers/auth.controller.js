@@ -299,6 +299,7 @@ exports.registerVendor = async (req, res, next) => {
       const newUser = await tx.user.create({
         data: {
           ...userData,
+          listingLimit: 5,
           vendorProfile: {
             create: {
               storeName: storeName.trim(),
@@ -874,5 +875,59 @@ exports.resendVerificationEmail = async (req, res, next) => {
       success: false,
       message: 'Internal server error while resending verification email'
     });
+  }
+};
+
+exports.updateProfile = async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ success: false, errors: errors.array() });
+    }
+
+    const { name, phone } = req.body;
+    const userId = req.user.id;
+
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: { name, phone },
+      select: { id: true, name: true, phone: true, email: true, role: true }
+    });
+
+    res.json({ success: true, data: updatedUser, message: 'Profile updated successfully' });
+  } catch (err) {
+    console.error("updateProfile error:", err);
+    res.status(500).json({ success: false, message: 'Failed to update profile' });
+  }
+};
+
+exports.changePassword = async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ success: false, errors: errors.array() });
+    }
+
+    const { currentPassword, newPassword } = req.body;
+    const userId = req.user.id;
+
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ success: false, message: 'Incorrect current password' });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
+    await prisma.user.update({
+      where: { id: userId },
+      data: { password: hashedPassword }
+    });
+
+    res.json({ success: true, message: 'Password changed successfully' });
+  } catch (err) {
+    console.error("changePassword error:", err);
+    res.status(500).json({ success: false, message: 'Failed to change password' });
   }
 };

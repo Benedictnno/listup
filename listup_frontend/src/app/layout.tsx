@@ -13,6 +13,8 @@ import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 import ReferralEngagementTracker from "@/components/ReferralEngagementTracker";
 import { Toaster } from "sonner";
 import QueryProvider from "@/providers/QueryProvider";
+import GoogleAnalytics from "@/components/GoogleAnalytics";
+import FirebaseAnalytics from "@/components/FirebaseAnalytics";
 
 
 const montserrat = Montserrat({
@@ -58,6 +60,8 @@ export default function RootLayout({
         <link rel="preconnect" href="https://api.listup.ng" />
       </head>
       <body className="antialiased">
+        <GoogleAnalytics />
+        <FirebaseAnalytics />
         <QueryProvider>
           <AuthProvider>
             <FeatureFlagProvider>

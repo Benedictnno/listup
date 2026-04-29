@@ -17,6 +17,7 @@ const passport = require('passport');
 const routes = require('./routes');
 const error = require('./middleware/error');
 const { cloudflareSecurity } = require('./middleware/security');
+const { auth, allow } = require('./middleware/auth');
 const cookieParser = require('cookie-parser');
 require('./config/passport'); // init strategies
 const whatsappService = require('./services/whatsappService');
@@ -24,7 +25,9 @@ const whatsappService = require('./services/whatsappService');
 const app = express();
 
 // 1. Trust proxy configuration (MUST BE ABSOLUTE TOP for accurate IP/Header resolution)
-app.set('trust proxy', true);
+// Limit to 1 hop: Express will only trust the immediate upstream proxy (Cloudflare edge).
+// Using `true` would allow attackers to forge X-Forwarded-For with any IP.
+app.set('trust proxy', 1);
 
 // 2. Early Preflight Handshake (Bypasses all subsequent logic)
 app.use((req, res, next) => {
@@ -88,7 +91,8 @@ if (process.env.NODE_ENV === 'production') {
 app.use(express.json({
   limit: '2mb',
   verify: (req, res, buf) => {
-    if (req.originalUrl === '/api/payments/webhook') {
+    // Preserve raw body for any route that needs signature verification (Paystack, Meta/WA).
+    if (req.originalUrl.includes('/webhook')) {
       req.rawBody = buf;
     }
   }
@@ -101,7 +105,8 @@ app.use(passport.initialize());
 
 app.use('/api', routes);
 
-app.get('/whatsapp/qr', (req, res) => {
+// Admin-only: the live pairing QR must not be publicly accessible.
+app.get('/whatsapp/qr', auth, allow('ADMIN'), (req, res) => {
   const qr = whatsappService.getQR();
   if (!qr) {
     return res.send(`

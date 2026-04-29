@@ -10,18 +10,9 @@ export default function SavedPage() {
   const router = useRouter();
 
   useEffect(() => {
-    if (!isInitialized) return; // wait for auth to be initialized
-
+    if (!isInitialized) return;
     if (!user) {
-      // not logged in -> send to login
       router.push("/login");
-      return;
-    }
-
-    if (user.role !== "USER") {
-      // not a plain user -> not allowed here
-      router.push("/");
-      return;
     }
   }, [user, isInitialized, router]);
 

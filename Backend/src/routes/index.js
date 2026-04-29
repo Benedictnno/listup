@@ -5,6 +5,9 @@ const router = require('express').Router();
 router.get('/health', (req, res) => res.json({ ok: true, uptime: process.uptime() }));
 
 router.use('/auth', require('./auth.routes'));
+router.use('/auth', require('./auth-google.routes'));
+router.use('/auth', require('./firebase-google.routes'));
+router.use('/auth', require('./upgrade.routes'));
 router.use('/users', require('./users.routes'));
 router.use('/listings', require('./listings.routes'));
 router.use('/categories', require('./categories.routes'));

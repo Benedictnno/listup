@@ -21,4 +21,6 @@ passport.use(
   })
 );
 
+require('./passport-google');
+
 module.exports = passport;

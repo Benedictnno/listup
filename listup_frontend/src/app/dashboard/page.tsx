@@ -16,10 +16,12 @@ import { fetchVendorListings } from "@/lib/api/listing";
 import { safeLocalStorage } from "@/utils/helpers";
 import Link from "next/link";
 import { useAuthStore } from "@/store/authStore";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import SavedListings from "@/components/SavedListings";
 import KYCStatusBanner from "@/components/KYCStatusBanner";
 import { useFeatureFlag } from "@/context/FeatureFlagContext";
+import UpgradeToVendorModal from "@/components/UpgradeToVendorModal";
+import Analytics from "@/lib/analytics";
 
 interface DashboardData {
   totalListings: number;
@@ -43,7 +45,16 @@ export default function DashboardOverview() {
   const [loading, setLoading] = useState(true);
   const { user } = useAuthStore();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { isEnabled } = useFeatureFlag();
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+
+  // Auto-open upgrade modal if ?upgrade=1 is present
+  useEffect(() => {
+    if (searchParams.get('upgrade') === '1' && user?.role === 'USER') {
+      setShowUpgradeModal(true);
+    }
+  }, [searchParams, user]);
 
   // Unified Auth and Redirect Protection
   useEffect(() => {
@@ -53,11 +64,11 @@ export default function DashboardOverview() {
       return;
     }
 
-    // 2. Check Role
-    if (user.role !== "VENDOR") {
-      router.push("/");
-      return;
-    }
+    // 2. Check Role (removed to allow users to see saved posts and upgrade)
+    // if (user.role !== "VENDOR") {
+    //   router.push("/");
+    //   return;
+    // }
 
     // 3. Check Payment Status (if KYC is enabled)
     const checkPaymentStatus = async () => {
@@ -155,7 +166,10 @@ export default function DashboardOverview() {
   if (user.role !== "VENDOR") {
     return (
       <div className="p-4">
-        <h2 className="text-2xl font-semibold mb-4">Your saved posts</h2>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-2xl font-semibold">Your saved posts</h2>
+          <UpgradeSection user={user} open={showUpgradeModal} setOpen={setShowUpgradeModal} />
+        </div>
         <SavedListings />
       </div>
     );
@@ -362,5 +376,29 @@ export default function DashboardOverview() {
         </div>
       </div>
     </div>
+  );
+}
+
+function UpgradeSection({ user, open, setOpen }: { user: any; open: boolean; setOpen: (v: boolean) => void }) {
+  const handleSuccess = (data: any) => {
+    Analytics.upgradeToVendor();
+    setOpen(false);
+    window.location.href = '/dashboard';
+  };
+
+  if (user.role !== 'USER') return null;
+
+  return (
+    <>
+      <Button onClick={() => setOpen(true)} className="bg-lime-500 hover:bg-lime-600 text-slate-900 font-bold">
+        🚀 Upgrade to Vendor — Start Selling
+      </Button>
+
+      <UpgradeToVendorModal
+        isOpen={open}
+        onClose={() => setOpen(false)}
+        onSuccess={handleSuccess}
+      />
+    </>
   );
 }
