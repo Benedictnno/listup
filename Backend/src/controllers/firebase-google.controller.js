@@ -98,6 +98,7 @@ exports.firebaseGoogleAuth = async (req, res) => {
           role:           user.role,
           isKYCVerified:  user.isKYCVerified,
           listingLimit:   user.listingLimit,
+          hasPassword:    Boolean(user.password && user.password.length > 0),
         },
         token,
       },

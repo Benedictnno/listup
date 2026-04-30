@@ -15,6 +15,7 @@ type User = {
     businessCategory: string;
     logo?: string;
   };
+  hasPassword?: boolean;
 };
 
 type AuthState = {
@@ -73,6 +74,7 @@ export const useAuthStore = create<AuthState>((set) => ({
               logo: userData.vendorProfile.logo
             },
           }),
+          hasPassword: userData.hasPassword,
         };
 
         set({ user, isInitialized: true });
@@ -114,6 +116,7 @@ export const useAuthStore = create<AuthState>((set) => ({
             logo: userData.vendorProfile.logo
           },
         }),
+        hasPassword: userData.hasPassword,
       };
 
       // Backend sets HttpOnly cookie; just keep user in memory

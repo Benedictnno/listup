@@ -171,20 +171,21 @@ export default function SettingsPage() {
             {/* Password Tab */}
             {activeTab === "password" && (
               <form onSubmit={handleUpdatePassword} className="space-y-6 max-w-lg">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Current Password</label>
-                  <input 
-                    type="password" 
-                    value={currentPassword} 
-                    onChange={(e) => setCurrentPassword(e.target.value)}
-                    placeholder="Leave blank if you signed up with Google"
-                    className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-lime-500 focus:border-lime-500 transition-all outline-none" 
-                  />
-                  <p className="mt-1 text-xs text-slate-400">Required only if you already have a password set.</p>
-                </div>
+                {user.hasPassword && (
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Current Password</label>
+                    <input 
+                      type="password" 
+                      value={currentPassword} 
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                      placeholder="Enter your current password"
+                      className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-lime-500 focus:border-lime-500 transition-all outline-none" 
+                    />
+                  </div>
+                )}
                 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">New Password</label>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">{user.hasPassword ? 'New Password' : 'Set Password'}</label>
                   <input 
                     type="password" 
                     value={newPassword} 

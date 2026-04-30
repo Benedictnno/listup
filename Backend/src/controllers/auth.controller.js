@@ -34,6 +34,7 @@ exports.getMe = async (req, res) => {
         phone: true,
         isKYCVerified: true,
         listingLimit: true,
+        password: true, // Fetch password to check if it exists
         vendorProfile: {
           select: {
             storeName: true,
@@ -49,7 +50,14 @@ exports.getMe = async (req, res) => {
       return res.status(401).json({ success: false, message: "User not found" });
     }
 
-    res.json({ success: true, data: user });
+    // Don't send the actual password hash, only a boolean
+    const { password, ...userWithoutPassword } = user;
+    const data = {
+      ...userWithoutPassword,
+      hasPassword: Boolean(password && password.length > 0)
+    };
+
+    res.json({ success: true, data });
   } catch (err) {
     console.error("getMe error:", err);
     res.status(401).json({ success: false, message: "Invalid token" });
@@ -194,7 +202,8 @@ exports.register = async (req, res, next) => {
           email: user.email,
           name: user.name,
           role: user.role,
-          isEmailVerified: user.isEmailVerified
+          isEmailVerified: user.isEmailVerified,
+          hasPassword: true
         }
       }
     });
@@ -370,6 +379,7 @@ exports.registerVendor = async (req, res, next) => {
           email: user.email,
           name: user.name,
           role: user.role,
+          hasPassword: true
         }
       }
     });
@@ -413,6 +423,7 @@ exports.login = async (req, res, next) => {
             logo: true,
           },
         },
+        password: true,
       }
     });
 
@@ -453,7 +464,8 @@ exports.login = async (req, res, next) => {
           email: fullUser.email,
           role: fullUser.role,
           phone: fullUser.phone,
-          isEmailVerified: fullUser.isEmailVerified
+          isEmailVerified: fullUser.isEmailVerified,
+          hasPassword: Boolean(fullUser.password && fullUser.password.length > 0)
         }
       }
     });
