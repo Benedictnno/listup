@@ -177,9 +177,10 @@ export default function SettingsPage() {
                     type="password" 
                     value={currentPassword} 
                     onChange={(e) => setCurrentPassword(e.target.value)}
-                    required
+                    placeholder="Leave blank if you signed up with Google"
                     className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-lime-500 focus:border-lime-500 transition-all outline-none" 
                   />
+                  <p className="mt-1 text-xs text-slate-400">Required only if you already have a password set.</p>
                 </div>
                 
                 <div>
