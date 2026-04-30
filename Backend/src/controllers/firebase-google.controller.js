@@ -13,8 +13,10 @@ const { addToGoogleSheet } = require('../utils/googleSheets');
 exports.firebaseGoogleAuth = async (req, res) => {
   try {
     const { idToken } = req.body;
+    console.log('[FirebaseAuth] Received auth request');
 
     if (!idToken) {
+      console.warn('[FirebaseAuth] Missing idToken in request body');
       return res.status(400).json({ success: false, message: 'idToken is required' });
     }
 
@@ -23,14 +25,17 @@ exports.firebaseGoogleAuth = async (req, res) => {
     let decoded;
     try {
       decoded = await admin.auth().verifyIdToken(idToken);
+      console.log('[FirebaseAuth] Token verified for UID:', decoded.uid);
     } catch (err) {
-      console.error('Firebase token verification failed:', err.message);
+      console.error('[FirebaseAuth] Token verification failed:', err.message);
       return res.status(401).json({ success: false, message: 'Invalid or expired Google token' });
     }
 
     const { email, name, picture, uid } = decoded;
+    console.log('[FirebaseAuth] Processing user:', email);
 
     if (!email) {
+      console.warn('[FirebaseAuth] Google account missing email:', uid);
       return res.status(400).json({ success: false, message: 'Google account has no email address' });
     }
 
