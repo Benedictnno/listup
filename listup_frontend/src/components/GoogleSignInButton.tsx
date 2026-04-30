@@ -30,11 +30,20 @@ export default function GoogleSignInButton({
     setLoading(true);
     try {
       // 1. Firebase popup — returns idToken
+      console.log('[GoogleAuth] Opening Firebase popup...');
       const result = await signInWithPopup(auth, googleProvider);
+      console.log('[GoogleAuth] Popup success, user:', result.user.email);
+      
       const idToken = await result.user.getIdToken();
+      console.log('[GoogleAuth] ID Token retrieved (length:', idToken.length, ')');
 
       // 2. Send idToken to our backend to verify + create session cookie
+      const targetUrl = `${api.defaults.baseURL}/auth/firebase-google`;
+      console.log('[GoogleAuth] Sending to backend:', targetUrl);
+      
       const res = await api.post('/auth/firebase-google', { idToken });
+      console.log('[GoogleAuth] Backend response:', res.status);
+      
       const { user, isNewUser } = res.data.data;
 
       // 3. Persist user in zustand store
