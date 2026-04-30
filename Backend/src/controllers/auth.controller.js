@@ -914,9 +914,17 @@ exports.changePassword = async (req, res) => {
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) return res.status(404).json({ success: false, message: 'User not found' });
 
-    const isMatch = await bcrypt.compare(currentPassword, user.password);
-    if (!isMatch) {
-      return res.status(400).json({ success: false, message: 'Incorrect current password' });
+    // Check if user has a password set (standard signup vs Google signup)
+    // Google users have password: '' initially.
+    const hasPassword = user.password && user.password.length > 0;
+
+    if (hasPassword) {
+      const isMatch = await bcrypt.compare(currentPassword, user.password);
+      if (!isMatch) {
+        return res.status(400).json({ success: false, message: 'Incorrect current password' });
+      }
+    } else {
+      console.log(`[Auth] User ${user.email} is setting their first password.`);
     }
 
     const hashedPassword = await bcrypt.hash(newPassword, 12);

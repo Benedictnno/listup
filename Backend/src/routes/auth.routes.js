@@ -245,7 +245,7 @@ router.put(
   "/change-password",
   auth,
   [
-    body("currentPassword").notEmpty().withMessage("Current password is required"),
+    body("currentPassword").optional(),
     body("newPassword").isLength({ min: 6 }).withMessage("New password must be at least 6 characters"),
   ],
   AuthCtrl.changePassword
