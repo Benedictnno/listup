@@ -23,6 +23,12 @@ require('./config/passport'); // init strategies
 const whatsappService = require('./services/whatsappService');
 
 const app = express();
+ 
+// 0. Global Request Logger (Emergency Debug)
+app.use((req, res, next) => {
+  console.log(`[REQUEST] ${req.method} ${req.originalUrl} - IP: ${req.ip} - Peer: ${req.socket.remoteAddress}`);
+  next();
+});
 
 // 1. Trust proxy configuration (MUST BE ABSOLUTE TOP for accurate IP/Header resolution)
 // Limit to 1 hop: Express will only trust the immediate upstream proxy (Cloudflare edge).
