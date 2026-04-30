@@ -66,13 +66,20 @@ function cloudflareSecurity(req, res, next) {
       return next();
     }
 
-    // 5. In production the TCP peer MUST be a Cloudflare edge node.
+    // 5. In production the TCP peer MUST be a Cloudflare edge node OR an internal private network (Render/VPC)
     if (process.env.NODE_ENV === "production") {
       const isCloudflare = CLOUDFLARE_IP_RANGES.some((range) =>
         ipRangeCheck(remoteIp, range)
       );
 
-      if (!isCloudflare) {
+      const isPrivate =
+        ipRangeCheck(remoteIp, "10.0.0.0/8") ||
+        ipRangeCheck(remoteIp, "172.16.0.0/12") ||
+        ipRangeCheck(remoteIp, "192.168.0.0/16") ||
+        remoteIp === "127.0.0.1" ||
+        remoteIp === "::1";
+
+      if (!isCloudflare && !isPrivate) {
         console.warn(
           `[SECURITY-DENIED] Non-Cloudflare TCP peer: ${remoteIp}`
         );
@@ -83,7 +90,8 @@ function cloudflareSecurity(req, res, next) {
 
       // cf-connecting-ip is injected by Cloudflare — its absence means the
       // request bypassed the Cloudflare proxy layer somehow.
-      if (!req.headers["cf-connecting-ip"]) {
+      // We only enforce this if it's NOT a health check or internal request.
+      if (!req.headers["cf-connecting-ip"] && !isPrivate) {
         console.warn(
           `[SECURITY-DENIED] Missing cf-connecting-ip from Cloudflare peer ${remoteIp}`
         );
