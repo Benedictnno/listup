@@ -21,6 +21,6 @@ passport.use(
   })
 );
 
-require('./passport-google');
+// require('./passport-google'); // Disabled in favor of Firebase Auth
 
 module.exports = passport;
