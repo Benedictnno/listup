@@ -237,7 +237,7 @@ export default function LoginPage() {
         <GoogleSignInButton
           onSuccess={({ isNewUser }) => {
             if (isNewUser) setShowVendorPrompt(true);
-            else router.push('/dashboard');
+            else router.push('/listings');
           }}
         />
         
