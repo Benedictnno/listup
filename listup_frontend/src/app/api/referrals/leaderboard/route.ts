@@ -4,12 +4,14 @@ import { NextResponse } from 'next/server';
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
-    try {
-        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
-        const res = await fetch(`${backendUrl}/api/referrals/leaderboard`, {
-            cache: 'no-store'
-        });
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
+    
+    // Move dynamic fetch outside of try/catch so Next.js can handle dynamic bailout errors during build
+    const res = await fetch(`${backendUrl}/api/referrals/leaderboard`, {
+        cache: 'no-store'
+    });
 
+    try {
         if (!res.ok) {
             return NextResponse.json({ success: false }, { status: res.status });
         }
