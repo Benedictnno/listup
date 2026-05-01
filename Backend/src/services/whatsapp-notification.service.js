@@ -1,20 +1,33 @@
 const { sendMessage } = require('./whatsappService');
 const prisma = require('../lib/prisma');
+const { getFrontendUrl } = require('../utils/url');
 
 /**
  * Notify Seller of new message
  */
-async function notifySeller(sellerId, buyerName, productName, messagePreview) {
+async function notifySeller(sellerId, buyerName, productName, messagePreview, conversationId) {
     try {
         const seller = await prisma.user.findUnique({
             where: { id: sellerId },
             select: { phone: true, whatsappOptIn: true, name: true }
         });
 
-        if (!seller || !seller.phone || !seller.whatsappOptIn) {
-            console.log(`[WhatsApp] Skipping notification for seller ${sellerId}: opt-out or no phone.`);
+        if (!seller) {
+            console.log(`[WhatsApp] Skipping notification: Seller ${sellerId} not found.`);
             return;
         }
+
+        if (!seller.phone) {
+            console.log(`[WhatsApp] Skipping notification for ${seller.name}: No phone number registered.`);
+            return;
+        }
+
+        if (!seller.whatsappOptIn) {
+            console.log(`[WhatsApp] Skipping notification for ${seller.name}: WhatsApp opt-in is DISABLED.`);
+            return;
+        }
+
+        console.log(`[WhatsApp] Preparing notification for seller: ${seller.name} (${seller.phone})`);
 
         const body = `🔔 *New Message from Customer*
 
@@ -24,7 +37,7 @@ async function notifySeller(sellerId, buyerName, productName, messagePreview) {
 
 💬 Reply on Listup to maintain your seller rating!
 
-🔗 https://listup.ng/messages`;
+🔗 ${getFrontendUrl()}/chat/${conversationId}`;
 
         await sendMessage(seller.phone, body);
 
@@ -47,7 +60,7 @@ async function notifySeller(sellerId, buyerName, productName, messagePreview) {
 /**
  * Notify Buyer of vendor response
  */
-async function notifyBuyer(buyerId, vendorName, productName, messagePreview) {
+async function notifyBuyer(buyerId, vendorName, productName, messagePreview, conversationId) {
     try {
         const buyer = await prisma.user.findUnique({
             where: { id: buyerId },
@@ -65,7 +78,7 @@ Hi ${buyer.name}, *${vendorName}* has responded to your inquiry about *${product
 
 *Message:* "${messagePreview.substring(0, 100)}${messagePreview.length > 100 ? '...' : ''}"
 
-🔗 View and reply here: https://listup.ng/messages`;
+🔗 View and reply here: ${getFrontendUrl()}/chat/${conversationId}`;
 
         await sendMessage(buyer.phone, body);
 

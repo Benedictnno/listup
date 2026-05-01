@@ -16,12 +16,14 @@ type User = {
     logo?: string;
   };
   hasPassword?: boolean;
+  whatsappOptIn?: boolean;
 };
 
 type AuthState = {
   user: User | null;
   isInitialized: boolean;
   login: (email: string, password: string) => Promise<User>;
+  updateUser: (data: Partial<User>) => void;
   signup: (userData: {
     name: string;
     email: string;
@@ -40,6 +42,10 @@ type AuthState = {
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   isInitialized: false,
+
+  updateUser: (data) => set((state) => ({
+    user: state.user ? { ...state.user, ...data } : null
+  })),
 
   initializeAuth: () => {
     if (typeof window === "undefined") return;
@@ -75,6 +81,7 @@ export const useAuthStore = create<AuthState>((set) => ({
             },
           }),
           hasPassword: userData.hasPassword,
+          whatsappOptIn: userData.whatsappOptIn,
         };
 
         set({ user, isInitialized: true });
@@ -117,6 +124,7 @@ export const useAuthStore = create<AuthState>((set) => ({
           },
         }),
         hasPassword: userData.hasPassword,
+        whatsappOptIn: userData.whatsappOptIn,
       };
 
       // Backend sets HttpOnly cookie; just keep user in memory

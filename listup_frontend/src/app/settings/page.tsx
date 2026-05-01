@@ -17,6 +17,7 @@ export default function SettingsPage() {
   // Profile Form State
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [whatsappOptIn, setWhatsappOptIn] = useState(false);
 
   // Password Form State
   const [currentPassword, setCurrentPassword] = useState("");
@@ -30,6 +31,7 @@ export default function SettingsPage() {
     } else {
       setName(user.name || "");
       setPhone(user.phone || "");
+      setWhatsappOptIn(user.whatsappOptIn || false);
     }
   }, [user, isInitialized, router]);
 
@@ -38,7 +40,7 @@ export default function SettingsPage() {
     setLoading(true);
     try {
       // Assuming a generic update endpoint exists, or we use a settings endpoint
-      const res = await api.put("/auth/update-profile", { name, phone });
+      const res = await api.put("/auth/update-profile", { name, phone, whatsappOptIn });
       if (res.data.success) {
         toast.success("Profile updated successfully");
         await initializeAuth(); // Refresh global user state
@@ -153,6 +155,24 @@ export default function SettingsPage() {
                     placeholder="+234..."
                     className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-lime-500 focus:border-lime-500 transition-all outline-none" 
                   />
+                </div>
+
+                <div className="bg-lime-50 border border-lime-100 p-4 rounded-xl">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="text-sm font-bold text-lime-900">WhatsApp Notifications</h4>
+                      <p className="text-xs text-lime-700 mt-0.5">Receive alerts for new messages and orders directly on WhatsApp.</p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        checked={whatsappOptIn}
+                        onChange={(e) => setWhatsappOptIn(e.target.checked)}
+                        className="sr-only peer" 
+                      />
+                      <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-lime-500"></div>
+                    </label>
+                  </div>
                 </div>
 
                 <div className="pt-4">

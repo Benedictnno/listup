@@ -1,9 +1,11 @@
 const { default: makeWASocket, DisconnectReason, useMultiFileAuthState, fetchLatestBaileysVersion, downloadContentFromMessage } = require('@whiskeysockets/baileys');
 const { Boom } = require('@hapi/boom');
 const qrcode = require('qrcode-terminal');
+const pino = require('pino');
 const prisma = require('../lib/prisma');
 const GeminiService = require('./geminiService');
 const { addToGoogleSheet } = require('../utils/googleSheets');
+const { normalizePhoneNumber } = require('../utils/phoneUtils');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const fs = require('fs');
@@ -46,6 +48,7 @@ const WhatsAppService = {
                 auth: state,
                 printQRInTerminal: false,
                 defaultQueryTimeoutMs: undefined,
+                logger: pino({ level: 'error' }),
             });
 
             // Handle connection updates
@@ -321,7 +324,10 @@ const WhatsAppService = {
         }
 
         try {
-            const jid = to.includes('@s.whatsapp.net') ? to : `${to.replace(/\D/g, '')}@s.whatsapp.net`;
+            const cleanPhone = normalizePhoneNumber(to);
+            const jid = `${cleanPhone}@s.whatsapp.net`;
+            
+            console.log(`[WhatsApp] Attempting to send message to: ${jid}`);
             const result = await sock.sendMessage(jid, { text });
             return result;
         } catch (error) {
@@ -514,10 +520,6 @@ const WhatsAppService = {
             history.reverse();
         }
 
-        console.log('--- Debugging Context ---');
-        console.log('Current Message:', messageContent);
-        console.log('History Context:', JSON.stringify(history, null, 2));
-
         const responseText = await GeminiService.generateResponse(contactName, from, messageContent, history, audioData);
 
         const delay = this.calculateResponseDelay(responseText.length);
@@ -595,7 +597,8 @@ const WhatsAppService = {
     async sendImage(to, imageUrl, caption) {
         if (!sock) return null;
         try {
-            const jid = to.includes('@s.whatsapp.net') ? to : `${to.replace(/\D/g, '')}@s.whatsapp.net`;
+            const cleanPhone = normalizePhoneNumber(to);
+            const jid = `${cleanPhone}@s.whatsapp.net`;
             const result = await sock.sendMessage(jid, {
                 image: { url: imageUrl },
                 caption: caption
@@ -613,7 +616,8 @@ const WhatsAppService = {
     async sendButtons(to, title, buttons, footer = 'Listup Assistant') {
         if (!sock) return null;
         try {
-            const jid = to.includes('@s.whatsapp.net') ? to : `${to.replace(/\D/g, '')}@s.whatsapp.net`;
+            const cleanPhone = normalizePhoneNumber(to);
+            const jid = `${cleanPhone}@s.whatsapp.net`;
             return await sock.sendMessage(jid, {
                 poll: {
                     name: title,
@@ -635,6 +639,8 @@ const WhatsAppService = {
     async sendListMessage(to, title, buttonText, sections, footer = 'Listup Assistant') {
         if (!sock) return null;
         try {
+            const cleanPhone = normalizePhoneNumber(to);
+            // Constructing list as text fallback for reliability across clients
             let message = `${title}\n\n`;
             sections.forEach(section => {
                 message += `*${section.title}*\n`;

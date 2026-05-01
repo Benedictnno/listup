@@ -160,16 +160,20 @@ export default function LoginPage() {
       <div className="absolute inset-0 -z-0 bg-[radial-gradient(1200px_600px_at_20%_-10%,rgba(148,163,184,0.18),transparent_70%),radial-gradient(800px_400px_at_100%_10%,rgba(148,163,184,0.12),transparent_60%)]" />
 
       <form
-        onSubmit={handleSubmit}
+        onSubmit={handleSubmit} 
         action="#"
         method="post"
         className="relative z-10 bg-white p-8 rounded-2xl shadow-lg w-full max-w-md border border-slate-200/20"
       >
         {/* Header */}
-        <div className="flex items-center gap-2 mb-6">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-lime-400 text-slate-900 font-black">LU</div>
+        {/* <div className="flex items-center gap-1 mb-6">
+          <img
+            src="/images/Listup.png"
+            alt="ListUp Logo"
+            className="h-8"
+          />
           <span className="text-lg font-semibold tracking-wide">ListUp</span>
-        </div>
+        </div> */}
 
         <h2 className="text-2xl font-bold mb-6 text-slate-800">Welcome back</h2>
 

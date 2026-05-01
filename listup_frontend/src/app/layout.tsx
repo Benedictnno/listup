@@ -15,6 +15,7 @@ import { Toaster } from "sonner";
 import QueryProvider from "@/providers/QueryProvider";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
 import FirebaseAnalytics from "@/components/FirebaseAnalytics";
+import WhatsAppOptInModal from "@/components/WhatsAppOptInModal";
 
 
 const montserrat = Montserrat({
@@ -77,6 +78,7 @@ export default function RootLayout({
                 <ReferralEngagementTracker />
                 <PWAInstallPrompt />
                 <Toaster position="top-center" richColors />
+                <WhatsAppOptInModal />
               </ChatProvider>
 
             </FeatureFlagProvider>

@@ -173,7 +173,8 @@ exports.updatePersonalInfo = async (req, res, next) => {
       state,
       zipCode,
       country,
-      email // Added email for change handling
+      email,
+      whatsappOptIn
     } = req.body;
 
     // Validate required fields
@@ -195,7 +196,8 @@ exports.updatePersonalInfo = async (req, res, next) => {
       city,
       state,
       zipCode,
-      country
+      country,
+      whatsappOptIn: whatsappOptIn !== undefined ? whatsappOptIn : undefined
     };
 
     let emailChanged = false;
@@ -232,7 +234,8 @@ exports.updatePersonalInfo = async (req, res, next) => {
         zipCode: true,
         country: true,
         role: true,
-        createdAt: true
+        createdAt: true,
+        whatsappOptIn: true
       }
     });
 

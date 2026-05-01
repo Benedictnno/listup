@@ -70,6 +70,7 @@ export default function SettingsPage() {
     lastName: "",
     personalEmail: "",
     personalPhone: "",
+    whatsappOptIn: false,
   });
 
   const [passwordForm, setPasswordForm] = useState({
@@ -130,6 +131,7 @@ export default function SettingsPage() {
           lastName: lastName || "",
           personalEmail: user?.email || "",
           personalPhone: user?.phone || "",
+          whatsappOptIn: user?.whatsappOptIn || false,
         }));
       } catch (error) {
         console.error("Failed to load user settings", error);
@@ -182,7 +184,8 @@ export default function SettingsPage() {
         await updatePersonalInfo({
           name: `${firstName} ${lastName}`.trim(),
           phone: personalPhone,
-        });
+          whatsappOptIn: personalForm.whatsappOptIn
+        } as any);
 
         setMessage({ type: 'success', text: 'Personal settings updated successfully!' });
       } else if (section === 'Security') {
@@ -675,6 +678,21 @@ export default function SettingsPage() {
                 value={personalForm.personalPhone}
                 onChange={(e) => setPersonalForm(prev => ({ ...prev, personalPhone: e.target.value }))}
               />
+            </div>
+
+            <div className="flex items-center justify-between p-4 bg-green-50 rounded-lg border border-green-100">
+              <div className="space-y-0.5">
+                <Label className="text-base font-semibold text-green-900">WhatsApp Notifications</Label>
+                <p className="text-xs text-green-700">Receive real-time alerts for new messages and orders.</p>
+              </div>
+              <div className="flex items-center h-6">
+                <input
+                  type="checkbox"
+                  checked={personalForm.whatsappOptIn}
+                  onChange={(e) => setPersonalForm(prev => ({ ...prev, whatsappOptIn: e.target.checked }))}
+                  className="w-11 h-6 bg-gray-200 rounded-full appearance-none cursor-pointer checked:bg-green-500 transition-colors relative after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all checked:after:translate-x-5"
+                />
+              </div>
             </div>
           </div>
         </CardContent>

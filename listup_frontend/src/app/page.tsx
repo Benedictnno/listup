@@ -1,83 +1,36 @@
-"use client";
-import React from "react";
-// import { motion } from "framer-motion"; // Removed unused import to save bundle size if not used elsewhere, or keep if needed. It was used in original file.
-import { ArrowRight, Search, Store, MessageCircle } from "lucide-react";
+import React, { Suspense } from "react";
+import { ArrowRight, Store, MessageCircle } from "lucide-react";
 import { tips } from "@/utils/constants";
 import { PrimaryButton, SectionEyebrow } from "@/utils/helpers";
-import AdsPage from "@/components/TrendingAds";
 import Image from "next/image";
-import MiniListings from "@/components/MiniListings";
 import Link from "next/link";
-import { GhostButton } from "@/utils/helpers";
-import { useAuthStore } from "@/store/authStore";
-import OutsideAd from "@/components/OutsideAd";
-import CategorySidebar from "@/components/CategorySidebar";
-import RecentlyViewed from "@/components/RecentlyViewed";
-import TrendingListings from "@/components/TrendingListings";
-// import HeroCarousel from "@/components/HeroCarousel"; // Replaced with dynamic import
-import PromoCards from "@/components/PromoCards";
-import { useRouter } from "next/navigation";
-import { useFilterStore } from "@/store/useFilterStore";
 import dynamic from "next/dynamic";
-import CarouselSkeleton from "@/components/skeletons/CarouselSkeleton";
 
+// Components
+import CategorySidebar from "@/components/CategorySidebar";
+import TrendingListings from "@/components/TrendingListings";
+import RecentlyViewed from "@/components/RecentlyViewed";
+import MiniListings from "@/components/MiniListings";
+import MobileSearchBar from "@/components/MobileSearchBar";
+
+// Skeletons
+import CarouselSkeleton from "@/components/skeletons/CarouselSkeleton";
+import ListingGridSkeleton from "@/components/skeletons/ListingGridSkeleton";
+
+// Dynamic Imports
 const HeroCarousel = dynamic(() => import("@/components/HeroCarousel"), {
   loading: () => <CarouselSkeleton />,
-  ssr: false // Disable SSR for carousel since it's client-side heavy
+  ssr: false
 });
 
-/**
- * Marketplace Landing Page
- * Framework: Next.js (app router ready) + TailwindCSS
- * Notes:
- * - Replace <img> with Next/Image in your Next.js app for optimized images.
- * - This file can be used directly as `app/page.tsx` in a Next.js project.
- */
-
 export default function MarketplaceLanding() {
-  const user = useAuthStore((state) => state.user);
-  const router = useRouter();
-  const setSearch = useFilterStore((state) => state.setSearch);
-
   return (
     <div className="min-h-screen w-full text-slate-800 font-montserrat relative overflow-x-hidden">
-      {/* NAVBAR */}
-
       {/* HERO SECTION */}
       <section className="bg-slate-950 py-6 md:py-12 border-b border-white/5">
         <div className="mx-auto max-w-7xl px-4 md:px-6">
-          {/* Mobile Search Bar - Visible only on mobile */}
-          <div className="md:hidden mb-6">
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                const searchInput = e.currentTarget.querySelector("input");
-                const searchValue = searchInput?.value || "";
-                if (searchValue.trim()) {
-                  setSearch(searchValue.trim());
-                  router.push(
-                    `/listings?q=${encodeURIComponent(searchValue.trim())}`,
-                  );
-                }
-              }}
-              className="flex w-full items-center bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden h-14 shadow-2xl"
-            >
-              <div className="pl-4">
-                <Search className="h-5 w-4 text-slate-500" />
-              </div>
-              <input
-                type="text"
-                placeholder="Search listings..."
-                className="flex-1 bg-transparent text-white outline-none px-3 font-montserrat text-sm"
-              />
-              <button
-                type="submit"
-                className="h-full px-4 bg-lime-400 text-slate-950 font-bold font-montserrat hover:bg-lime-300 transition-colors"
-              >
-                Search
-              </button>
-            </form>
-          </div>
+          {/* Mobile Search Bar - Client Component */}
+          <MobileSearchBar />
 
           <div className="flex flex-col lg:flex-row gap-6">
             {/* 1. Category Sidebar (Desktop Only) */}
@@ -148,16 +101,17 @@ export default function MarketplaceLanding() {
         </div>
       </section>
 
-      {/* <PromoCards /> */}
+      <Suspense fallback={<ListingGridSkeleton />}>
+        <TrendingListings />
+      </Suspense>
 
-      {/* <AdsPage/> */}
+      <Suspense fallback={<div className="h-40" />}>
+        <RecentlyViewed />
+      </Suspense>
 
-      <TrendingListings />
-      <RecentlyViewed />
-
-      <MiniListings />
-
-      {/* <Category /> */}
+      <Suspense fallback={<ListingGridSkeleton />}>
+        <MiniListings />
+      </Suspense>
 
       {/* FEATURED STORY */}
       <section id="deals" className="bg-slate-50">
@@ -289,7 +243,7 @@ export default function MarketplaceLanding() {
           </div>
         </div>
       </section>
-      <OutsideAd />
     </div>
   );
 }
+

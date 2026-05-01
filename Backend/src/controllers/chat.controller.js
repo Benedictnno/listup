@@ -118,12 +118,12 @@ class ChatController {
             if (senderType === 'BUYER') {
                 const productName = conversation.listing?.title || 'General Inquiry';
                 const buyerName = req.user.name;
-                notifySeller(conversation.sellerId, buyerName, productName, content);
+                notifySeller(conversation.sellerId, buyerName, productName, content, conversationId);
             } else if (senderType === 'SELLER') {
                 const productName = conversation.listing?.title || 'General Inquiry';
                 const vendorName = conversation.seller?.vendorProfile?.storeName || conversation.seller?.name || 'A Vendor';
                 const { notifyBuyer } = require('../services/whatsapp-notification.service');
-                notifyBuyer(conversation.buyerId, vendorName, productName, content);
+                notifyBuyer(conversation.buyerId, vendorName, productName, content, conversationId);
             }
 
             return res.json({ success: true, message });
@@ -168,12 +168,12 @@ class ChatController {
             if (senderType === 'BUYER') {
                 const productName = conversation.listing?.title || 'General Inquiry';
                 const buyerName = req.user.name;
-                notifySeller(conversation.sellerId, buyerName, productName, '[Image]');
+                notifySeller(conversation.sellerId, buyerName, productName, '[Image]', conversationId);
             } else if (senderType === 'SELLER') {
                 const productName = conversation.listing?.title || 'General Inquiry';
                 const vendorName = conversation.seller?.vendorProfile?.storeName || conversation.seller?.name || 'A Vendor';
                 const { notifyBuyer } = require('../services/whatsapp-notification.service');
-                notifyBuyer(conversation.buyerId, vendorName, productName, '[Image]');
+                notifyBuyer(conversation.buyerId, vendorName, productName, '[Image]', conversationId);
             }
 
             return res.json({ success: true, message });

@@ -43,6 +43,7 @@ exports.getMe = async (req, res) => {
             logo: true,
           },
         },
+        whatsappOptIn: true,
       },
     });
 
@@ -424,6 +425,7 @@ exports.login = async (req, res, next) => {
           },
         },
         password: true,
+        whatsappOptIn: true,
       }
     });
 
@@ -465,6 +467,7 @@ exports.login = async (req, res, next) => {
           role: fullUser.role,
           phone: fullUser.phone,
           isEmailVerified: fullUser.isEmailVerified,
+          whatsappOptIn: fullUser.whatsappOptIn,
           hasPassword: Boolean(fullUser.password && fullUser.password.length > 0)
         }
       }
