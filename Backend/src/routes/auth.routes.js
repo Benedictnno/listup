@@ -236,6 +236,7 @@ router.put(
   [
     body("name").trim().notEmpty().withMessage("Name is required"),
     body("phone").optional().trim(),
+    body("whatsappOptIn").optional().isBoolean().withMessage("whatsappOptIn must be a boolean"),
   ],
   AuthCtrl.updateProfile
 );

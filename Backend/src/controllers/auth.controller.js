@@ -900,13 +900,17 @@ exports.updateProfile = async (req, res) => {
       return res.status(400).json({ success: false, errors: errors.array() });
     }
 
-    const { name, phone } = req.body;
+    const { name, phone, whatsappOptIn } = req.body;
     const userId = req.user.id;
 
     const updatedUser = await prisma.user.update({
       where: { id: userId },
-      data: { name, phone },
-      select: { id: true, name: true, phone: true, email: true, role: true }
+      data: { 
+        name, 
+        phone,
+        ...(whatsappOptIn !== undefined && { whatsappOptIn })
+      },
+      select: { id: true, name: true, phone: true, email: true, role: true, whatsappOptIn: true }
     });
 
     res.json({ success: true, data: updatedUser, message: 'Profile updated successfully' });

@@ -5,7 +5,7 @@
   "scripts": {
     "test": "dotenv -e .env.test -- jest",
     "test:watch": "dotenv -e .env.test -- jest --watch",
-    "build": "npx prisma@6.4.1 generate",
+    "build": "prisma generate",
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
     "prisma": "prisma",
@@ -19,6 +19,8 @@
   "description": "",
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
+    "@prisma/client": "6.4.1",
+    "prisma": "6.4.1",
     "@hapi/boom": "^10.0.1",
     "@whiskeysockets/baileys": "^6.7.8",
     "africastalking": "^0.7.4",
@@ -53,11 +55,9 @@
     "twilio": "^5.11.2"
   },
   "devDependencies": {
-    "@prisma/client": "6.4.1",
     "dotenv-cli": "^11.0.0",
     "jest": "^30.3.0",
     "nodemon": "^3.1.10",
-    "prisma": "6.4.1",
     "supertest": "^7.2.2"
   }
 }
