@@ -5,7 +5,7 @@
   "scripts": {
     "test": "dotenv -e .env.test -- jest",
     "test:watch": "dotenv -e .env.test -- jest --watch",
-    "build": "npx prisma generate",
+    "build": "prisma generate",
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
     "prisma": "prisma",
