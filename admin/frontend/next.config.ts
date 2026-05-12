@@ -3,18 +3,16 @@ import path from "path";
 
 const nextConfig: NextConfig = {
   // Configure for both Turbopack and webpack
-  experimental: {
-    turbo: {
-      resolveAlias: {
-        '@': path.resolve(__dirname, 'src'),
-      },
+  turbopack: {
+    resolveAlias: {
+      '@': path.resolve(__dirname, '.'),
     },
   },
   // Fallback webpack config for when not using Turbopack
   webpack: (config) => {
     config.resolve.alias = {
       ...config.resolve.alias,
-      '@': path.resolve(__dirname, 'src'),
+      '@': path.resolve(__dirname, '.'),
     };
     return config;
   },

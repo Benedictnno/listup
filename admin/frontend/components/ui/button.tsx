@@ -23,7 +23,7 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
   size?: Size;
 }
 
-export default function Button({ variant = "default", size = "md", className = "", ...props }: ButtonProps) {
+export function Button({ variant = "default", size = "md", className = "", ...props }: ButtonProps) {
   return (
     <button
       {...props}
@@ -31,3 +31,5 @@ export default function Button({ variant = "default", size = "md", className = "
     />
   );
 }
+
+export default Button;
